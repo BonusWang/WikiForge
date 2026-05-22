@@ -1,0 +1,55 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+
+# Java / Maven / Gradle
+target/
+build/
+.gradle/
+out/
+*.class
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+.turbo/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Env / local config
+.env
+.env.*
+!.env.example
+application-local.yml
+application-local.yaml
+application-local.properties
+
+# Logs
+logs/
+*.log
+
+# Local runtime data
+WikiForge_RawSources/
+WikiForge_Vault/
+data/
+storage/
+uploads/
+tmp/
+temp/
+
+# Secrets / keys
+*.key
+*.pem
+*.p12
+*.jks
+secrets/
+
+# Test / coverage
+coverage/
+.nyc_output/
