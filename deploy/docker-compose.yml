@@ -1,0 +1,90 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: wikiforge-mysql
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-wikiforge}
+      MYSQL_USER: ${MYSQL_USER:-wikiforge}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-wikiforge}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-wikiforge_root}
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - ../data/mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  wikiforge-core-service:
+    build:
+      context: ..
+      dockerfile: deploy/docker/core-service.Dockerfile
+    container_name: wikiforge-core-service
+    environment:
+      CORE_SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:mysql://mysql:3306/wikiforge?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-wikiforge}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-wikiforge}
+      WIKIFORGE_RAW_SOURCES_PATH: ${WIKIFORGE_RAW_SOURCES_PATH:-/data/wikiforge/raw-sources}
+      WIKIFORGE_OBSIDIAN_VAULT_PATH: ${WIKIFORGE_OBSIDIAN_VAULT_PATH:-/data/wikiforge/obsidian-vault}
+      WIKIFORGE_ALLOWED_SCAN_ROOTS: ${WIKIFORGE_ALLOWED_SCAN_ROOTS:-/data/wikiforge/imports}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../data/raw-sources:/data/wikiforge/raw-sources
+      - ../data/obsidian-vault:/data/wikiforge/obsidian-vault
+      - ../data/imports:/data/wikiforge/imports
+      - ../data/logs/core-service:/app/logs
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  wikiforge-worker-service:
+    build:
+      context: ..
+      dockerfile: deploy/docker/worker-service.Dockerfile
+    container_name: wikiforge-worker-service
+    environment:
+      WORKER_SERVER_PORT: 8081
+      WIKIFORGE_RAW_SOURCES_PATH: ${WIKIFORGE_RAW_SOURCES_PATH:-/data/wikiforge/raw-sources}
+      WIKIFORGE_OBSIDIAN_VAULT_PATH: ${WIKIFORGE_OBSIDIAN_VAULT_PATH:-/data/wikiforge/obsidian-vault}
+      WIKIFORGE_ALLOWED_SCAN_ROOTS: ${WIKIFORGE_ALLOWED_SCAN_ROOTS:-/data/wikiforge/imports}
+    ports:
+      - "8081:8081"
+    volumes:
+      - ../data/raw-sources:/data/wikiforge/raw-sources
+      - ../data/obsidian-vault:/data/wikiforge/obsidian-vault
+      - ../data/imports:/data/wikiforge/imports
+      - ../data/logs/worker-service:/app/logs
+    depends_on:
+      wikiforge-core-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health | grep UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  wikiforge-ui:
+    build:
+      context: ..
+      dockerfile: deploy/docker/frontend.Dockerfile
+    container_name: wikiforge-ui
+    ports:
+      - "3000:80"
+    depends_on:
+      wikiforge-core-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/ | grep WikiForge"]
+      interval: 10s
+      timeout: 5s
+      retries: 12

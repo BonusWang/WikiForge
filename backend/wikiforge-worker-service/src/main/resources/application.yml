@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: wikiforge-worker-service
+
+server:
+  port: ${WORKER_SERVER_PORT:8081}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+wikiforge:
+  raw-sources-path: ${WIKIFORGE_RAW_SOURCES_PATH:./data/raw-sources}
+  obsidian-vault-path: ${WIKIFORGE_OBSIDIAN_VAULT_PATH:./data/obsidian-vault}
+  allowed-scan-roots: ${WIKIFORGE_ALLOWED_SCAN_ROOTS:}

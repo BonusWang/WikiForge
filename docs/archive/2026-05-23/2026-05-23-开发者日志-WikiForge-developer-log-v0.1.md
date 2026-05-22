@@ -746,3 +746,97 @@ docs/archive/2026-05-23/2026-05-23-AI开发规则-AGENTS-v0.1.md
 3. 再按任务需要阅读该日期目录中的需求文档、技术架构、数据模型、实施计划和开发者日志快照。
 4. 最后阅读 `docs/` 下的当前主文档。
 5. 如最新快照、主文档和用户当前指令冲突，先指出冲突并请用户确认。
+
+## 2026-05-23 架构评审准备
+
+用户准备在正式写 MVP 代码前发起一次架构评审。
+
+已新增评审材料：
+
+```text
+docs/2026-05-23-架构评审材料-WikiForge-architecture-review.md
+```
+
+同时归档快照：
+
+```text
+docs/archive/2026-05-23/2026-05-23-架构评审材料-WikiForge-architecture-review-v0.1.md
+```
+
+本次评审目标是确认 WikiForge MVP 是否可以进入编码阶段，重点审查 MVP 边界、技术栈、MySQL / Obsidian / Raw Sources 职责、文件系统安全、数据模型收敛度和后续 MCP / 向量库 / 在线文档 / 个人记录扩展预留。
+
+## 2026-05-23 架构评审补充：CI/CD 与 Docker 发布
+
+用户补充要求：架构评审必须考虑打包和部署方式，计划采用 CI/CD 打包流程和 Docker 发布模式，避免后续出现无法自动迭代、Docker 打包异常而反向修改架构的问题。
+
+已更新：
+
+- `docs/技术架构-technical-architecture.md` 升级为 v0.3，补充 CI/CD、Docker Compose、镜像拆分、配置注入、volume 挂载、Flyway migration、健康检查和部署评审约束。
+- `docs/2026-05-23-架构评审材料-WikiForge-architecture-review.md` 升级为 v0.2，补充 CI/CD 与 Docker 专项评审问题。
+
+新增归档快照：
+
+```text
+docs/archive/2026-05-23/2026-05-23-技术架构-technical-architecture-v0.3.md
+docs/archive/2026-05-23/2026-05-23-架构评审材料-WikiForge-architecture-review-v0.2.md
+```
+
+当前倾向：
+
+- MVP 采用前后端分离镜像：`wikiforge-backend`、`wikiforge-frontend`、`mysql:8`。
+- 使用 Docker Compose 管理应用、前端和 MySQL。
+- Raw Sources、Obsidian Vault、MySQL 数据、日志和配置必须外部挂载。
+- CI/CD 最小流水线覆盖后端测试、前端构建、Docker build 和 Compose smoke test。
+
+## 2026-05-23 外部 AI 架构评审归档与最终结论
+
+用户提供了多份外部 AI / 模型的架构评审结果，原始目录为：
+
+```text
+docs/archive/2026-05-23/架构评审/
+```
+
+已规范为：
+
+```text
+docs/archive/2026-05-23/架构评审-architecture-review/
+```
+
+目录内文件已按“日期 + 中文名 + EnglishName + 版本号”的规则重命名，并新增：
+
+```text
+docs/archive/2026-05-23/架构评审-architecture-review/2026-05-23-架构评审索引-architecture-review-index-v0.1.md
+docs/archive/2026-05-23/架构评审-architecture-review/2026-05-23-架构评审结论-WikiForge-architecture-review-conclusion-v1.0.md
+```
+
+同时新增当前主结论文档：
+
+```text
+docs/2026-05-23-架构评审结论-WikiForge-architecture-review-conclusion.md
+```
+
+评审综合结论：
+
+```text
+可以进入 MVP 0 项目骨架阶段。
+```
+
+采纳的关键调整：
+
+- 数据访问最终采用 MyBatis-Plus 3.5.x。
+- Flyway 分阶段建表，MVP 0 不创建全部长期规划表。
+- MVP 0 纳入 CI/CD、Docker Compose、`.env.example` 和健康检查。
+- `sources` 不承载大文本正文，后续拆 `source_contents`。
+- 路径安全、符号链接、SHA-256、原子复制、Obsidian URI 安全作为 MVP 1 前置约束。
+- AI / MCP 延后到 MVP 3 / MVP 4，不阻塞 MVP 0。
+
+同步更新并归档：
+
+```text
+docs/架构决策-DECISIONS.md
+docs/数据模型-data-model.md
+docs/2026-05-22-MVP实施计划-WikiForge-mvp-implementation-plan.md
+docs/archive/2026-05-23/2026-05-23-架构决策-DECISIONS-v0.2.md
+docs/archive/2026-05-23/2026-05-23-数据模型-data-model-v0.3.md
+docs/archive/2026-05-23/2026-05-23-MVP实施计划-WikiForge-mvp-implementation-plan-v0.2.md
+```
