@@ -1,8 +1,8 @@
-# 2026-05-23 WikiForge 文档归档索引 v1.2
+# 2026-05-23 WikiForge 文档归档索引 v1.3
 
 ## 版本索引 Version Index
 
-- 最新版本：v1.2
+- 最新版本：v1.3
 - 最新小节：`当前阶段结论`
 - 推荐阅读：新 AI 开始工作时，先读本索引、命名规则和当前阶段结论；再按任务读取对应最新文件。
 - 历史版本：v0.1-v0.9 仅在追溯需求演进、架构评审或归档规则变化时阅读。
@@ -53,7 +53,7 @@
 | `2026-05-23-归档索引-archive-index-v0.5.md` | v0.5 | 补充少服务微服务选择和 WikiForge AI 开发 Skill 后的归档索引 |
 | `2026-05-23-归档索引-archive-index-v0.6.md` | v0.6 | 补充多人协作角色 Prompt、Work Order 模板和 Skill v0.2 后的归档索引 |
 | `2026-05-23-归档索引-archive-index-v0.7.md` | v0.7 | 补充 Git 提交规则，明确 node_modules、dist、target 等编译产物不提交 |
-| `2026-05-23-归档索引-archive-index-v1.2.md` | v1.2 | 补充版本标签 0.02 与版本更新记录后的归档索引 |
+| `2026-05-23-归档索引-archive-index-v1.3.md` | v1.3 | 补充 MVP1 契约冻结 Parallel Work Order 后的归档索引 |
 | `2026-05-23-MVP实施计划-WikiForge-mvp-implementation-plan-v0.1.md` | v0.1 | MVP 实施计划 |
 | `2026-05-23-MVP实施计划-WikiForge-mvp-implementation-plan-v0.2.md` | v0.2 | 架构评审后补充 MVP 0、CI/CD、Docker 和分阶段执行规则的实施计划 |
 | `2026-05-23-MVP实施计划-WikiForge-mvp-implementation-plan-v0.3.md` | v0.3 | 补充 MVP 0 少服务微服务骨架、Core/Worker 拆分和新开发顺序 |
@@ -71,8 +71,9 @@
 | `2026-05-23-开发者日志-WikiForge-developer-log-v0.5.md` | v0.5 | 补充少服务微服务架构选择、CDP AI 范式学习和 WikiForge AI 开发 Skill |
 | `2026-05-23-开发者日志-WikiForge-developer-log-v0.6.md` | v0.6 | 补充多人协作角色 Prompt 和 Work Order 模板 |
 | `2026-05-23-开发者日志-WikiForge-developer-log-v0.7.md` | v0.7 | 补充 Git 提交规则，禁止提交 node_modules、dist、target、本地配置和运行数据 |
-| `2026-05-23-开发者日志-WikiForge-developer-log-v1.2.md` | v1.2 | 补充版本标签 0.02、更新内容和下一阶段边界 |
+| `2026-05-23-开发者日志-WikiForge-developer-log-v1.3.md` | v1.3 | 补充 MVP1 契约冻结 Parallel Work Order 和并行派工前置条件 |
 | `2026-05-23-版本更新记录-WikiForge-release-notes-v0.1.md` | v0.1 | 版本 0.02 的更新内容、验证结果和版本边界 |
+| `2026-05-23-MVP1契约冻结并行工作单-WikiForge-mvp1-contract-freeze-parallel-work-order-v0.1.md` | v0.1 | MVP1 API、DTO、DDL、状态枚举、路径安全规则和并行任务边界 |
 | `2026-05-23-架构决策-DECISIONS-v0.1.md` | v0.1 | 架构决策记录 |
 | `2026-05-23-架构决策-DECISIONS-v0.2.md` | v0.2 | 架构评审后的最终决策记录 |
 | `2026-05-23-架构决策-DECISIONS-v0.3.md` | v0.3 | 补充少服务微服务选择和 AI 开发 Skill 决策 |
@@ -121,6 +122,9 @@
 - 已补充专家编排规则：主编排 Agent 负责 Parallel Work Order v2、专家选择、文件边界、高冲突串行区、Handoff Packet、最终集成验证和归档更新。
 - 本地 `main` 已快进合并 MVP0 工程骨架提交，版本标签规划为 `0.02`。
 - 已新增版本更新记录，明确 `0.02` 是工程基线版本，不包含 MVP1 文件扫描、归集、解析和 Obsidian 写入业务。
+- `main` 和标签 `0.02` 已推送到远程仓库。
+- 已创建开发分支 `codex/mvp1-source-ingestion`。
+- 已创建 MVP1 契约冻结 Parallel Work Order，冻结 API、DTO、DDL、状态枚举、路径安全规则和并行任务边界；正式并行实现前必须先完成契约确认和 common 串行区。
 
 ## 后续归档建议
 

@@ -2,8 +2,8 @@
 
 ## 版本索引 Version Index
 
-- 最新版本：v1.2
-- 最新小节：`2026-05-23 版本标签 0.02 与更新内容补充`
+- 最新版本：v1.3
+- 最新小节：`2026-05-23 MVP1 契约冻结 Parallel Work Order`
 - 推荐阅读：新 AI 开始工作时，先读本索引和最新小节，再按任务需要阅读历史小节。
 - 历史范围：v0.1-v0.9 记录需求发掘、架构评审、MVP0 骨架、微服务拆分和同日滚动归档规则；仅在追溯需求来源或架构决策时阅读。
 
@@ -1177,3 +1177,35 @@ docs/archive/2026-05-23/2026-05-23-版本更新记录-WikiForge-release-notes-v0
 
 - `0.02` 不包含 MVP1 文件扫描、归集、解析和 Obsidian 写入业务。
 - 下一阶段应先冻结 MVP1 API、DTO、DDL、状态枚举和路径安全策略，再开始并行开发。
+
+## 2026-05-23 MVP1 契约冻结 Parallel Work Order
+
+用户要求接着此前规划，先创建 MVP1 契约冻结 Parallel Work Order，完成后再正式派 Core、Worker、UI、DevOps、Test/Review 多路并行开工。
+
+本次处理：
+
+- 已推送 `main` 和标签 `0.02` 到远程仓库。
+- 已从 `main` 创建开发分支 `codex/mvp1-source-ingestion`。
+- 已暂停提前实现接口的动作，避免契约未冻结前进入编码。
+- 已创建 MVP1 契约冻结并行工作单：
+
+```text
+docs/superpowers/plans/2026-05-23-MVP1契约冻结并行工作单-WikiForge-mvp1-contract-freeze-parallel-work-order.md
+docs/archive/2026-05-23/2026-05-23-MVP1契约冻结并行工作单-WikiForge-mvp1-contract-freeze-parallel-work-order-v0.1.md
+```
+
+本次冻结内容：
+
+- Core / Worker / UI / DevOps 服务边界。
+- UI -> Core、Core -> Worker、Worker -> Core API。
+- DTO 名称。
+- `ImportJobStatus`、`ImportType`、`OrganizeMode`、`SourceStatus`、`ParseStatus`、`RawOrganizeStatus`。
+- 错误码。
+- 路径安全规则。
+- Flyway migration 编号：`V20260523_002__create_source_import_tables.sql`。
+- 并行任务拆分和合并顺序。
+
+下一步：
+
+- 先完成 `PWO-MVP1-CF-001` 和 `PWO-MVP1-COMMON-001`。
+- 然后按 PWO 派发 Core、Worker、UI、DevOps、QA/Review 并行实现。
