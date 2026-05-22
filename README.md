@@ -38,7 +38,8 @@ MVP 的第一目标不是做完整 RAG，也不是做复杂多 Agent 平台，�
 - [需求完整度自检 Requirements Review](docs/2026-05-22-需求完整度自检-WikiForge-requirements-completeness-review.md)
 - [参考项目清单 Reference Projects](docs/2026-05-22-参考项目清单-WikiForge-reference-projects.md)
 - [开发者日志 Developer Log](docs/2026-05-22-开发者日志-WikiForge-developer-log.md)
+- [版本更新记录 Release Notes](docs/2026-05-23-版本更新记录-WikiForge-release-notes.md)
 
 ## 当前状态
 
-项目已进入 MVP 0 工程骨架阶段，后端已拆分为 `wikiforge-common`、`wikiforge-core-service`、`wikiforge-worker-service`，并已补齐基础 CI、Docker Compose、Flyway 与健康检查。
+项目已进入 MVP 0 工程骨架阶段，后端已拆分为 `wikiforge-common`、`wikiforge-core-service`、`wikiforge-worker-service`，并已补齐基础 CI、Docker Compose、Flyway 与健康检查。当前版本标签为 `0.02`。

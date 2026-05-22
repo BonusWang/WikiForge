@@ -2,8 +2,8 @@
 
 ## 版本索引 Version Index
 
-- 最新版本：v1.1
-- 最新小节：`2026-05-23 并行开发 init 检查与专家编排规则`
+- 最新版本：v1.2
+- 最新小节：`2026-05-23 版本标签 0.02 与更新内容补充`
 - 推荐阅读：新 AI 开始工作时，先读本索引和最新小节，再按任务需要阅读历史小节。
 - 历史范围：v0.1-v0.9 记录需求发掘、架构评审、MVP0 骨架、微服务拆分和同日滚动归档规则；仅在追溯需求来源或架构决策时阅读。
 
@@ -1147,3 +1147,33 @@ docs/ai-skills/wikiforge-development/references/multi-agent-collaboration.md
 docs/ai-skills/wikiforge-development/references/development-workflow.md
 docs/ai-skills/wikiforge-development/references/agent-role-prompts.md
 ```
+
+## 2026-05-23 版本标签 0.02 与更新内容补充
+
+用户要求在合并到 `main` 后生成对应版本标签，并补充本次更新内容。
+
+本次处理：
+
+- 将 `codex/mvp0-project-skeleton` 快进合并到 `main`。
+- 提交 MVP0 工程骨架与 Agent 协作基线，提交号为 `f76893a`。
+- 计划创建版本标签 `0.02`，用于标记 MVP0 工程骨架可开发基线。
+- 新增版本更新记录：
+
+```text
+docs/2026-05-23-版本更新记录-WikiForge-release-notes.md
+docs/archive/2026-05-23/2026-05-23-版本更新记录-WikiForge-release-notes-v0.1.md
+```
+
+版本 `0.02` 的核心范围：
+
+- 少服务微服务骨架。
+- Core / Worker / UI / MySQL Compose 拓扑。
+- GitHub Actions CI。
+- Dockerfile 与 Compose 发布配置。
+- WikiForge AI 开发 Skill。
+- 并行开发和 Git 提交规则。
+
+边界说明：
+
+- `0.02` 不包含 MVP1 文件扫描、归集、解析和 Obsidian 写入业务。
+- 下一阶段应先冻结 MVP1 API、DTO、DDL、状态枚举和路径安全策略，再开始并行开发。

@@ -1,8 +1,8 @@
-# 2026-05-23 WikiForge 文档归档索引 v1.1
+# 2026-05-23 WikiForge 文档归档索引 v1.2
 
 ## 版本索引 Version Index
 
-- 最新版本：v1.1
+- 最新版本：v1.2
 - 最新小节：`当前阶段结论`
 - 推荐阅读：新 AI 开始工作时，先读本索引、命名规则和当前阶段结论；再按任务读取对应最新文件。
 - 历史版本：v0.1-v0.9 仅在追溯需求演进、架构评审或归档规则变化时阅读。
@@ -53,7 +53,7 @@
 | `2026-05-23-归档索引-archive-index-v0.5.md` | v0.5 | 补充少服务微服务选择和 WikiForge AI 开发 Skill 后的归档索引 |
 | `2026-05-23-归档索引-archive-index-v0.6.md` | v0.6 | 补充多人协作角色 Prompt、Work Order 模板和 Skill v0.2 后的归档索引 |
 | `2026-05-23-归档索引-archive-index-v0.7.md` | v0.7 | 补充 Git 提交规则，明确 node_modules、dist、target 等编译产物不提交 |
-| `2026-05-23-归档索引-archive-index-v1.1.md` | v1.1 | 补充并行开发 init 检查和专家编排规则后的归档索引 |
+| `2026-05-23-归档索引-archive-index-v1.2.md` | v1.2 | 补充版本标签 0.02 与版本更新记录后的归档索引 |
 | `2026-05-23-MVP实施计划-WikiForge-mvp-implementation-plan-v0.1.md` | v0.1 | MVP 实施计划 |
 | `2026-05-23-MVP实施计划-WikiForge-mvp-implementation-plan-v0.2.md` | v0.2 | 架构评审后补充 MVP 0、CI/CD、Docker 和分阶段执行规则的实施计划 |
 | `2026-05-23-MVP实施计划-WikiForge-mvp-implementation-plan-v0.3.md` | v0.3 | 补充 MVP 0 少服务微服务骨架、Core/Worker 拆分和新开发顺序 |
@@ -71,7 +71,8 @@
 | `2026-05-23-开发者日志-WikiForge-developer-log-v0.5.md` | v0.5 | 补充少服务微服务架构选择、CDP AI 范式学习和 WikiForge AI 开发 Skill |
 | `2026-05-23-开发者日志-WikiForge-developer-log-v0.6.md` | v0.6 | 补充多人协作角色 Prompt 和 Work Order 模板 |
 | `2026-05-23-开发者日志-WikiForge-developer-log-v0.7.md` | v0.7 | 补充 Git 提交规则，禁止提交 node_modules、dist、target、本地配置和运行数据 |
-| `2026-05-23-开发者日志-WikiForge-developer-log-v1.1.md` | v1.1 | 补充 MVP0 服务拆分执行、归档规则、并行开发 init 检查和专家编排规则 |
+| `2026-05-23-开发者日志-WikiForge-developer-log-v1.2.md` | v1.2 | 补充版本标签 0.02、更新内容和下一阶段边界 |
+| `2026-05-23-版本更新记录-WikiForge-release-notes-v0.1.md` | v0.1 | 版本 0.02 的更新内容、验证结果和版本边界 |
 | `2026-05-23-架构决策-DECISIONS-v0.1.md` | v0.1 | 架构决策记录 |
 | `2026-05-23-架构决策-DECISIONS-v0.2.md` | v0.2 | 架构评审后的最终决策记录 |
 | `2026-05-23-架构决策-DECISIONS-v0.3.md` | v0.3 | 补充少服务微服务选择和 AI 开发 Skill 决策 |
@@ -88,7 +89,7 @@
 | `2026-05-23-README-v0.1.md` | v0.1 | 项目入口说明 |
 | `2026-05-23-README-v0.2.md` | v0.2 | 更新当前状态为 MVP 0 工程骨架阶段的项目入口说明 |
 | `2026-05-23-README-v0.3.md` | v0.3 | 更新当前状态为少服务微服务目标架构 |
-| `2026-05-23-README-v0.4.md` | v0.4 | 更新当前状态为 common/core/worker 后端服务拆分已完成 |
+| `2026-05-23-README-v0.5.md` | v0.5 | 补充版本更新记录入口和当前版本标签 0.02 |
 | `AI开发Skill-WikiForge-development-skill-v0.1/` | v0.1 | WikiForge 项目内 AI 开发 Skill 及 references 快照 |
 | `AI开发Skill-WikiForge-development-skill-v0.2/` | v0.2 | 补充 AI 角色 Prompt 和开发工作流模板后的 Skill 快照 |
 | `AI开发Skill-WikiForge-development-skill-v0.6/` | v0.6 | 补充主编排 Agent、Parallel Work Order v2、专家矩阵和 Handoff Packet 后的 Skill 快照 |
@@ -118,6 +119,8 @@
 - 长归档文件已增加版本索引规则：AI 默认先读版本索引和最新版本小节，避免因为历史记录过长占用过多上下文。
 - 并行开发 init 检查已完成：后端、前端和部署骨架验证通过，但进入 MVP1 并行开发前必须先提交或冻结当前骨架，并串行冻结 API / DTO / DDL / 状态枚举 / 路径安全契约。
 - 已补充专家编排规则：主编排 Agent 负责 Parallel Work Order v2、专家选择、文件边界、高冲突串行区、Handoff Packet、最终集成验证和归档更新。
+- 本地 `main` 已快进合并 MVP0 工程骨架提交，版本标签规划为 `0.02`。
+- 已新增版本更新记录，明确 `0.02` 是工程基线版本，不包含 MVP1 文件扫描、归集、解析和 Obsidian 写入业务。
 
 ## 后续归档建议
 
