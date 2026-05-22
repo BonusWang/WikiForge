@@ -1,28 +1,241 @@
 <script setup lang="ts">
-import { Connection, Cpu, Files, SetUp } from '@element-plus/icons-vue';
-import { onMounted, ref } from 'vue';
-import { useAppStore } from '../stores/app';
+import {
+  Connection,
+  Cpu,
+  Files,
+  FolderAdd,
+  Refresh,
+  SetUp
+} from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
+import { computed, onMounted, reactive, ref } from 'vue';
+import {
+  createLocalImportJob,
+  getImportJob,
+  listImportJobs,
+  listSourceFiles
+} from '../api/import-jobs';
 import { fetchBackendHealth, type BackendHealth } from '../services/http';
+import { useAppStore } from '../stores/app';
+import type {
+  CreateLocalImportJobRequest,
+  ImportJob,
+  ImportJobDetail,
+  ImportJobStatus,
+  SourceFile
+} from '../types/importJobs';
 
 const appStore = useAppStore();
 const backendHealth = ref<BackendHealth | null>(null);
-const loading = ref(false);
+const healthLoading = ref(false);
 const errorMessage = ref('');
 
+const importForm = reactive<CreateLocalImportJobRequest>({
+  inputPath: '',
+  rawSourcesRoot: '',
+  recursive: true,
+  organizeMode: 'copy',
+  maxCopyFileSizeMb: 100
+});
+
+const statusOptions: ImportJobStatus[] = [
+  'pending',
+  'running',
+  'completed',
+  'failed',
+  'cancelled'
+];
+
+const statusLabels: Record<ImportJobStatus, string> = {
+  pending: 'Pending',
+  running: 'Running',
+  completed: 'Completed',
+  failed: 'Failed',
+  cancelled: 'Cancelled'
+};
+
+const jobStatusFilter = ref<ImportJobStatus | ''>('');
+const jobs = ref<ImportJob[]>([]);
+const jobPage = ref(1);
+const jobPageSize = ref(20);
+const jobTotal = ref(0);
+const jobListLoading = ref(false);
+const createLoading = ref(false);
+
+const selectedJobUid = ref('');
+const selectedJobDetail = ref<ImportJobDetail | null>(null);
+const detailLoading = ref(false);
+const sourceFiles = ref<SourceFile[]>([]);
+const sourceFilePage = ref(1);
+const sourceFilePageSize = ref(50);
+const sourceFileTotal = ref(0);
+const sourceFilesLoading = ref(false);
+
+const selectedJobStatus = computed(() => {
+  return selectedJobDetail.value?.status
+    ? statusLabels[selectedJobDetail.value.status]
+    : 'Not selected';
+});
+
 async function refreshHealth() {
-  loading.value = true;
+  healthLoading.value = true;
   errorMessage.value = '';
   try {
     backendHealth.value = await fetchBackendHealth();
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '无法连接后端服务';
   } finally {
-    loading.value = false;
+    healthLoading.value = false;
   }
+}
+
+async function refreshJobs() {
+  jobListLoading.value = true;
+  try {
+    const result = await listImportJobs({
+      status: jobStatusFilter.value || undefined,
+      page: jobPage.value,
+      pageSize: jobPageSize.value
+    });
+    jobs.value = result.items;
+    jobTotal.value = result.total;
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '导入任务列表加载失败');
+  } finally {
+    jobListLoading.value = false;
+  }
+}
+
+async function createJob() {
+  const inputPath = importForm.inputPath.trim();
+  const rawSourcesRoot = importForm.rawSourcesRoot.trim();
+
+  if (!inputPath || !rawSourcesRoot) {
+    ElMessage.warning('inputPath 和 rawSourcesRoot 必填');
+    return;
+  }
+
+  createLoading.value = true;
+  try {
+    const job = await createLocalImportJob({
+      inputPath,
+      rawSourcesRoot,
+      recursive: importForm.recursive,
+      organizeMode: 'copy',
+      maxCopyFileSizeMb: importForm.maxCopyFileSizeMb
+    });
+    ElMessage.success(`任务已创建：${job.jobUid}`);
+    jobStatusFilter.value = '';
+    jobPage.value = 1;
+    await refreshJobs();
+    await selectJob(job);
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '导入任务创建失败');
+  } finally {
+    createLoading.value = false;
+  }
+}
+
+async function selectJob(job: ImportJob) {
+  selectedJobUid.value = job.jobUid;
+  sourceFilePage.value = 1;
+  await Promise.all([refreshJobDetail(), refreshSourceFiles()]);
+}
+
+async function refreshJobDetail() {
+  if (!selectedJobUid.value) {
+    selectedJobDetail.value = null;
+    return;
+  }
+
+  detailLoading.value = true;
+  try {
+    selectedJobDetail.value = await getImportJob(selectedJobUid.value);
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '导入任务详情加载失败');
+  } finally {
+    detailLoading.value = false;
+  }
+}
+
+async function refreshSourceFiles() {
+  if (!selectedJobUid.value) {
+    sourceFiles.value = [];
+    sourceFileTotal.value = 0;
+    return;
+  }
+
+  sourceFilesLoading.value = true;
+  try {
+    const result = await listSourceFiles({
+      jobUid: selectedJobUid.value,
+      page: sourceFilePage.value,
+      pageSize: sourceFilePageSize.value
+    });
+    sourceFiles.value = result.items;
+    sourceFileTotal.value = result.total;
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : 'Source files 加载失败');
+  } finally {
+    sourceFilesLoading.value = false;
+  }
+}
+
+async function refreshSelectedJob() {
+  await Promise.all([refreshJobDetail(), refreshSourceFiles()]);
+}
+
+function handleJobPageChange(page: number) {
+  jobPage.value = page;
+  void refreshJobs();
+}
+
+function handleSourceFilePageChange(page: number) {
+  sourceFilePage.value = page;
+  void refreshSourceFiles();
+}
+
+function handleStatusFilterChange() {
+  jobPage.value = 1;
+  void refreshJobs();
+}
+
+function statusTagType(status: ImportJobStatus) {
+  if (status === 'completed') {
+    return 'success';
+  }
+  if (status === 'failed') {
+    return 'danger';
+  }
+  if (status === 'running') {
+    return 'warning';
+  }
+  if (status === 'cancelled') {
+    return 'info';
+  }
+  return 'primary';
+}
+
+function formatBytes(value: number) {
+  if (!Number.isFinite(value)) {
+    return '-';
+  }
+
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let size = value;
+  let unitIndex = 0;
+
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex += 1;
+  }
+
+  return `${size.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
 }
 
 onMounted(() => {
   void refreshHealth();
+  void refreshJobs();
 });
 </script>
 
@@ -33,7 +246,8 @@ onMounted(() => {
         <p class="eyebrow">{{ appStore.stage }}</p>
         <h1>{{ appStore.appName }}</h1>
       </div>
-      <el-button :loading="loading" type="primary" @click="refreshHealth">
+      <el-button :loading="healthLoading" type="primary" @click="refreshHealth">
+        <el-icon><Refresh /></el-icon>
         刷新状态
       </el-button>
     </header>
@@ -59,30 +273,30 @@ onMounted(() => {
             工程阶段
           </div>
         </template>
-        <p class="metric">MVP 0</p>
-        <p class="muted">项目骨架 / CI / Docker / Flyway</p>
+        <p class="metric">MVP 1</p>
+        <p class="muted">Source ingestion</p>
       </el-card>
 
       <el-card shadow="never">
         <template #header>
           <div class="card-title">
             <el-icon><Cpu /></el-icon>
-            数据库
+            导入任务
           </div>
         </template>
-        <p class="metric">MySQL</p>
-        <p class="muted">Flyway 管理 MVP 0 表结构</p>
+        <p class="metric">{{ jobTotal }}</p>
+        <p class="muted">当前筛选结果</p>
       </el-card>
 
       <el-card shadow="never">
         <template #header>
           <div class="card-title">
             <el-icon><Files /></el-icon>
-            知识层
+            Source Files
           </div>
         </template>
-        <p class="metric">待接入</p>
-        <p class="muted">Raw Sources 与 Obsidian 将在 MVP 1/2 实现</p>
+        <p class="metric">{{ sourceFileTotal }}</p>
+        <p class="muted">{{ selectedJobStatus }}</p>
       </el-card>
     </section>
 
@@ -94,5 +308,191 @@ onMounted(() => {
       show-icon
       :closable="false"
     />
+
+    <section class="dashboard-stack">
+      <el-card shadow="never">
+        <template #header>
+          <div class="section-title">
+            <div class="card-title">
+              <el-icon><FolderAdd /></el-icon>
+              本地导入
+            </div>
+            <el-button :loading="jobListLoading" @click="refreshJobs">
+              <el-icon><Refresh /></el-icon>
+              刷新任务
+            </el-button>
+          </div>
+        </template>
+
+        <el-form class="import-form" label-position="top">
+          <el-form-item label="inputPath" required>
+            <el-input
+              v-model="importForm.inputPath"
+              clearable
+              placeholder="E:/example/messy-sources"
+            />
+          </el-form-item>
+
+          <el-form-item label="rawSourcesRoot" required>
+            <el-input
+              v-model="importForm.rawSourcesRoot"
+              clearable
+              placeholder="E:/WikiForge_RawSources"
+            />
+          </el-form-item>
+
+          <el-form-item label="recursive">
+            <el-switch v-model="importForm.recursive" />
+          </el-form-item>
+
+          <el-form-item label="最大复制文件大小(MB)">
+            <el-input-number
+              v-model="importForm.maxCopyFileSizeMb"
+              :min="1"
+              :max="10240"
+              controls-position="right"
+            />
+          </el-form-item>
+
+          <div class="form-actions">
+            <el-tag type="info" effect="plain">organizeMode: copy</el-tag>
+            <el-button :loading="createLoading" type="primary" @click="createJob">
+              创建任务
+            </el-button>
+          </div>
+        </el-form>
+      </el-card>
+
+      <el-card shadow="never">
+        <template #header>
+          <div class="section-title">
+            <div class="card-title">
+              <el-icon><SetUp /></el-icon>
+              导入任务列表
+            </div>
+            <el-select
+              v-model="jobStatusFilter"
+              class="status-filter"
+              clearable
+              placeholder="全部状态"
+              @change="handleStatusFilterChange"
+            >
+              <el-option
+                v-for="status in statusOptions"
+                :key="status"
+                :label="statusLabels[status]"
+                :value="status"
+              />
+            </el-select>
+          </div>
+        </template>
+
+        <el-table
+          v-loading="jobListLoading"
+          :data="jobs"
+          border
+          highlight-current-row
+          empty-text="暂无导入任务"
+          @row-click="selectJob"
+        >
+          <el-table-column prop="jobUid" label="jobUid" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="status" label="status" width="120">
+            <template #default="scope">
+              <el-tag :type="statusTagType(scope.row.status)">
+                {{ statusLabels[scope.row.status as ImportJobStatus] }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="totalCount" label="total" width="86" align="right" />
+          <el-table-column prop="successCount" label="success" width="94" align="right" />
+          <el-table-column prop="skippedCount" label="skipped" width="94" align="right" />
+          <el-table-column prop="failedCount" label="failed" width="86" align="right" />
+          <el-table-column prop="inputPath" label="inputPath" min-width="220" show-overflow-tooltip />
+          <el-table-column prop="rawSourcesRoot" label="rawSourcesRoot" min-width="220" show-overflow-tooltip />
+          <el-table-column prop="createdAt" label="createdAt" min-width="180" show-overflow-tooltip />
+          <el-table-column fixed="right" label="操作" width="110">
+            <template #default="scope">
+              <el-button link type="primary" @click.stop="selectJob(scope.row)">查看文件</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <div class="pagination-row">
+          <el-pagination
+            v-if="jobTotal > jobPageSize"
+            background
+            layout="prev, pager, next"
+            :current-page="jobPage"
+            :page-size="jobPageSize"
+            :total="jobTotal"
+            @current-change="handleJobPageChange"
+          />
+        </div>
+      </el-card>
+
+      <el-card shadow="never">
+        <template #header>
+          <div class="section-title">
+            <div class="card-title">
+              <el-icon><Files /></el-icon>
+              Source Files
+            </div>
+            <el-button
+              :disabled="!selectedJobUid"
+              :loading="sourceFilesLoading || detailLoading"
+              @click="refreshSelectedJob"
+            >
+              <el-icon><Refresh /></el-icon>
+              刷新文件
+            </el-button>
+          </div>
+        </template>
+
+        <div v-if="selectedJobDetail" class="job-detail-strip">
+          <span class="detail-item">{{ selectedJobDetail.jobUid }}</span>
+          <el-tag :type="statusTagType(selectedJobDetail.status)">
+            {{ statusLabels[selectedJobDetail.status] }}
+          </el-tag>
+          <span class="detail-item">total {{ selectedJobDetail.totalCount }}</span>
+          <span class="detail-item">success {{ selectedJobDetail.successCount }}</span>
+          <span class="detail-item">skipped {{ selectedJobDetail.skippedCount }}</span>
+          <span class="detail-item">failed {{ selectedJobDetail.failedCount }}</span>
+          <span v-if="selectedJobDetail.errorMessage" class="detail-error">
+            {{ selectedJobDetail.errorMessage }}
+          </span>
+        </div>
+
+        <el-table
+          v-loading="sourceFilesLoading"
+          :data="sourceFiles"
+          border
+          empty-text="选择导入任务后显示 source files"
+        >
+          <el-table-column prop="fileName" label="fileName" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="fileExt" label="fileExt" width="100" show-overflow-tooltip />
+          <el-table-column prop="originalPath" label="originalPath" min-width="260" show-overflow-tooltip />
+          <el-table-column prop="managedPath" label="managedPath" min-width="260" show-overflow-tooltip />
+          <el-table-column prop="fileSize" label="fileSize" width="120" align="right">
+            <template #default="scope">
+              {{ formatBytes(scope.row.fileSize) }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="contentHash" label="contentHash" min-width="220" show-overflow-tooltip />
+          <el-table-column prop="organizeStatus" label="organizeStatus" width="150" show-overflow-tooltip />
+        </el-table>
+
+        <div class="pagination-row">
+          <el-pagination
+            v-if="sourceFileTotal > sourceFilePageSize"
+            background
+            layout="prev, pager, next"
+            :current-page="sourceFilePage"
+            :page-size="sourceFilePageSize"
+            :total="sourceFileTotal"
+            @current-change="handleSourceFilePageChange"
+          />
+        </div>
+      </el-card>
+    </section>
   </main>
 </template>

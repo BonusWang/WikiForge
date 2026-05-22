@@ -69,3 +69,6 @@ jobs:
 
       - name: Validate compose file
         run: docker compose -f deploy/docker-compose.yml config
+
+      - name: Validate development compose file
+        run: docker compose -f deploy/docker-compose.dev.yml config

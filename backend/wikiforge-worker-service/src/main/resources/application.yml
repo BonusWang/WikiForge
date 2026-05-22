@@ -16,6 +16,10 @@ management:
         enabled: true
 
 wikiforge:
-  raw-sources-path: ${WIKIFORGE_RAW_SOURCES_PATH:./data/raw-sources}
+  raw-sources-root: ${WIKIFORGE_RAW_SOURCES_ROOT:${WIKIFORGE_RAW_SOURCES_PATH:./data/raw-sources}}
+  raw-sources-path: ${WIKIFORGE_RAW_SOURCES_PATH:${WIKIFORGE_RAW_SOURCES_ROOT:./data/raw-sources}}
   obsidian-vault-path: ${WIKIFORGE_OBSIDIAN_VAULT_PATH:./data/obsidian-vault}
   allowed-scan-roots: ${WIKIFORGE_ALLOWED_SCAN_ROOTS:}
+  core-service:
+    base-url: ${WIKIFORGE_CORE_SERVICE_BASE_URL:http://localhost:8080}
+  internal-api-token: ${WIKIFORGE_INTERNAL_API_TOKEN:}

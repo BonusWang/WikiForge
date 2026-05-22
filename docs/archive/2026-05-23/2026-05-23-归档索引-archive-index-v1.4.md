@@ -71,9 +71,9 @@
 | `2026-05-23-开发者日志-WikiForge-developer-log-v0.5.md` | v0.5 | 补充少服务微服务架构选择、CDP AI 范式学习和 WikiForge AI 开发 Skill |
 | `2026-05-23-开发者日志-WikiForge-developer-log-v0.6.md` | v0.6 | 补充多人协作角色 Prompt 和 Work Order 模板 |
 | `2026-05-23-开发者日志-WikiForge-developer-log-v0.7.md` | v0.7 | 补充 Git 提交规则，禁止提交 node_modules、dist、target、本地配置和运行数据 |
-| `2026-05-23-开发者日志-WikiForge-developer-log-v1.3.md` | v1.3 | 补充 MVP1 契约冻结 Parallel Work Order 和并行派工前置条件 |
+| `2026-05-23-开发者日志-WikiForge-developer-log-v1.4.md` | v1.4 | 补充 MVP1 契约冻结、并行派工、QA 契约收口和 Core-Worker 导入闭环 |
 | `2026-05-23-版本更新记录-WikiForge-release-notes-v0.1.md` | v0.1 | 版本 0.02 的更新内容、验证结果和版本边界 |
-| `2026-05-23-MVP1契约冻结并行工作单-WikiForge-mvp1-contract-freeze-parallel-work-order-v0.1.md` | v0.1 | MVP1 API、DTO、DDL、状态枚举、路径安全规则和并行任务边界 |
+| `2026-05-23-MVP1契约冻结并行工作单-WikiForge-mvp1-contract-freeze-parallel-work-order-v0.2.md` | v0.2 | MVP1 API、DTO、完整 DDL、状态枚举、路径安全、内部 API token、Core-Worker 派发闭环、去重归属和并行任务边界 |
 | `2026-05-23-架构决策-DECISIONS-v0.1.md` | v0.1 | 架构决策记录 |
 | `2026-05-23-架构决策-DECISIONS-v0.2.md` | v0.2 | 架构评审后的最终决策记录 |
 | `2026-05-23-架构决策-DECISIONS-v0.3.md` | v0.3 | 补充少服务微服务选择和 AI 开发 Skill 决策 |
@@ -125,6 +125,10 @@
 - `main` 和标签 `0.02` 已推送到远程仓库。
 - 已创建开发分支 `codex/mvp1-source-ingestion`。
 - 已创建 MVP1 契约冻结 Parallel Work Order，冻结 API、DTO、DDL、状态枚举、路径安全规则和并行任务边界；正式并行实现前必须先完成契约确认和 common 串行区。
+- MVP1 已正式派发 Core、Worker、UI、DevOps、Test/Review 多路并行任务。
+- QA 已提前发现并推动收口 P1 契约缺口：去重归属、完整 DDL、路径安全、内部 API token、环境变量对齐和大文件策略。
+- MVP1 并行成果已进入主编排集成：Core 创建任务后会派发 Worker，Worker 回调 Core 写入状态和 Source Files。
+- Compose 已补齐 Worker -> Core 的 `WIKIFORGE_CORE_SERVICE_BASE_URL`，Core / Worker 配置已与冻结契约对齐。
 
 ## 后续归档建议
 

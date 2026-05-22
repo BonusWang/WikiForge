@@ -1209,3 +1209,51 @@ docs/archive/2026-05-23/2026-05-23-MVP1契约冻结并行工作单-WikiForge-mvp
 
 - 先完成 `PWO-MVP1-CF-001` 和 `PWO-MVP1-COMMON-001`。
 - 然后按 PWO 派发 Core、Worker、UI、DevOps、QA/Review 并行实现。
+
+## 2026-05-23 MVP1 并行开工与 QA 契约收口
+
+用户确认 PWO 已经提交，可以正式派 Core、Worker、UI、DevOps、Test/Review 多路并行开工。
+
+本次执行：
+
+- 已提交 PWO 基线：`74cb8e1 docs: freeze mvp1 parallel work order`。
+- 已完成 Common 串行区：`7b9f807 feat: add common error response and path safety`。
+- 已派发 Core、Worker、UI、DevOps、Test/Review 五路 Agent。
+- Test/Review Agent 提前发现 P1 契约缺口，并已由主编排收口更新 PWO。
+
+QA 触发的契约补充：
+
+- 去重归属：Core 是持久化去重关系的唯一权威，Worker 负责 hash 和本次 run 内复制去重。
+- DDL：补充 `import_jobs`、`sources`、`source_files` 完整字段、索引和外键约束。
+- 路径安全：补充 allowed roots、rawSourcesRoot 配置一致性、no-follow symlink / junction 策略。
+- 内部 API：Worker -> Core 内部回调统一使用 `X-WikiForge-Internal-Token`。
+- 环境变量：新增 `WIKIFORGE_INTERNAL_API_TOKEN`，统一 `WIKIFORGE_RAW_SOURCES_ROOT` 和 `WIKIFORGE_WORKER_BASE_URL`。
+- 大文件策略：`maxFileSizeMb` 收敛为 `maxCopyFileSizeMb`，超限文件不复制，标记 `need_confirm` 或计入 skipped。
+
+同步通知：
+
+- Core Agent 已收到字段、DDL、内部 token、去重归属和 runtime config 更新。
+- Worker Agent 已收到字段、去重归属、内部 token、大文件策略和 symlink 策略更新。
+- UI Agent 已收到 `maxCopyFileSizeMb` 和 `ApiResponse.code` 更新。
+- DevOps Agent 已收到 `WIKIFORGE_INTERNAL_API_TOKEN` 更新。
+
+## 2026-05-23 MVP1 并行集成与 Core-Worker 闭环
+
+在并行 Agent 返回后，主编排进行集成自检，发现 MVP1 不能只停留在创建 pending job：Core 必须在持久化任务后派发 Worker，才能完成“先把杂乱源文件整理到 Raw Sources”的 MVP 核心闭环。
+
+本次补充：
+
+- Core 新增 `WorkerImportJobClient`，通过 `WIKIFORGE_WORKER_BASE_URL` 调用 Worker `/api/v1/worker/import-jobs/local/run`。
+- Core 创建本地导入任务后，在事务提交后派发 Worker，避免 Worker 回调时读不到尚未提交的 `import_jobs`。
+- Worker Compose 环境补齐 `WIKIFORGE_CORE_SERVICE_BASE_URL`，避免容器内默认回调 `localhost:8080`。
+- Core / Worker `application.yml` 补齐 Raw Sources、Worker base URL、Core base URL 和内部 token 配置。
+- Compose 将 `WIKIFORGE_INTERNAL_API_TOKEN` 本地默认值调整为 `change-me`，避免空 token 导致 Worker 回调被 Core 拒绝；正式部署必须覆盖为真实 token。
+- MVP1 PWO 追加说明：UI 只调用 Core，Core 负责派发 Worker。
+
+本次归档版本：
+
+```text
+docs/archive/2026-05-23/2026-05-23-开发者日志-WikiForge-developer-log-v1.4.md
+docs/archive/2026-05-23/2026-05-23-归档索引-archive-index-v1.4.md
+docs/archive/2026-05-23/2026-05-23-MVP1契约冻结并行工作单-WikiForge-mvp1-contract-freeze-parallel-work-order-v0.2.md
+```

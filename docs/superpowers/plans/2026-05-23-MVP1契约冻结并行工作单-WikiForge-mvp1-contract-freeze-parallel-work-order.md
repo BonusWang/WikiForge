@@ -99,7 +99,7 @@ Request:
   "rawSourcesRoot": "E:/WikiForge_RawSources",
   "recursive": true,
   "organizeMode": "copy",
-  "maxFileSizeMb": 100
+  "maxCopyFileSizeMb": 100
 }
 ```
 
@@ -112,7 +112,9 @@ Rules:
 - MVP1 accepts directory input first. Single-file input is reserved.
 - `recursive` defaults to `true`.
 - `organizeMode` defaults to `copy`; MVP1 UI must not expose `move`.
-- `maxFileSizeMb` defaults to `100`.
+- `maxCopyFileSizeMb` defaults to `100`.
+- `rawSourcesRoot` must match the configured `wikiforge.storage.raw-sources-root`; request override is accepted only to make UI state explicit.
+- After persisting the pending job, Core must dispatch Worker through section 3.5; UI must not call Worker directly.
 
 Success response:
 
@@ -126,6 +128,7 @@ Success response:
     "rawSourcesRoot": "E:/WikiForge_RawSources",
     "recursive": true,
     "organizeMode": "copy",
+    "maxCopyFileSizeMb": 100,
     "status": "pending",
     "totalCount": 0,
     "successCount": 0,
@@ -214,7 +217,7 @@ Request:
   "rawSourcesRoot": "E:/WikiForge_RawSources",
   "recursive": true,
   "organizeMode": "copy",
-  "maxFileSizeMb": 100,
+  "maxCopyFileSizeMb": 100,
   "skipHidden": true,
   "skipTemporary": true,
   "followSymlinks": false
@@ -240,6 +243,7 @@ Response:
 
 ```text
 PATCH /api/v1/internal/import-jobs/{jobUid}/status
+Header: X-WikiForge-Internal-Token: ${WIKIFORGE_INTERNAL_API_TOKEN}
 ```
 
 Request:
@@ -259,6 +263,7 @@ Request:
 
 ```text
 POST /api/v1/internal/import-jobs/{jobUid}/source-files/batch
+Header: X-WikiForge-Internal-Token: ${WIKIFORGE_INTERNAL_API_TOKEN}
 ```
 
 Request:
@@ -281,6 +286,25 @@ Request:
   ]
 }
 ```
+
+### 3.8 Duplicate Ownership And Idempotency
+
+Core is the source of truth for persisted duplicate relationships.
+
+Worker responsibilities:
+
+- Calculate SHA-256 for every file it accepts.
+- Avoid copying the same hash twice inside the same run when it can identify a duplicate locally.
+- Use a hash-aware managed path so an existing managed file can be reused without overwriting.
+- Send `contentHash`, `managedPath`, and `organizeStatus` to Core.
+
+Core responsibilities:
+
+- Resolve `duplicateOfFileUid` when a submitted `contentHash` already exists in `source_files`.
+- Persist a `source_files` row for copied and duplicate files.
+- Treat repeated batch submissions for the same `jobUid + originalPath + contentHash` as idempotent and not create duplicate rows.
+
+No separate hash lookup API is required in MVP1. If Worker cannot know the global duplicate file uid, it sends `duplicateOfFileUid = null`; Core fills it during persistence.
 
 ## 4. Frozen DTO Names
 
@@ -387,6 +411,9 @@ Skipped files are counted on `import_jobs.skipped_count`; they do not require `s
 - `inputPath` and `rawSourcesRoot` must not overlap in either direction:
   - input inside Raw Sources is forbidden.
   - Raw Sources inside input is forbidden.
+- If `wikiforge.security.allowed-scan-roots` is configured, `inputPath` must be under one of those roots after real-path resolution.
+- `rawSourcesRoot` must equal configured `wikiforge.storage.raw-sources-root` after normalization.
+- Existing input directories must be checked with no-follow semantics; symlink or junction-like entries are skipped by Worker in MVP1.
 - Default `followSymlinks = false`.
 - Never move or delete original files in MVP1.
 - Hidden files, system files, temporary files, and lock files are skipped by Worker.
@@ -397,7 +424,7 @@ Skipped files are counted on `import_jobs.skipped_count`; they do not require `s
   - `*.swp`
   - `.DS_Store`
   - `Thumbs.db`
-- Files larger than `maxFileSizeMb` can be copied and indexed, but must not be parsed in MVP1.
+- Files larger than `maxCopyFileSizeMb` are not copied in MVP1. Worker reports them as `organizeStatus = need_confirm` and increments `skippedCount`.
 
 ## 8. Frozen DDL
 
@@ -425,6 +452,111 @@ Required indexes:
 - `idx_import_jobs_status_created`
 
 No `source_contents`, `agent_runs`, `review_items`, `obsidian_notes`, or vector tables in MVP1 implementation tasks unless explicitly approved.
+
+Authoritative MVP1 DDL:
+
+```sql
+CREATE TABLE import_jobs (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    job_uid VARCHAR(64) NOT NULL,
+    import_type VARCHAR(64) NOT NULL,
+    input_path TEXT NULL,
+    input_url TEXT NULL,
+    raw_sources_root TEXT NULL,
+    recursive TINYINT(1) NOT NULL DEFAULT 1,
+    organize_mode VARCHAR(64) NOT NULL DEFAULT 'copy',
+    max_copy_file_size_mb INT NOT NULL DEFAULT 100,
+    source_platform VARCHAR(128) NULL,
+    connector_name VARCHAR(128) NULL,
+    connector_status VARCHAR(64) NULL,
+    status VARCHAR(64) NOT NULL DEFAULT 'pending',
+    total_count INT NOT NULL DEFAULT 0,
+    success_count INT NOT NULL DEFAULT 0,
+    skipped_count INT NOT NULL DEFAULT 0,
+    failed_count INT NOT NULL DEFAULT 0,
+    error_message TEXT NULL,
+    started_at DATETIME NULL,
+    finished_at DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_import_jobs_job_uid (job_uid),
+    KEY idx_import_jobs_status_created (status, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE sources (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    source_uid VARCHAR(64) NOT NULL,
+    title VARCHAR(512) NULL,
+    source_type VARCHAR(64) NOT NULL DEFAULT 'file',
+    source_platform VARCHAR(128) NOT NULL DEFAULT 'local',
+    source_url TEXT NULL,
+    connector_name VARCHAR(128) NULL,
+    connector_status VARCHAR(64) NULL,
+    connector_trace_id VARCHAR(128) NULL,
+    local_path TEXT NULL,
+    raw_original_path TEXT NULL,
+    raw_managed_path TEXT NULL,
+    raw_organize_status VARCHAR(64) NOT NULL DEFAULT 'pending',
+    processing_intent VARCHAR(64) NOT NULL DEFAULT 'organize_only',
+    content_hash VARCHAR(128) NULL,
+    status VARCHAR(64) NOT NULL DEFAULT 'pending',
+    collected_at DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_sources_source_uid (source_uid),
+    KEY idx_sources_status (status),
+    KEY idx_sources_hash (content_hash),
+    KEY idx_sources_collected_at (collected_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE source_files (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    file_uid VARCHAR(64) NOT NULL,
+    source_id BIGINT NULL,
+    import_job_id BIGINT NOT NULL,
+    file_name VARCHAR(512) NOT NULL,
+    file_ext VARCHAR(32) NULL,
+    original_path TEXT NOT NULL,
+    managed_path TEXT NULL,
+    file_size BIGINT NOT NULL DEFAULT 0,
+    mime_type VARCHAR(128) NULL,
+    content_hash VARCHAR(128) NULL,
+    parser_name VARCHAR(128) NULL,
+    parse_status VARCHAR(64) NOT NULL DEFAULT 'pending',
+    organize_status VARCHAR(64) NOT NULL DEFAULT 'pending',
+    duplicate_of_file_id BIGINT NULL,
+    parse_error TEXT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_source_files_file_uid (file_uid),
+    KEY idx_source_files_job (import_job_id),
+    KEY idx_source_files_hash (content_hash),
+    KEY idx_source_files_source (source_id),
+    CONSTRAINT fk_source_files_source FOREIGN KEY (source_id) REFERENCES sources(id),
+    CONSTRAINT fk_source_files_import_job FOREIGN KEY (import_job_id) REFERENCES import_jobs(id),
+    CONSTRAINT fk_source_files_duplicate FOREIGN KEY (duplicate_of_file_id) REFERENCES source_files(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+## 8.1 Frozen Runtime Configuration
+
+Official environment variables:
+
+- `WIKIFORGE_RAW_SOURCES_ROOT`: container path for Raw Sources, default `/data/wikiforge/raw-sources`.
+- `WIKIFORGE_WORKER_BASE_URL`: Core -> Worker base URL, default `http://wikiforge-worker-service:8081`.
+- `WIKIFORGE_CORE_SERVICE_BASE_URL`: Worker -> Core base URL, default `http://wikiforge-core-service:8080`.
+- `WIKIFORGE_INTERNAL_API_TOKEN`: shared token for Worker -> Core internal callbacks. Compose local default is `change-me`; real deployment must override it.
+- `WIKIFORGE_ALLOWED_SCAN_ROOTS`: optional comma-separated allowed input roots. Empty means unrestricted local desktop mode.
+
+Compose-only host variable:
+
+- `WIKIFORGE_HOST_RAW_SOURCES_ROOT`: host bind path for Raw Sources, default `../data/raw-sources`.
+
+Legacy compatibility:
+
+- `WIKIFORGE_RAW_SOURCES_PATH` may remain as an alias during MVP1, but new code must prefer `WIKIFORGE_RAW_SOURCES_ROOT`.
 
 ## 9. Parallel Work Order v2
 
@@ -594,6 +726,8 @@ Handoff 要求：列出 API client methods, pages/components touched, any mocked
 
 - `WIKIFORGE_RAW_SOURCES_ROOT`
 - `WIKIFORGE_WORKER_BASE_URL`
+- `WIKIFORGE_CORE_SERVICE_BASE_URL`
+- `WIKIFORGE_INTERNAL_API_TOKEN`
 - Raw Sources volume mapping
 - Compose config still valid
 

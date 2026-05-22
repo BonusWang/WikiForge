@@ -6,6 +6,16 @@
 docs
 data
 logs
+raw-sources
+raw-sources/**
+obsidian-vault
+obsidian-vault/**
+vault
+vault/**
+Vault
+Vault/**
+imports
+imports/**
 tmp
 temp
 
