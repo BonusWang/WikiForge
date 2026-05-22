@@ -13,4 +13,12 @@
     <artifactId>wikiforge-common</artifactId>
     <name>wikiforge-common</name>
     <description>WikiForge shared backend utilities</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>
