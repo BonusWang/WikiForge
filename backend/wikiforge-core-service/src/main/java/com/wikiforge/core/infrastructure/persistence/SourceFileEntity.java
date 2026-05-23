@@ -20,9 +20,11 @@ public class SourceFileEntity {
     private Long fileSize;
     private String mimeType;
     private String contentHash;
+    private String parserName;
     private String parseStatus;
     private String organizeStatus;
     private Long duplicateOfFileId;
+    private String parseError;
     private LocalDateTime createdAt;
 
     public Long getId() {
@@ -113,6 +115,14 @@ public class SourceFileEntity {
         this.contentHash = contentHash;
     }
 
+    public String getParserName() {
+        return parserName;
+    }
+
+    public void setParserName(String parserName) {
+        this.parserName = parserName;
+    }
+
     public String getParseStatus() {
         return parseStatus;
     }
@@ -135,6 +145,14 @@ public class SourceFileEntity {
 
     public void setDuplicateOfFileId(Long duplicateOfFileId) {
         this.duplicateOfFileId = duplicateOfFileId;
+    }
+
+    public String getParseError() {
+        return parseError;
+    }
+
+    public void setParseError(String parseError) {
+        this.parseError = parseError;
     }
 
     public LocalDateTime getCreatedAt() {

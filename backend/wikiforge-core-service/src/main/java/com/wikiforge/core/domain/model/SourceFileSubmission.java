@@ -8,8 +8,15 @@ public record SourceFileSubmission(
         Long fileSize,
         String mimeType,
         String contentHash,
+        String parserName,
         String parseStatus,
         String organizeStatus,
-        String duplicateOfFileUid
+        String duplicateOfFileUid,
+        String contentType,
+        String parsedText,
+        String textHash,
+        Integer charCount,
+        Boolean rawTextSaved,
+        String parseError
 ) {
 }

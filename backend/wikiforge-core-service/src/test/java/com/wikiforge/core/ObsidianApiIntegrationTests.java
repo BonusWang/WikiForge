@@ -58,6 +58,7 @@ class ObsidianApiIntegrationTests {
         Files.createDirectories(RAW_SOURCES_ROOT);
         Files.createDirectories(OBSIDIAN_VAULT);
         jdbcTemplate.execute("DROP TABLE IF EXISTS obsidian_notes");
+        jdbcTemplate.execute("DROP TABLE IF EXISTS source_contents");
         jdbcTemplate.execute("DROP TABLE IF EXISTS source_files");
         jdbcTemplate.execute("DROP TABLE IF EXISTS sources");
         jdbcTemplate.execute("DROP TABLE IF EXISTS import_jobs");
@@ -134,6 +135,27 @@ class ObsidianApiIntegrationTests {
                 )
                 """);
         jdbcTemplate.execute("""
+                CREATE TABLE source_contents (
+                    id BIGINT NOT NULL AUTO_INCREMENT,
+                    content_uid VARCHAR(64) NOT NULL,
+                    source_id BIGINT NOT NULL,
+                    source_file_id BIGINT NOT NULL,
+                    parser_name VARCHAR(128) NULL,
+                    content_type VARCHAR(64) NOT NULL DEFAULT 'plain_text',
+                    raw_text CLOB NULL,
+                    text_hash VARCHAR(128) NULL,
+                    char_count INT NOT NULL DEFAULT 0,
+                    raw_text_saved BOOLEAN NOT NULL DEFAULT FALSE,
+                    parse_status VARCHAR(64) NOT NULL DEFAULT 'pending',
+                    parse_error CLOB NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY uk_source_contents_content_uid (content_uid),
+                    UNIQUE KEY uk_source_contents_source_file (source_file_id)
+                )
+                """);
+        jdbcTemplate.execute("""
                 CREATE TABLE obsidian_notes (
                     id BIGINT NOT NULL AUTO_INCREMENT,
                     note_uid VARCHAR(64) NOT NULL,
@@ -176,6 +198,18 @@ class ObsidianApiIntegrationTests {
 
     @Test
     void generateDraftUsesSourceFileMetadata() {
+        jdbcTemplate.update("""
+                INSERT INTO source_contents (
+                    id, content_uid, source_id, source_file_id, parser_name, content_type,
+                    raw_text, text_hash, char_count, raw_text_saved, parse_status,
+                    created_at, updated_at
+                ) VALUES (
+                    400, 'content_test', 100, 200, 'markdown-text', 'plain_text',
+                    '这是第一段正文，用于 Source Note 摘录。\\n这是第二段正文。', 'text-hash', 31, TRUE, 'success',
+                    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                )
+                """);
+
         ResponseEntity<JsonNode> response = restTemplate.postForEntity(
                 "/api/v1/source-files/file_test/obsidian-note/draft",
                 null,
@@ -191,6 +225,8 @@ class ObsidianApiIntegrationTests {
         assertThat(data.path("markdown").asText()).contains("# example.pdf");
         assertThat(data.path("markdown").asText()).contains("Source UID: `src_test`");
         assertThat(data.path("markdown").asText()).contains("原始路径");
+        assertThat(data.path("markdown").asText()).contains("## 正文摘录");
+        assertThat(data.path("markdown").asText()).contains("这是第一段正文，用于 Source Note 摘录。");
     }
 
     @Test

@@ -26,8 +26,8 @@ class LocalImportJobRunnerTests {
         Path inputPath = tempDir.resolve("input");
         Path rawSourcesRoot = tempDir.resolve("raw-sources");
         Files.createDirectories(inputPath);
-        Files.writeString(inputPath.resolve("note.md"), "same", StandardCharsets.UTF_8);
-        Files.writeString(inputPath.resolve("note-copy.md"), "same", StandardCharsets.UTF_8);
+        Files.writeString(inputPath.resolve("note.md"), "---\ntitle: Note\n---\n# Heading\n\n正文内容", StandardCharsets.UTF_8);
+        Files.writeString(inputPath.resolve("note-copy.md"), "---\ntitle: Note\n---\n# Heading\n\n正文内容", StandardCharsets.UTF_8);
 
         RecordingCoreImportJobClient coreClient = new RecordingCoreImportJobClient();
         LocalImportJobRunner runner = new LocalImportJobRunner(new LocalFileScanner(), coreClient);
@@ -64,7 +64,11 @@ class LocalImportJobRunnerTests {
                 .containsOnlyNulls();
         assertThat(coreClient.submittedBatch.files())
                 .extracting(file -> file.parseStatus())
-                .containsOnly("pending");
+                .containsOnly("success");
+        assertThat(coreClient.submittedBatch.files().get(0).parserName()).isEqualTo("markdown-text");
+        assertThat(coreClient.submittedBatch.files().get(0).parsedText()).contains("# Heading");
+        assertThat(coreClient.submittedBatch.files().get(0).parsedText()).doesNotContain("title: Note");
+        assertThat(coreClient.submittedBatch.files().get(0).rawTextSaved()).isTrue();
         assertThat(Path.of(coreClient.submittedBatch.files().get(0).managedPath())).isRegularFile();
         assertThat(coreClient.submittedBatch.files().get(1).managedPath())
                 .isEqualTo(coreClient.submittedBatch.files().get(0).managedPath());

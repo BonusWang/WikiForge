@@ -11,8 +11,10 @@ import com.wikiforge.core.application.dto.ObsidianNoteResponse;
 import com.wikiforge.core.application.dto.ObsidianVaultStatusResponse;
 import com.wikiforge.core.application.dto.SourceNoteDraftResponse;
 import com.wikiforge.core.domain.model.ObsidianNote;
+import com.wikiforge.core.domain.model.SourceContent;
 import com.wikiforge.core.domain.model.SourceFileRecord;
 import com.wikiforge.core.domain.repository.ObsidianNoteRepository;
+import com.wikiforge.core.domain.repository.SourceContentRepository;
 import com.wikiforge.core.domain.repository.SourceFileRepository;
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -54,17 +56,20 @@ public class ObsidianVaultService {
     );
 
     private final SourceFileRepository sourceFileRepository;
+    private final SourceContentRepository sourceContentRepository;
     private final ObsidianNoteRepository obsidianNoteRepository;
     private final CoreRuntimeProperties runtimeProperties;
     private final ObjectMapper objectMapper;
 
     public ObsidianVaultService(
             SourceFileRepository sourceFileRepository,
+            SourceContentRepository sourceContentRepository,
             ObsidianNoteRepository obsidianNoteRepository,
             CoreRuntimeProperties runtimeProperties,
             ObjectMapper objectMapper
     ) {
         this.sourceFileRepository = sourceFileRepository;
+        this.sourceContentRepository = sourceContentRepository;
         this.obsidianNoteRepository = obsidianNoteRepository;
         this.runtimeProperties = runtimeProperties;
         this.objectMapper = objectMapper;
@@ -209,11 +214,11 @@ public class ObsidianVaultService {
                 title,
                 vaultName,
                 vaultPath,
-                markdown(sourceFile, title)
+                markdown(sourceFile, title, sourceContentRepository.findBySourceFileUid(sourceFile.fileUid()).orElse(null))
         );
     }
 
-    private String markdown(SourceFileRecord sourceFile, String title) {
+    private String markdown(SourceFileRecord sourceFile, String title, SourceContent sourceContent) {
         String today = LocalDate.now().toString();
         return """
                 ---
@@ -247,6 +252,8 @@ public class ObsidianVaultService {
 
                 待补充：MVP2 先完成 Source Note 归档闭环，AI 摘要将在后续版本生成。
 
+                %s
+
                 ## 关键内容 Key Points
 
                 - 待补充
@@ -272,8 +279,23 @@ public class ObsidianVaultService {
                 value(sourceFile.fileExt()),
                 value(sourceFile.originalPath()),
                 value(sourceFile.managedPath()),
-                value(sourceFile.contentHash())
+                value(sourceFile.contentHash()),
+                excerptSection(sourceContent)
         );
+    }
+
+    private String excerptSection(SourceContent sourceContent) {
+        if (sourceContent == null || sourceContent.rawText() == null || sourceContent.rawText().isBlank()) {
+            return "";
+        }
+        return "## 正文摘录 Content Excerpt\n\n" + truncate(sourceContent.rawText().trim(), 2000) + "\n";
+    }
+
+    private String truncate(String value, int maxLength) {
+        if (value.length() <= maxLength) {
+            return value;
+        }
+        return value.substring(0, maxLength).trim() + "\n\n...";
     }
 
     private Path vaultRoot() {

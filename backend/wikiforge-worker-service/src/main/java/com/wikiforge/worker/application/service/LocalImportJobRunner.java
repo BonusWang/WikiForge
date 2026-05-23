@@ -28,21 +28,32 @@ public class LocalImportJobRunner {
 
     private final LocalFileScanner localFileScanner;
     private final CoreImportJobClient coreImportJobClient;
+    private final TextContentExtractor textContentExtractor;
     private final String configuredRawSourcesRoot;
 
     @Autowired
     public LocalImportJobRunner(
             LocalFileScanner localFileScanner,
             CoreImportJobClient coreImportJobClient,
+            TextContentExtractor textContentExtractor,
             @Value("${WIKIFORGE_RAW_SOURCES_ROOT:${wikiforge.raw-sources-root:${wikiforge.raw-sources-path:}}}") String configuredRawSourcesRoot
     ) {
         this.localFileScanner = localFileScanner;
         this.coreImportJobClient = coreImportJobClient;
+        this.textContentExtractor = textContentExtractor;
         this.configuredRawSourcesRoot = configuredRawSourcesRoot;
     }
 
     public LocalImportJobRunner(LocalFileScanner localFileScanner, CoreImportJobClient coreImportJobClient) {
-        this(localFileScanner, coreImportJobClient, "");
+        this(localFileScanner, coreImportJobClient, new TextContentExtractor(), "");
+    }
+
+    public LocalImportJobRunner(
+            LocalFileScanner localFileScanner,
+            CoreImportJobClient coreImportJobClient,
+            String configuredRawSourcesRoot
+    ) {
+        this(localFileScanner, coreImportJobClient, new TextContentExtractor(), configuredRawSourcesRoot);
     }
 
     public RunLocalImportJobResponse run(RunLocalImportJobRequest request) {
@@ -124,6 +135,9 @@ public class LocalImportJobRunner {
     }
 
     private SubmitSourceFileItem toBatchItem(LocalScanFile file) {
+        ParsedTextContent parsedContent = textContentExtractor
+                .extract(Path.of(file.managedPath()), file.fileExt())
+                .orElse(null);
         return new SubmitSourceFileItem(
                 file.fileName(),
                 file.fileExt(),
@@ -132,9 +146,16 @@ public class LocalImportJobRunner {
                 file.fileSize(),
                 file.mimeType(),
                 file.contentHash(),
-                file.parseStatus(),
+                parsedContent == null ? null : parsedContent.parserName(),
+                parsedContent == null ? file.parseStatus() : parsedContent.parseStatus(),
                 file.organizeStatus(),
-                null
+                file.duplicateOfFileUid(),
+                parsedContent == null ? null : parsedContent.contentType(),
+                parsedContent == null ? null : parsedContent.parsedText(),
+                parsedContent == null ? null : parsedContent.textHash(),
+                parsedContent == null ? null : parsedContent.charCount(),
+                parsedContent == null ? null : parsedContent.rawTextSaved(),
+                parsedContent == null ? null : parsedContent.parseError()
         );
     }
 }

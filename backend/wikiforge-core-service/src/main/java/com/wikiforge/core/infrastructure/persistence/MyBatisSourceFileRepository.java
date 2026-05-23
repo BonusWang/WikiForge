@@ -21,15 +21,18 @@ public class MyBatisSourceFileRepository implements SourceFileRepository {
 
     private final SourceMapper sourceMapper;
     private final SourceFileMapper sourceFileMapper;
+    private final SourceContentMapper sourceContentMapper;
     private final ImportJobMapper importJobMapper;
 
     public MyBatisSourceFileRepository(
             SourceMapper sourceMapper,
             SourceFileMapper sourceFileMapper,
+            SourceContentMapper sourceContentMapper,
             ImportJobMapper importJobMapper
     ) {
         this.sourceMapper = sourceMapper;
         this.sourceFileMapper = sourceFileMapper;
+        this.sourceContentMapper = sourceContentMapper;
         this.importJobMapper = importJobMapper;
     }
 
@@ -72,11 +75,14 @@ public class MyBatisSourceFileRepository implements SourceFileRepository {
             sourceFile.setFileSize(file.fileSize());
             sourceFile.setMimeType(file.mimeType());
             sourceFile.setContentHash(file.contentHash());
+            sourceFile.setParserName(file.parserName());
             sourceFile.setParseStatus(file.parseStatus());
             sourceFile.setOrganizeStatus(organizeStatus);
             sourceFile.setDuplicateOfFileId(duplicate == null ? null : duplicate.getId());
+            sourceFile.setParseError(file.parseError());
             sourceFile.setCreatedAt(now);
             sourceFileMapper.insert(sourceFile);
+            saveSourceContent(source, sourceFile, file, now);
         }
     }
 
@@ -163,6 +169,40 @@ public class MyBatisSourceFileRepository implements SourceFileRepository {
                         .orderByAsc(SourceFileEntity::getId)
         );
         return matches.isEmpty() ? null : matches.get(0);
+    }
+
+    private void saveSourceContent(
+            SourceEntity source,
+            SourceFileEntity sourceFile,
+            SourceFileSubmission file,
+            LocalDateTime now
+    ) {
+        if (!hasText(file.parsedText()) && !hasText(file.parserName()) && !hasText(file.parseError())) {
+            return;
+        }
+        SourceContentEntity content = new SourceContentEntity();
+        content.setContentUid(newUid("content"));
+        content.setSourceId(source.getId());
+        content.setSourceFileId(sourceFile.getId());
+        content.setParserName(file.parserName());
+        content.setContentType(hasText(file.contentType()) ? file.contentType() : "plain_text");
+        content.setRawText(file.parsedText());
+        content.setTextHash(file.textHash());
+        content.setCharCount(file.charCount() == null ? charCount(file.parsedText()) : file.charCount());
+        content.setRawTextSaved(Boolean.TRUE.equals(file.rawTextSaved()));
+        content.setParseStatus(file.parseStatus());
+        content.setParseError(file.parseError());
+        content.setCreatedAt(now);
+        content.setUpdatedAt(now);
+        sourceContentMapper.insert(content);
+    }
+
+    private int charCount(String text) {
+        return text == null ? 0 : text.length();
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private String duplicateFileUid(Long duplicateOfFileId) {

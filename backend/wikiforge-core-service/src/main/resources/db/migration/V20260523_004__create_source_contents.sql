@@ -1,0 +1,23 @@
+CREATE TABLE source_contents (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    content_uid VARCHAR(64) NOT NULL,
+    source_id BIGINT NOT NULL,
+    source_file_id BIGINT NOT NULL,
+    parser_name VARCHAR(128) NULL,
+    content_type VARCHAR(64) NOT NULL DEFAULT 'plain_text',
+    raw_text LONGTEXT NULL,
+    text_hash VARCHAR(128) NULL,
+    char_count INT NOT NULL DEFAULT 0,
+    raw_text_saved TINYINT(1) NOT NULL DEFAULT 0,
+    parse_status VARCHAR(64) NOT NULL DEFAULT 'pending',
+    parse_error TEXT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_source_contents_content_uid (content_uid),
+    UNIQUE KEY uk_source_contents_source_file (source_file_id),
+    KEY idx_source_contents_source (source_id),
+    KEY idx_source_contents_parse_status (parse_status),
+    CONSTRAINT fk_source_contents_source FOREIGN KEY (source_id) REFERENCES sources(id),
+    CONSTRAINT fk_source_contents_source_file FOREIGN KEY (source_file_id) REFERENCES source_files(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

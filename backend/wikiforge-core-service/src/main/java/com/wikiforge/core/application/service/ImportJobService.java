@@ -201,9 +201,16 @@ public class ImportJobService {
                 item.fileSize(),
                 item.mimeType(),
                 item.contentHash(),
+                item.parserName(),
                 item.parseStatus(),
                 item.organizeStatus(),
-                null
+                item.duplicateOfFileUid(),
+                item.contentType(),
+                item.parsedText(),
+                item.textHash(),
+                item.charCount(),
+                item.rawTextSaved(),
+                item.parseError()
         );
     }
 

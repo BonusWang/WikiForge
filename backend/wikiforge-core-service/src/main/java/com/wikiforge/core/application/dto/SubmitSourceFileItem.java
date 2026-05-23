@@ -12,8 +12,15 @@ public record SubmitSourceFileItem(
         @NotNull @PositiveOrZero Long fileSize,
         String mimeType,
         String contentHash,
+        String parserName,
         @NotBlank String parseStatus,
         @NotBlank String organizeStatus,
-        String duplicateOfFileUid
+        String duplicateOfFileUid,
+        String contentType,
+        String parsedText,
+        String textHash,
+        Integer charCount,
+        Boolean rawTextSaved,
+        String parseError
 ) {
 }

@@ -63,6 +63,7 @@ class ImportJobApiIntegrationTests {
         Files.createDirectories(ALLOWED_ROOT);
         Files.createDirectories(RAW_SOURCES_ROOT);
         jdbcTemplate.execute("DROP TABLE IF EXISTS obsidian_notes");
+        jdbcTemplate.execute("DROP TABLE IF EXISTS source_contents");
         jdbcTemplate.execute("DROP TABLE IF EXISTS source_files");
         jdbcTemplate.execute("DROP TABLE IF EXISTS sources");
         jdbcTemplate.execute("DROP TABLE IF EXISTS import_jobs");
@@ -140,6 +141,27 @@ class ImportJobApiIntegrationTests {
                     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (id),
                     UNIQUE KEY uk_source_files_file_uid (file_uid)
+                )
+                """);
+        jdbcTemplate.execute("""
+                CREATE TABLE source_contents (
+                    id BIGINT NOT NULL AUTO_INCREMENT,
+                    content_uid VARCHAR(64) NOT NULL,
+                    source_id BIGINT NOT NULL,
+                    source_file_id BIGINT NOT NULL,
+                    parser_name VARCHAR(128) NULL,
+                    content_type VARCHAR(64) NOT NULL DEFAULT 'plain_text',
+                    raw_text CLOB NULL,
+                    text_hash VARCHAR(128) NULL,
+                    char_count INT NOT NULL DEFAULT 0,
+                    raw_text_saved BOOLEAN NOT NULL DEFAULT FALSE,
+                    parse_status VARCHAR(64) NOT NULL DEFAULT 'pending',
+                    parse_error CLOB NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY uk_source_contents_content_uid (content_uid),
+                    UNIQUE KEY uk_source_contents_source_file (source_file_id)
                 )
                 """);
         jdbcTemplate.execute("""
@@ -360,6 +382,32 @@ class ImportJobApiIntegrationTests {
         assertThat(first.path("duplicateOfFileUid").isMissingNode() || first.path("duplicateOfFileUid").isNull()).isTrue();
         assertThat(duplicate.path("duplicateOfFileUid").asText()).isEqualTo(first.path("fileUid").asText());
         assertThat(duplicate.path("organizeStatus").asText()).isEqualTo("duplicate");
+    }
+
+    @Test
+    void submitSourceFilesBatchPersistsParsedMarkdownText() throws Exception {
+        String jobUid = createJob();
+        Map<String, Object> parsedFile = sourceFile("note.md", "notes/note.md", "hash-md");
+        parsedFile = new java.util.HashMap<>(parsedFile);
+        parsedFile.put("fileExt", "md");
+        parsedFile.put("mimeType", "text/markdown");
+        parsedFile.put("parseStatus", "success");
+        parsedFile.put("parserName", "markdown-text");
+        parsedFile.put("contentType", "plain_text");
+        parsedFile.put("parsedText", "第一段正文\n第二段正文");
+        parsedFile.put("textHash", "text-hash-md");
+        parsedFile.put("charCount", 11);
+        parsedFile.put("rawTextSaved", true);
+
+        ResponseEntity<JsonNode> submit = postInternalBatch(jobUid, Map.of("files", List.of(parsedFile)));
+
+        assertThat(submit.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Integer contentRows = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM source_contents", Integer.class);
+        assertThat(contentRows).isEqualTo(1);
+        String rawText = jdbcTemplate.queryForObject("SELECT raw_text FROM source_contents", String.class);
+        assertThat(rawText).isEqualTo("第一段正文\n第二段正文");
+        String parseStatus = jdbcTemplate.queryForObject("SELECT parse_status FROM source_contents", String.class);
+        assertThat(parseStatus).isEqualTo("success");
     }
 
     private ResponseEntity<JsonNode> postInternalBatch(String jobUid, Map<String, Object> batch) {
