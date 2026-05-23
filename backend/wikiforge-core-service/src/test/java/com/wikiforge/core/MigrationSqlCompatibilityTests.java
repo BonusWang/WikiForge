@@ -64,4 +64,18 @@ class MigrationSqlCompatibilityTests {
             assertThat(migrationSql).contains("KEY idx_review_items_status_created (status, created_at)");
         }
     }
+
+    @Test
+    void v1PersonalRecordMigrationAddsObsidianArchiveColumns() throws Exception {
+        try (var inputStream = getClass().getResourceAsStream(
+                "/db/migration/V20260524_001__extend_personal_records_for_v1.sql"
+        )) {
+            assertThat(inputStream).isNotNull();
+            String migrationSql = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+            assertThat(migrationSql).contains("ADD COLUMN obsidian_vault_path VARCHAR(1024) NULL");
+            assertThat(migrationSql).contains("ADD COLUMN obsidian_uri VARCHAR(2048) NULL");
+            assertThat(migrationSql).contains("ADD COLUMN archived_at DATETIME NULL");
+            assertThat(migrationSql).contains("idx_personal_records_archived_at");
+        }
+    }
 }

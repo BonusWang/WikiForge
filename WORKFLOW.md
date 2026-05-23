@@ -19,7 +19,7 @@
 1. `AGENTS.md`
 2. `WORKFLOW.md`
 3. 最新 `docs/archive/YYYY-MM-DD/*归档索引-archive-index-vX.Y.md`
-4. `docs/current/2026-05-23-项目整体计划-WikiForge-project-roadmap.md`
+4. `docs/current/2026-05-24-项目整体计划-WikiForge-project-roadmap.md`
 5. 当前任务对应的 `docs/superpowers/plans/*.md`
 6. 当前任务对应的 `agentteam/{team}/README.md` 和本 Agent 目录
 7. `docs/ai-skills/wikiforge-development/SKILL.md`
@@ -93,7 +93,7 @@ agentteam/{YYYY-MM-DD}-{task-id}-{team-name}/
 - 每个子节点只创建或修改自己 Agent 目录下的 `STATUS.md`。
 - `PROMPT.md` 用于新会话启动；`SKILL.md` 用于角色规则；`WORKSPACE.md` 用于文件边界；`STATUS.md` 用于交接状态。
 - 子节点不得修改其他 Agent 目录下的文件。
-- 子节点不得直接改 `docs/current/2026-05-23-项目整体计划-WikiForge-project-roadmap.md`、开发者日志和 `docs/archive/**归档索引*`。
+- 子节点不得直接改 `docs/current/2026-05-24-项目整体计划-WikiForge-project-roadmap.md`、开发者日志和 `docs/archive/**归档索引*`。
 - 子节点完成后在状态文件写明分支、提交、修改文件、验证命令、风险和需要主开发处理的事项。
 - 主开发 Agent 读取状态文件后，统一合并代码、运行验证、更新正式文档、归档快照和发布标签。
 

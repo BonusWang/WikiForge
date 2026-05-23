@@ -1,11 +1,51 @@
-# 2026-05-23 知识熔炉 WikiForge 开发者日志 Developer Log
+# 2026-05-24 知识熔炉 WikiForge 开发者日志 Developer Log
 
 ## 版本索引 Version Index
 
-- 最新版本：v4.3
-- 最新小节：`2026-05-23 R4-6 MVP 审核加固`
+- 最新版本：v5.1
+- 最新小节：`2026-05-24 R5 / V1 在线资料与个人记录首版完成`
 - 推荐阅读：新 AI 开始工作时，先读本索引和最新小节，再按任务需要阅读历史小节。
 - 历史范围：v0.1-v0.9 记录需求发掘、架构评审、MVP0 骨架、微服务拆分和同日滚动归档规则；仅在追溯需求来源或架构决策时阅读。
+
+## 2026-05-24 R5 / V1 在线资料与个人记录启动
+
+本轮根据用户要求重新 init 项目，检查需求、路线图和开发计划后，确认当前 R4 / MVP5 已完成，下一阶段应进入 R5 / V1。
+
+本轮对 V1 做可落地收敛：
+
+- V1 先做“链接资料收集入口 + 个人 LifeOS 记录 + Obsidian 归档 + Web UI 操作区”。
+- 飞书、腾讯文档、网页收藏第一版先保存 URL、平台、标题、正文或备注，真实授权抓取留到 V1.x 连接器节点。
+- 消费、账单、邮件、人际关系、事件和普通笔记统一进入 `personal_records`。
+- 个人记录可以从 REST API、Web UI 或 MCP Preview 写入同一张表，避免数据割裂。
+- 本轮新增 V1 Work Order：`docs/superpowers/plans/2026-05-24-V1在线资料与个人记录-WikiForge-v1-lifeos-work-order.md`。
+
+当前执行计划：
+
+- R5-0：契约冻结与计划优化。
+- R5-1：链接类 Source REST API。
+- R5-2：个人记录 REST API。
+- R5-3：个人记录 Obsidian 归档模板。
+- R5-4：Web UI LifeOS 操作区。
+- R5-5：集成测试、构建验证、文档归档。
+
+## 2026-05-24 R5 / V1 在线资料与个人记录首版完成
+
+本轮完成 V1 首版可用闭环：
+
+- 后端新增链接资料 REST API：`POST /api/v1/link-sources`。
+- 后端新增个人记录 REST API：创建、列表、详情、汇总、写入 Obsidian。
+- `personal_records` 增加 Obsidian 归档字段：`obsidian_vault_path`、`obsidian_uri`、`archived_at`。
+- Obsidian 个人记录默认写入 `00_Inbox_收集箱/Personal_个人记录/{recordType}/{yyyy-MM}/`。
+- Dashboard 新增 LifeOS 收集区：链接资料录入、个人记录录入、类型汇总、记录列表、写入 Obsidian。
+- PRD、技术架构、数据模型、Roadmap、Work Order、归档索引同步到 V1 首版状态。
+
+验证结果：
+
+- 后端全量测试：`mvn -s %TEMP%/wikiforge-maven-settings.xml test` 通过，5 个模块合计 55 个测试，0 失败。
+- 前端构建：`npm --prefix frontend run build` 通过，保留既有 Rollup 大 chunk 和 VueUse PURE 注释 warning。
+- Docker Compose config：生产与开发配置均通过。
+- Git 卫生：`git diff --check` 通过，禁止路径扫描未发现 `node_modules`、`dist`、`target`、真实 `.env`、Vault 或 Raw Sources 被跟踪，敏感信息扫描未命中用户提供的 MiniMax token。
+- 浏览器自动化：当前会话未能加载 Playwright 模块，未完成浏览器截图验证；前端已通过 TypeScript 和 Vite 构建验证。
 
 ## 会话主题
 

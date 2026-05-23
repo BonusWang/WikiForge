@@ -181,6 +181,68 @@ h1 {
   gap: 10px;
 }
 
+.lifeos-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.lifeos-form-pane {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.lifeos-form {
+  display: grid;
+  gap: 10px;
+}
+
+.lifeos-form .el-form-item {
+  margin-bottom: 0;
+}
+
+.record-form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.lifeos-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 8px 0 14px;
+}
+
+.summary-pill {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 5px 10px;
+  border: 1px solid #d7dde8;
+  border-radius: 8px;
+  background: #fff;
+  color: #526070;
+  font-size: 13px;
+}
+
+.summary-pill strong {
+  color: #17202a;
+  font-size: 16px;
+}
+
+.lifeos-record-toolbar {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.8fr) minmax(120px, 0.6fr) minmax(160px, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
 .ai-config-strip {
   display: grid;
   grid-template-columns: minmax(120px, 0.8fr) minmax(150px, 0.8fr) minmax(150px, 1fr) minmax(220px, 1.4fr) auto;
@@ -269,6 +331,15 @@ h1 {
   .mcp-filter-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .lifeos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lifeos-record-toolbar,
+  .record-form-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
@@ -301,6 +372,11 @@ h1 {
   }
 
   .mcp-filter-row {
+    grid-template-columns: 1fr;
+  }
+
+  .lifeos-record-toolbar,
+  .record-form-row {
     grid-template-columns: 1fr;
   }
 
