@@ -19,6 +19,7 @@ import {
   listImportJobs,
   listSourceFiles
 } from '../api/import-jobs';
+import { listMcpCalls, listMcpTools } from '../api/mcp';
 import {
   generateSourceNoteDraft,
   getObsidianStatus,
@@ -43,6 +44,7 @@ import type {
   ObsidianVaultStatus,
   SourceNoteDraft
 } from '../types/obsidianNotes';
+import type { McpCallStatus, McpToolCallLog, McpToolDefinition } from '../types/mcp';
 import type { CreateAiReviewRunRequest, ReviewItem } from '../types/review';
 
 const appStore = useAppStore();
@@ -120,6 +122,16 @@ const aiReviewLoadingFileUid = ref('');
 const reviewDrawerVisible = ref(false);
 const selectedReviewItem = ref<ReviewItem | null>(null);
 const approvingReviewUid = ref('');
+const mcpTools = ref<McpToolDefinition[]>([]);
+const mcpCalls = ref<McpToolCallLog[]>([]);
+const mcpToolsLoading = ref(false);
+const mcpCallsLoading = ref(false);
+const mcpCallPage = ref(1);
+const mcpCallPageSize = ref(20);
+const mcpCallTotal = ref(0);
+const mcpCallToolFilter = ref('');
+const mcpCallStatusFilter = ref<McpCallStatus | ''>('');
+const mcpCallCallerTypeFilter = ref('');
 
 const selectedJobStatus = computed(() => {
   return selectedJobDetail.value?.status
@@ -280,6 +292,41 @@ async function refreshReviewItems() {
   }
 }
 
+async function refreshMcpTools() {
+  mcpToolsLoading.value = true;
+  try {
+    const result = await listMcpTools();
+    mcpTools.value = result.tools;
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : 'MCP 工具清单加载失败');
+  } finally {
+    mcpToolsLoading.value = false;
+  }
+}
+
+async function refreshMcpCalls() {
+  mcpCallsLoading.value = true;
+  try {
+    const result = await listMcpCalls({
+      toolName: optionalText(mcpCallToolFilter.value),
+      status: optionalText(mcpCallStatusFilter.value),
+      callerType: optionalText(mcpCallCallerTypeFilter.value),
+      page: mcpCallPage.value,
+      pageSize: mcpCallPageSize.value
+    });
+    mcpCalls.value = result.items;
+    mcpCallTotal.value = result.total;
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : 'MCP 调用日志加载失败');
+  } finally {
+    mcpCallsLoading.value = false;
+  }
+}
+
+async function refreshMcpPreview() {
+  await Promise.all([refreshMcpTools(), refreshMcpCalls()]);
+}
+
 async function initializeVault() {
   vaultInitializing.value = true;
   try {
@@ -425,6 +472,16 @@ function handleReviewPageChange(page: number) {
   void refreshReviewItems();
 }
 
+function handleMcpCallPageChange(page: number) {
+  mcpCallPage.value = page;
+  void refreshMcpCalls();
+}
+
+function handleMcpFilterChange() {
+  mcpCallPage.value = 1;
+  void refreshMcpCalls();
+}
+
 function handleStatusFilterChange() {
   jobPage.value = 1;
   void refreshJobs();
@@ -486,6 +543,16 @@ function statusTagType(status: ImportJobStatus) {
   return 'primary';
 }
 
+function mcpStatusTagType(status: McpCallStatus) {
+  if (status === 'completed') {
+    return 'success';
+  }
+  if (status === 'failed') {
+    return 'danger';
+  }
+  return 'info';
+}
+
 function formatBytes(value: number) {
   if (!Number.isFinite(value)) {
     return '-';
@@ -524,6 +591,7 @@ onMounted(() => {
   void refreshJobs();
   void refreshVaultStatus();
   void refreshReviewItems();
+  void refreshMcpPreview();
 });
 </script>
 
@@ -683,6 +751,113 @@ onMounted(() => {
             </el-button>
           </div>
         </el-form>
+      </el-card>
+
+      <el-card shadow="never">
+        <template #header>
+          <div class="section-title">
+            <div class="card-title">
+              <el-icon><Connection /></el-icon>
+              MCP Preview
+            </div>
+            <el-button :loading="mcpToolsLoading || mcpCallsLoading" @click="refreshMcpPreview">
+              <el-icon><Refresh /></el-icon>
+              刷新 MCP
+            </el-button>
+          </div>
+        </template>
+
+        <div class="mcp-board">
+          <div class="mcp-tools-pane">
+            <div class="card-title">工具清单</div>
+            <el-table
+              v-loading="mcpToolsLoading"
+              :data="mcpTools"
+              border
+              empty-text="暂无 MCP 工具"
+            >
+              <el-table-column prop="name" label="tool" min-width="170" show-overflow-tooltip />
+              <el-table-column prop="enabled" label="enabled" width="100">
+                <template #default="scope">
+                  <el-tag :type="scope.row.enabled ? 'success' : 'info'" effect="plain">
+                    {{ scope.row.enabled ? 'enabled' : 'disabled' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="description" label="description" min-width="260" show-overflow-tooltip />
+            </el-table>
+          </div>
+
+          <div class="mcp-calls-pane">
+            <div class="mcp-filter-row">
+              <el-select
+                v-model="mcpCallToolFilter"
+                clearable
+                placeholder="tool"
+                @change="handleMcpFilterChange"
+              >
+                <el-option
+                  v-for="tool in mcpTools"
+                  :key="tool.name"
+                  :label="tool.name"
+                  :value="tool.name"
+                />
+              </el-select>
+              <el-select
+                v-model="mcpCallStatusFilter"
+                clearable
+                placeholder="status"
+                @change="handleMcpFilterChange"
+              >
+                <el-option label="completed" value="completed" />
+                <el-option label="failed" value="failed" />
+              </el-select>
+              <el-input
+                v-model="mcpCallCallerTypeFilter"
+                clearable
+                placeholder="callerType"
+                @change="handleMcpFilterChange"
+                @clear="handleMcpFilterChange"
+              />
+            </div>
+
+            <el-table
+              v-loading="mcpCallsLoading"
+              :data="mcpCalls"
+              border
+              empty-text="暂无 MCP 调用日志"
+            >
+              <el-table-column prop="createdAt" label="createdAt" min-width="180" show-overflow-tooltip />
+              <el-table-column prop="toolName" label="tool" min-width="170" show-overflow-tooltip />
+              <el-table-column prop="status" label="status" width="120">
+                <template #default="scope">
+                  <el-tag :type="mcpStatusTagType(scope.row.status)">
+                    {{ scope.row.status }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="caller" min-width="180" show-overflow-tooltip>
+                <template #default="scope">
+                  {{ scope.row.callerType }} / {{ scope.row.callerId }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="durationMs" label="ms" width="90" align="right" />
+              <el-table-column prop="errorCode" label="error" min-width="140" show-overflow-tooltip />
+            </el-table>
+
+            <div class="pagination-row">
+              <el-pagination
+                v-if="mcpCallTotal > mcpCallPageSize"
+                background
+                layout="prev, pager, next"
+                :current-page="mcpCallPage"
+                :page-size="mcpCallPageSize"
+                :total="mcpCallTotal"
+                @current-change="handleMcpCallPageChange"
+              />
+            </div>
+          </div>
+        </div>
       </el-card>
 
       <el-card shadow="never">

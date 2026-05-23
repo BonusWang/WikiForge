@@ -43,6 +43,7 @@ public class McpPreviewService {
 
     private static final int DEFAULT_PAGE_SIZE = 20;
     private static final int MAX_PAGE_SIZE = 50;
+    private static final int MAX_MCP_CALL_PAGE_SIZE = 100;
     private static final Set<String> SOURCE_STATUSES = Set.of(
             "pending",
             "organized",
@@ -176,7 +177,7 @@ public class McpPreviewService {
     @Transactional(readOnly = true)
     public McpToolCallPageResponse listCalls(String toolName, String status, String callerType, int page, int pageSize) {
         int normalizedPage = normalizePage(page);
-        int normalizedPageSize = Math.min(normalizePageSize(pageSize), 100);
+        int normalizedPageSize = normalizeMcpCallPageSize(pageSize);
         StringBuilder where = new StringBuilder(" WHERE 1 = 1");
         List<Object> params = new ArrayList<>();
         if (hasText(toolName)) {
@@ -843,6 +844,13 @@ public class McpPreviewService {
             return DEFAULT_PAGE_SIZE;
         }
         return Math.min(pageSize, MAX_PAGE_SIZE);
+    }
+
+    private int normalizeMcpCallPageSize(int pageSize) {
+        if (pageSize < 1) {
+            return DEFAULT_PAGE_SIZE;
+        }
+        return Math.min(pageSize, MAX_MCP_CALL_PAGE_SIZE);
     }
 
     private String normalizeCallerType(String callerType) {

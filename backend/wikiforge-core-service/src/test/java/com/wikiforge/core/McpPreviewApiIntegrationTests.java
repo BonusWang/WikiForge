@@ -310,6 +310,57 @@ class McpPreviewApiIntegrationTests {
     }
 
     @Test
+    void listCallsReturnsFilteredAuditPageWithoutInputOrOutputPayloads() {
+        for (int i = 0; i < 55; i++) {
+            insertMcpCallLog(
+                    "mcp_call_completed_" + i,
+                    "search_sources",
+                    "agent",
+                    "openclaw",
+                    "completed",
+                    null,
+                    null,
+                    "{\"rawContent\":\"private raw " + i + "\"}",
+                    "{\"markdown\":\"private markdown " + i + "\"}"
+            );
+        }
+        insertMcpCallLog(
+                "mcp_call_failed_1",
+                "get_obsidian_note",
+                "agent",
+                "hermes",
+                "failed",
+                "MCP_005",
+                "Obsidian note not found",
+                "{\"noteUid\":\"note_missing\"}",
+                "{}"
+        );
+
+        ResponseEntity<JsonNode> response = restTemplate.getForEntity(
+                "/api/v1/mcp/calls?callerType=agent&status=completed&page=1&pageSize=100",
+                JsonNode.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode data = response.getBody().path("data");
+        assertThat(data.path("page").asInt()).isEqualTo(1);
+        assertThat(data.path("pageSize").asInt()).isEqualTo(100);
+        assertThat(data.path("total").asLong()).isEqualTo(55);
+        JsonNode items = data.path("items");
+        assertThat(items).hasSize(55);
+        assertThat(items.get(0).path("callUid").asText()).isEqualTo("mcp_call_completed_54");
+        assertThat(items.get(0).path("toolName").asText()).isEqualTo("search_sources");
+        assertThat(items.get(0).path("callerType").asText()).isEqualTo("agent");
+        assertThat(items.get(0).path("callerId").asText()).isEqualTo("openclaw");
+        assertThat(items.get(0).path("status").asText()).isEqualTo("completed");
+        assertThat(items.get(0).has("inputJson")).isFalse();
+        assertThat(items.get(0).has("outputJson")).isFalse();
+        assertThat(data.toString()).doesNotContain("private raw");
+        assertThat(data.toString()).doesNotContain("private markdown");
+        assertThat(data.toString()).doesNotContain("mcp_call_failed_1");
+    }
+
+    @Test
     void missingObsidianNoteReturnsContractErrorAndWritesFailedCallLog() {
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-WikiForge-Caller-Type", "agent");
@@ -455,6 +506,35 @@ class McpPreviewApiIntegrationTests {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody().path("code").asText()).isEqualTo("RECORD_001");
+    }
+
+    private void insertMcpCallLog(
+            String callUid,
+            String toolName,
+            String callerType,
+            String callerId,
+            String status,
+            String errorCode,
+            String errorMessage,
+            String inputJson,
+            String outputJson
+    ) {
+        jdbcTemplate.update("""
+                INSERT INTO mcp_tool_calls (
+                    call_uid, tool_name, caller_type, caller_id, input_json, output_json,
+                    status, error_code, error_message, duration_ms, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 12, CURRENT_TIMESTAMP)
+                """,
+                callUid,
+                toolName,
+                callerType,
+                callerId,
+                inputJson,
+                outputJson,
+                status,
+                errorCode,
+                errorMessage
+        );
     }
 
     private List<String> toNames(JsonNode tools) {

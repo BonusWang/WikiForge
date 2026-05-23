@@ -7,16 +7,16 @@
 ## 当前执行指针
 
 - ( ) 主Agent：建立 Agent Team 目录、规则和计划
-- (x) 前端开发Agent：实现 MCP 工具与调用日志展示
+- ( ) 前端开发Agent：实现 MCP 工具与调用日志展示
 - ( ) 后端开发Agent：检查 MCP 后端缺口并补强必要测试
-- ( ) 测试Agent：执行 R4-5 验证矩阵
+- (x) 主Agent：进入 OpenClaw / Hermes 本机接入说明
 
 ## 节点清单
 
 - [x] R4-5-0 建立 Agent Team 目录和角色工作空间
-- [ ] R4-5-1 前端 MCP tools / calls 数据接入，只读展示优先
-- [ ] R4-5-2 前端 Dashboard 展示 MCP 工具、调用结果和日志
-- [ ] R4-5-3 后端补 `GET /api/v1/mcp/calls` 查询端点集成测试
+- [x] R4-5-1 前端 MCP tools / calls 数据接入，只读展示优先
+- [x] R4-5-2 前端 Dashboard 展示 MCP 工具、调用结果和日志
+- [x] R4-5-3 后端补 `GET /api/v1/mcp/calls` 查询端点集成测试
 - [ ] R4-5-4 OpenClaw / Hermes 本机接入说明
 - [ ] R4-5-5 集成验证、文档归档、提交推送和发布
 
@@ -78,3 +78,11 @@
 - 后端小改：`mvn -pl wikiforge-core-service test`
 - 前端联动：`npm run build`
 - 发布前：后端全量测试、前端构建、Compose config、Git 卫生和敏感信息扫描
+
+## R4-5-1/2/3 验证记录
+
+- RED：`McpPreviewApiIntegrationTests#listCallsReturnsFilteredAuditPageWithoutInputOrOutputPayloads` 先失败，原因是 calls 查询 `pageSize=100` 被通用上限压成 50。
+- GREEN：MCP calls 查询改用独立上限 100，单测通过。
+- 后端定向：`McpPreviewApiIntegrationTests` 8 个测试通过。
+- 前端构建：`npm --prefix frontend run build` 通过，保留既有 Rollup 大 chunk / PURE 注释 warning。
+- 浏览器验证：`http://127.0.0.1:3002/` 可看到 MCP Preview、工具清单、调用日志列；无“调用工具”入口；控制台无 error。

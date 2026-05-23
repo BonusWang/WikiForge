@@ -3,13 +3,13 @@
 | 字段 | 内容 |
 | --- | --- |
 | 任务ID | R4-5-1 / R4-5-2 |
-| 状态 | Ready for Implementation |
+| 状态 | Integrated |
 | 建议分支 | `codex/r4-5-ui-mcp-dashboard` |
 | 当前目标 | MCP tools / calls 前端接入与 Dashboard 只读展示 |
 | 允许修改 | 见 `WORKSPACE.md` |
-| 已完成 | 只读侦察已完成；建议首版只展示 MCP tools 与 calls 日志，默认不开放工具调用 |
-| 验证命令 | `npm run build` |
-| 风险 | 工具调用会写入业务数据；calls 接口当前不含 input/output 详情，首版只展示审计列表 |
+| 已完成 | 已新增 MCP API 封装、类型定义、Dashboard MCP Preview 只读工具清单和调用日志表 |
+| 验证命令 | `npm --prefix frontend run build`、浏览器验证 `http://127.0.0.1:3002/` |
+| 风险 | 工具调用会写入业务数据，本轮已明确不提供调用入口 |
 
 ## 侦察结论
 
@@ -40,3 +40,12 @@
 ```powershell
 npm --prefix frontend run build
 ```
+
+## 集成结果
+
+- 新增 `frontend/src/types/mcp.ts`。
+- 新增 `frontend/src/api/mcp/index.ts`。
+- 更新 `frontend/src/views/DashboardView.vue`，加入 MCP Preview 卡片。
+- 更新 `frontend/src/styles/main.css`，加入 MCP 筛选和表格布局。
+- 构建通过。
+- 浏览器检查通过：MCP Preview、工具清单和调用日志可见，页面无 error。

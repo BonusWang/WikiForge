@@ -21,6 +21,7 @@
 ## 用户偏好和硬规则
 
 - 用户希望 Agent 持续推进，不要无故停下来。
+- 每一轮任务结束后自动进入下一轮，不等待用户确认，直到 MVP 整体全流程结束或遇到真实阻塞；每轮只需汇总结果。
 - 日常开发提交和推送已授权，提交信息要简要说明改动点。
 - 版本标签和 GitHub Release 已授权由 Agent 在验证通过后直接发布，用户后续再调整。
 - 远程分支删除、重命名仍需用户确认。
@@ -78,14 +79,16 @@
 - `docs/current/2026-05-23-版本更新记录-WikiForge-release-notes.md`
 - `docs/current/分支管理策略-branch-strategy.md`
 - `docs/archive/2026-05-23/**` 对应快照
+- `backend/wikiforge-core-service/src/main/java/com/wikiforge/core/application/service/McpPreviewService.java`
+- `backend/wikiforge-core-service/src/test/java/com/wikiforge/core/McpPreviewApiIntegrationTests.java`
+- `frontend/src/types/mcp.ts`
+- `frontend/src/api/mcp/index.ts`
+- `frontend/src/views/DashboardView.vue`
+- `frontend/src/styles/main.css`
 
 ## 下一步建议
 
-1. 提交当前 Agent Team 机制文档，保留一个干净基线。
-2. 进入 R4-5-1 / R4-5-2：实现 `frontend/` 中 MCP tools 和 calls 的只读展示。
-3. 同步补 R4-5-3：为 `GET /api/v1/mcp/calls` 增加集成测试。
-4. 只在前端和 MCP 后端测试范围内小步修改，避免重构 Dashboard 大文件。
-5. 运行 `npm --prefix frontend run build` 和 MCP 定向后端测试。
-6. 更新 `任务计划-team-plan.md`、Roadmap、开发者日志和归档索引。
-7. 执行 `git diff --check`、Git 卫生检查、敏感信息扫描。
-8. 提交并推送当前分支；阶段收口时合入 `main` 并创建 tag / GitHub Release。
+1. 进入 R4-5-4：编写 OpenClaw / Hermes 本机接入说明和 curl 示例。
+2. R4-5-5 发布收口时执行 `git diff --check`、后端定向或全量测试、前端构建、Compose config、Git 卫生检查和敏感信息扫描。
+3. 更新 Roadmap、开发者日志、归档索引和 Release Notes。
+4. 提交并推送当前分支；阶段收口时合入 `main` 并创建 tag / GitHub Release。
