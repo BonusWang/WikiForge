@@ -95,11 +95,12 @@
 - 接入方式定位：HTTP Tool / Custom Action / Connector / Bridge Script 调用 MCP HTTP Preview。
 - 接入说明覆盖本机 `localhost:8080`、Docker 外部容器 `host.docker.internal:8080`、Compose 网络内 `wikiforge-core-service:8080`。
 - R4-5-5 发布候选验证已完成：后端 Maven 全量 52 测试通过、前端构建通过、Compose config 通过、Git / secret / forbidden path 扫描通过。
-- 当前执行指针：推送最终提交、合入 main、创建 `0.08-preview.3` 标签和 GitHub Release。
+- `main` 已推送到提交 `e8c5bec`。
+- 已创建并推送 `0.08-preview.3` 标签。
+- 已创建 GitHub prerelease：https://github.com/BonusWang/WikiForge/releases/tag/0.08-preview.3
+- 当前执行指针：MVP5 HTTP Preview 主线完成；后续 V1 需新切片。
 
 ## 下一步建议
 
-1. 提交并推送当前分支的最终发布说明和归档快照。
-2. 合入 `main`。
-3. 创建并推送 `0.08-preview.3` 标签。
-4. 创建 GitHub Release。
+1. 结束 R4-5 主线并汇总结果。
+2. 后续进入 V1 前，先重新冻结在线资料连接器、个人记录持续整理、LifeOS 记录和向量库准备的最小切片。
