@@ -43,7 +43,7 @@ import type {
   ObsidianVaultStatus,
   SourceNoteDraft
 } from '../types/obsidianNotes';
-import type { ReviewItem } from '../types/review';
+import type { CreateAiReviewRunRequest, ReviewItem } from '../types/review';
 
 const appStore = useAppStore();
 const backendHealth = ref<BackendHealth | null>(null);
@@ -73,6 +73,14 @@ const statusLabels: Record<ImportJobStatus, string> = {
   failed: 'Failed',
   cancelled: 'Cancelled'
 };
+
+const aiProviderForm = reactive<CreateAiReviewRunRequest>({
+  providerName: import.meta.env.VITE_WIKIFORGE_AI_PROVIDER || 'minimax',
+  providerType: 'openai_compatible',
+  modelName: import.meta.env.VITE_WIKIFORGE_AI_MODEL || '',
+  baseUrl: '',
+  configSource: 'env'
+});
 
 const jobStatusFilter = ref<ImportJobStatus | ''>('');
 const jobs = ref<ImportJob[]>([]);
@@ -287,10 +295,7 @@ async function initializeVault() {
 async function runAiReview(sourceFile: SourceFile) {
   aiReviewLoadingFileUid.value = sourceFile.fileUid;
   try {
-    const run = await createAiReviewRun(sourceFile.fileUid, {
-      providerName: 'minimax',
-      configSource: 'env'
-    });
+    const run = await createAiReviewRun(sourceFile.fileUid, aiReviewPayload());
     ElMessage.success(`AI 整理已生成：${run.reviewItemUid}`);
     reviewPage.value = 1;
     await refreshReviewItems();
@@ -299,6 +304,16 @@ async function runAiReview(sourceFile: SourceFile) {
   } finally {
     aiReviewLoadingFileUid.value = '';
   }
+}
+
+function aiReviewPayload(): CreateAiReviewRunRequest {
+  return {
+    providerName: optionalText(aiProviderForm.providerName),
+    providerType: optionalText(aiProviderForm.providerType),
+    modelName: optionalText(aiProviderForm.modelName),
+    baseUrl: optionalText(aiProviderForm.baseUrl),
+    configSource: optionalText(aiProviderForm.configSource) || 'env'
+  };
 }
 
 function resetSourceNoteState(sourceFile: SourceFile, mode: 'draft' | 'existing') {
@@ -461,6 +476,11 @@ function prettyJson(value: string) {
   } catch {
     return value;
   }
+}
+
+function optionalText(value?: string) {
+  const normalized = value?.trim();
+  return normalized ? normalized : undefined;
 }
 
 onMounted(() => {
@@ -713,6 +733,29 @@ onMounted(() => {
             </el-button>
           </div>
         </template>
+
+        <div class="ai-config-strip">
+          <el-input
+            v-model="aiProviderForm.providerName"
+            clearable
+            placeholder="providerName"
+          />
+          <el-select v-model="aiProviderForm.providerType" placeholder="providerType">
+            <el-option label="OpenAI Compatible" value="openai_compatible" />
+            <el-option label="Rule Based" value="rule_based" />
+          </el-select>
+          <el-input
+            v-model="aiProviderForm.modelName"
+            clearable
+            placeholder="modelName"
+          />
+          <el-input
+            v-model="aiProviderForm.baseUrl"
+            clearable
+            placeholder="baseUrl 可留空读取环境变量"
+          />
+          <el-tag effect="plain">{{ aiProviderForm.configSource }}</el-tag>
+        </div>
 
         <div v-if="selectedJobDetail" class="job-detail-strip">
           <span class="detail-item">{{ selectedJobDetail.jobUid }}</span>

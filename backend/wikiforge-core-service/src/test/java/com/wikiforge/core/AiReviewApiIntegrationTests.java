@@ -281,6 +281,34 @@ class AiReviewApiIntegrationTests {
                 .contains("MiniMax 未配置密钥或模型");
     }
 
+    @Test
+    void openAiCompatibleProviderCanBeSelectedByConfiguration() {
+        ResponseEntity<JsonNode> response = restTemplate.postForEntity(
+                "/api/v1/source-files/file_test/ai-review-runs",
+                Map.of(
+                        "providerName", "deepseek",
+                        "providerType", "openai_compatible",
+                        "modelName", "deepseek-chat",
+                        "baseUrl", "http://127.0.0.1:9/v1",
+                        "configSource", "request"
+                ),
+                JsonNode.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode data = response.getBody().path("data");
+        assertThat(data.path("modelProvider").asText()).isEqualTo("deepseek");
+        assertThat(data.path("modelName").asText()).isEqualTo("deepseek-chat");
+
+        String suggestedChanges = jdbcTemplate.queryForObject(
+                "SELECT suggested_changes_json FROM review_items",
+                String.class
+        );
+        assertThat(suggestedChanges)
+                .contains("WikiForge 是一个本地优先知识系统")
+                .contains("deepseek 未配置密钥");
+    }
+
     private void seedSourceContent() {
         jdbcTemplate.update("""
                 INSERT INTO import_jobs (

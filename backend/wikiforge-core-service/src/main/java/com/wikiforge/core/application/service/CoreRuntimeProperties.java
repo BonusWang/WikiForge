@@ -3,6 +3,7 @@ package com.wikiforge.core.application.service;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
@@ -38,28 +39,54 @@ public class CoreRuntimeProperties {
         return firstConfigured("wikiforge.model.provider", "WIKIFORGE_MODEL_PROVIDER");
     }
 
-    public String minimaxApiKey() {
-        return firstConfigured(
-                "wikiforge.model.minimax.api-key",
-                "WIKIFORGE_MINIMAX_API_KEY",
-                "wikiforge.model.api-key",
-                "WIKIFORGE_MODEL_API_KEY"
+    public AiProviderConfig aiProviderConfig(
+            String providerName,
+            String providerType,
+            String baseUrl,
+            String modelName
+    ) {
+        String selectedProvider = firstText(providerName, modelProvider(), "rule-based");
+        String selectedType = firstText(
+                providerType,
+                providerConfiguredValue(selectedProvider, "type", "TYPE"),
+                defaultProviderType(selectedProvider)
         );
+        String selectedBaseUrl = firstText(
+                baseUrl,
+                providerConfiguredValue(selectedProvider, "base-url", "BASE_URL"),
+                legacyProviderValue(selectedProvider, "base-url", "BASE_URL"),
+                defaultProviderBaseUrl(selectedProvider)
+        );
+        String selectedModel = firstText(
+                modelName,
+                providerConfiguredValue(selectedProvider, "model", "MODEL"),
+                legacyProviderValue(selectedProvider, "model", "MODEL"),
+                defaultProviderModel(selectedProvider)
+        );
+        String selectedApiKey = firstText(
+                providerConfiguredValue(selectedProvider, "api-key", "API_KEY"),
+                legacyProviderValue(selectedProvider, "api-key", "API_KEY"),
+                firstConfigured("wikiforge.model.api-key", "WIKIFORGE_MODEL_API_KEY")
+        );
+        return new AiProviderConfig(
+                selectedProvider,
+                selectedType,
+                selectedBaseUrl,
+                selectedApiKey,
+                selectedModel
+        );
+    }
+
+    public String minimaxApiKey() {
+        return aiProviderConfig("minimax", null, null, null).apiKey();
     }
 
     public String minimaxBaseUrl() {
-        String value = firstConfigured(
-                "wikiforge.model.minimax.base-url",
-                "WIKIFORGE_MINIMAX_BASE_URL"
-        );
-        return value == null ? "https://api.minimax.io/v1" : value;
+        return aiProviderConfig("minimax", null, null, null).baseUrl();
     }
 
     public String minimaxModel() {
-        return firstConfigured(
-                "wikiforge.model.minimax.model",
-                "WIKIFORGE_MINIMAX_MODEL"
-        );
+        return aiProviderConfig("minimax", null, null, null).modelName();
     }
 
     public String obsidianVaultPath() {
@@ -99,6 +126,70 @@ public class CoreRuntimeProperties {
             String value = environment.getProperty(key);
             if (value != null && !value.isBlank()) {
                 return value;
+            }
+        }
+        return null;
+    }
+
+    private String providerConfiguredValue(String providerName, String propertySuffix, String envSuffix) {
+        String propertyProviderName = propertyProviderName(providerName);
+        String envProviderName = envProviderName(providerName);
+        return firstConfigured(
+                "wikiforge.model.providers." + propertyProviderName + "." + propertySuffix,
+                "WIKIFORGE_MODEL_" + envProviderName + "_" + envSuffix
+        );
+    }
+
+    private String legacyProviderValue(String providerName, String propertySuffix, String envSuffix) {
+        String propertyProviderName = propertyProviderName(providerName);
+        String envProviderName = envProviderName(providerName);
+        return firstConfigured(
+                "wikiforge.model." + propertyProviderName + "." + propertySuffix,
+                "WIKIFORGE_" + envProviderName + "_" + envSuffix
+        );
+    }
+
+    private String defaultProviderType(String providerName) {
+        if ("rule-based".equalsIgnoreCase(providerName)) {
+            return "rule_based";
+        }
+        return "openai_compatible";
+    }
+
+    private String defaultProviderBaseUrl(String providerName) {
+        String normalized = propertyProviderName(providerName);
+        if ("minimax".equals(normalized) || "minmax".equals(normalized)) {
+            return "https://api.minimax.io/v1";
+        }
+        return null;
+    }
+
+    private String defaultProviderModel(String providerName) {
+        if ("rule-based".equalsIgnoreCase(providerName)) {
+            return "wikiforge-local-rules";
+        }
+        return null;
+    }
+
+    private String propertyProviderName(String providerName) {
+        return normalizeProviderName(providerName, "-").toLowerCase(Locale.ROOT);
+    }
+
+    private String envProviderName(String providerName) {
+        return normalizeProviderName(providerName, "_").toUpperCase(Locale.ROOT);
+    }
+
+    private String normalizeProviderName(String providerName, String replacement) {
+        if (providerName == null || providerName.isBlank()) {
+            return "default";
+        }
+        return providerName.trim().replaceAll("[^A-Za-z0-9]+", replacement);
+    }
+
+    private String firstText(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value.trim();
             }
         }
         return null;

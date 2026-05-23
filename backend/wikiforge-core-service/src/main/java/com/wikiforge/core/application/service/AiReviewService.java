@@ -71,7 +71,7 @@ public class AiReviewService {
         SourceFileRecord sourceFile = sourceFileRepository.findByFileUid(fileUid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SOURCE_FILE_NOT_FOUND));
         SourceContent sourceContent = sourceContentRepository.findBySourceFileUid(fileUid).orElse(null);
-        AiModelSelection modelSelection = selectModel(request);
+        AiProviderConfig modelSelection = selectModel(request);
         AiReviewDraft draft = generateDraft(sourceFile, sourceContent, request, modelSelection);
 
         LocalDateTime now = LocalDateTime.now();
@@ -158,26 +158,38 @@ public class AiReviewService {
             SourceFileRecord sourceFile,
             SourceContent sourceContent,
             CreateAiReviewRunRequest request,
-            AiModelSelection modelSelection
+            AiProviderConfig modelSelection
     ) {
-        if (!isMiniMax(modelSelection.providerName())) {
+        if (modelSelection.ruleBased()) {
             return generateRuleBasedDraft(sourceFile, sourceContent, null);
         }
-        if (!hasText(modelSelection.apiKey()) || !hasText(modelSelection.modelName())) {
-            return generateRuleBasedDraft(sourceFile, sourceContent, "MiniMax 未配置密钥或模型，已使用本地规则兜底。");
+        if (!modelSelection.openAiCompatible()) {
+            return generateRuleBasedDraft(
+                    sourceFile,
+                    sourceContent,
+                    displayProviderName(modelSelection.providerName()) + " 暂不支持 providerType="
+                            + modelSelection.providerType() + "，已使用本地规则兜底。"
+            );
+        }
+        if (!modelSelection.readyForRemoteCall()) {
+            return generateRuleBasedDraft(sourceFile, sourceContent, missingConfigNotice(modelSelection));
         }
         try {
-            return generateMiniMaxDraft(sourceFile, sourceContent, request, modelSelection);
+            return generateOpenAiCompatibleDraft(sourceFile, sourceContent, request, modelSelection);
         } catch (RuntimeException exception) {
-            return generateRuleBasedDraft(sourceFile, sourceContent, "MiniMax 调用失败，已使用本地规则兜底：" + safeMessage(exception));
+            return generateRuleBasedDraft(
+                    sourceFile,
+                    sourceContent,
+                    displayProviderName(modelSelection.providerName()) + " 调用失败，已使用本地规则兜底：" + safeMessage(exception)
+            );
         }
     }
 
-    private AiReviewDraft generateMiniMaxDraft(
+    private AiReviewDraft generateOpenAiCompatibleDraft(
             SourceFileRecord sourceFile,
             SourceContent sourceContent,
             CreateAiReviewRunRequest request,
-            AiModelSelection modelSelection
+            AiProviderConfig modelSelection
     ) {
         String rawText = rawText(sourceContent);
         String prompt = """
@@ -215,9 +227,14 @@ public class AiReviewService {
                 : response.path("choices").path(0).path("message").path("content").asText("");
         JsonNode draftJson = parseJsonObject(content);
         if (draftJson == null) {
-            return draftFromSummary(sourceFile, sourceContent, content, "MiniMax 返回非 JSON 内容，已转成审核草案。");
+            return draftFromSummary(
+                    sourceFile,
+                    sourceContent,
+                    content,
+                    displayProviderName(modelSelection.providerName()) + " 返回非 JSON 内容，已转成审核草案。"
+            );
         }
-        return draftFromJson(sourceFile, sourceContent, draftJson, null);
+        return draftFromJson(sourceFile, sourceContent, draftJson, null, modelSelection);
     }
 
     private AiReviewDraft generateRuleBasedDraft(
@@ -270,7 +287,8 @@ public class AiReviewService {
             SourceFileRecord sourceFile,
             SourceContent sourceContent,
             JsonNode draftJson,
-            String providerNotice
+            String providerNotice,
+            AiProviderConfig modelSelection
     ) {
         ObjectNode suggested = objectMapper.createObjectNode();
         suggested.put("summary", draftJson.path("summary").asText(firstSentence(rawText(sourceContent))));
@@ -288,7 +306,7 @@ public class AiReviewService {
         return new AiReviewDraft(
                 toJson(suggested),
                 markdownDraft,
-                "MiniMax 已生成结构化整理建议，等待人工审核。",
+                displayProviderName(modelSelection.providerName()) + " 已生成结构化整理建议，等待人工审核。",
                 providerNotice
         );
     }
@@ -309,26 +327,18 @@ public class AiReviewService {
         return new AiReviewDraft(
                 toJson(suggested),
                 markdownDraftFromSuggested(suggested),
-                "MiniMax 已返回内容，系统转成待审核整理建议。",
+                "模型已返回内容，系统转成待审核整理建议。",
                 providerNotice
         );
     }
 
-    private AiModelSelection selectModel(CreateAiReviewRunRequest request) {
-        String providerName = firstText(
+    private AiProviderConfig selectModel(CreateAiReviewRunRequest request) {
+        return runtimeProperties.aiProviderConfig(
                 request == null ? null : request.providerName(),
-                runtimeProperties.modelProvider(),
-                "rule-based"
-        );
-        String baseUrl = firstText(
+                request == null ? null : request.providerType(),
                 request == null ? null : request.baseUrl(),
-                runtimeProperties.minimaxBaseUrl()
+                request == null ? null : request.modelName()
         );
-        String modelName = firstText(
-                request == null ? null : request.modelName(),
-                isMiniMax(providerName) ? runtimeProperties.minimaxModel() : "wikiforge-local-rules"
-        );
-        return new AiModelSelection(providerName, modelName, baseUrl, runtimeProperties.minimaxApiKey());
     }
 
     private AiReviewRunResponse toRunResponse(AgentRun run, ReviewItem reviewItem) {
@@ -417,12 +427,14 @@ public class AiReviewService {
         );
     }
 
-    private String stepInputJson(SourceFileRecord sourceFile, AiModelSelection modelSelection) {
+    private String stepInputJson(SourceFileRecord sourceFile, AiProviderConfig modelSelection) {
         ObjectNode input = objectMapper.createObjectNode();
         input.put("sourceUid", sourceFile.sourceUid());
         input.put("sourceFileUid", sourceFile.fileUid());
         input.put("providerName", modelSelection.providerName());
+        input.put("providerType", modelSelection.providerType());
         input.put("modelName", modelSelection.modelName());
+        input.put("baseUrlConfigured", hasText(modelSelection.baseUrl()));
         input.put("pipelineVersion", PIPELINE_VERSION);
         return toJson(input);
     }
@@ -490,6 +502,21 @@ public class AiReviewService {
         return null;
     }
 
+    private String missingConfigNotice(AiProviderConfig modelSelection) {
+        String providerName = displayProviderName(modelSelection.providerName());
+        if (isMiniMax(modelSelection.providerName())) {
+            return providerName + " 未配置密钥或模型，已使用本地规则兜底。";
+        }
+        return providerName + " 未配置密钥、Base URL 或模型，已使用本地规则兜底。";
+    }
+
+    private String displayProviderName(String providerName) {
+        if (isMiniMax(providerName)) {
+            return "MiniMax";
+        }
+        return firstText(providerName, "模型");
+    }
+
     private boolean isMiniMax(String providerName) {
         if (!hasText(providerName)) {
             return false;
@@ -520,9 +547,6 @@ public class AiReviewService {
 
     private boolean hasText(String value) {
         return value != null && !value.isBlank();
-    }
-
-    private record AiModelSelection(String providerName, String modelName, String baseUrl, String apiKey) {
     }
 
     private record AiReviewDraft(
