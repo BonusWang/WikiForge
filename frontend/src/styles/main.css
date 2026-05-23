@@ -137,6 +137,41 @@ h1 {
   margin-bottom: 0;
 }
 
+.maintenance-form {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.5fr) minmax(150px, 0.5fr) minmax(220px, 1fr);
+  gap: 12px 16px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+
+.maintenance-form .el-form-item {
+  margin-bottom: 0;
+}
+
+.maintenance-board {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.4fr);
+  gap: 14px;
+}
+
+.maintenance-pane {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.maintenance-toolbar {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(140px, 0.7fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.maintenance-toolbar.issue-toolbar {
+  grid-template-columns: minmax(160px, 1fr) minmax(210px, 1.2fr) minmax(120px, 0.6fr);
+}
+
 .form-actions {
   grid-column: 1 / -1;
   display: flex;
@@ -340,6 +375,13 @@ h1 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .maintenance-form,
+  .maintenance-board,
+  .maintenance-toolbar,
+  .maintenance-toolbar.issue-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .ai-config-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -384,6 +426,13 @@ h1 {
   }
 
   .vector-export-form {
+    grid-template-columns: 1fr;
+  }
+
+  .maintenance-form,
+  .maintenance-board,
+  .maintenance-toolbar,
+  .maintenance-toolbar.issue-toolbar {
     grid-template-columns: 1fr;
   }
 

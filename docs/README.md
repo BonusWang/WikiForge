@@ -14,6 +14,7 @@
 当前 R6 / V2 执行计划：
 
 - [V2 向量导出契约 Vector Export Work Order](superpowers/plans/2026-05-24-V2向量导出契约-WikiForge-r6-vector-export-contract.md)
+- [V2 知识维护巡检 Knowledge Maintenance Work Order](superpowers/plans/2026-05-24-V2知识维护巡检-WikiForge-r6-maintenance-lint-agent.md)
 - [V1 在线资料与个人记录 LifeOS Work Order](superpowers/plans/2026-05-24-V1在线资料与个人记录-WikiForge-v1-lifeos-work-order.md)
 
 ## 目录结构
@@ -57,6 +58,7 @@ docs/
 
 - 用户确认的 Obsidian Vault 宿主机路径：`E:\WikiForgeVault`
 - R6-1 向量导出宿主机默认路径：`data/vector-exports`，可通过 `WIKIFORGE_HOST_VECTOR_EXPORT_ROOT` 和 `WIKIFORGE_VECTOR_EXPORT_ROOT` 配置。
+- R6-3 知识维护巡检使用 MySQL 运行账本：`knowledge_maintenance_runs` 和 `knowledge_maintenance_items`。
 - Docker 容器内 Vault 路径仍使用：`/data/wikiforge/obsidian-vault`
 - Docker 容器内向量导出路径默认使用：`/data/wikiforge/vector-exports`
 - 不能把 Vault 内容、Raw Sources、运行数据或本地 `.env` 提交到 Git。

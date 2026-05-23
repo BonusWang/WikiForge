@@ -25,6 +25,9 @@ public enum ErrorCode {
     VECTOR_EXPORT_INVALID_INPUT("VECTOR_EXPORT_001", "invalid vector export input"),
     VECTOR_EXPORT_JOB_NOT_FOUND("VECTOR_EXPORT_002", "vector export job not found"),
     VECTOR_EXPORT_FAILED("VECTOR_EXPORT_003", "vector export failed"),
+    MAINTENANCE_INVALID_INPUT("MAINTENANCE_001", "invalid maintenance input"),
+    MAINTENANCE_RUN_NOT_FOUND("MAINTENANCE_002", "maintenance run not found"),
+    MAINTENANCE_FAILED("MAINTENANCE_003", "maintenance scan failed"),
     ORCHESTRATION_TASK_NOT_FOUND("ORCHESTRATION_001", "orchestration task not found"),
     WORKER_REJECTED_IMPORT_TASK("WORKER_001", "worker rejected import task"),
     VALIDATION_FAILED("COMMON_001", "validation failed");

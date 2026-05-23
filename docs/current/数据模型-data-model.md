@@ -22,6 +22,7 @@ Flyway 不在第一个 migration 中创建全部长期规划表。
 | MVP 5 | `mcp_tool_calls`、`personal_records` | Core Service，后续可拆 MCP / Record Service | 轻量 MCP HTTP Preview、调用日志、个人记录最小写入 |
 | V1 | `personal_records` 扩展归档字段，复用 `sources/source_files/source_contents` | Core Service，后续可拆 Link / Record Service | 链接资料收集、个人记录 REST API、个人记录 Obsidian 归档 |
 | V2 / R6-1 | `vector_export_jobs`、`content_chunks` | Core Service，后续可拆 Vector Service | JSONL chunk 导出契约、embedding 状态预留 |
+| V2 / R6-3 | `knowledge_maintenance_runs`、`knowledge_maintenance_items` | Core Service，后续可拆 Agent / Maintain Service | 知识维护巡检运行账本和问题列表 |
 | V2 后续 | `mcp_servers`、`embedding_jobs`、办公室视图相关表 | MCP / Vector / Agent Service | 完整 MCP 配置、真实向量库、混合检索和运行层 |
 
 ### 0.1.1 服务归属原则
@@ -627,6 +628,54 @@ V20260524_002__create_vector_export_tables.sql
 | metadata_json | json | 来源、标题、路径、标签等元数据 |
 | embedding_status | varchar(64) | pending、embedded、stale、failed |
 | target_collection | varchar(128) | 目标向量集合 |
+| created_at | datetime | 创建时间 |
+| updated_at | datetime | 更新时间 |
+
+## 20.1 knowledge_maintenance_runs
+
+记录 R6-3 知识维护巡检运行。首版为手动触发，不自动修改用户资料，不做定时任务。
+
+对应 migration：
+
+```text
+V20260524_003__create_knowledge_maintenance_tables.sql
+```
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| id | bigint pk | 主键 |
+| run_uid | varchar(64) unique | 巡检运行 ID |
+| run_type | varchar(64) | 当前固定为 manual |
+| status | varchar(64) | completed、failed；后续可扩展 running |
+| stale_days | int | 判断未归档或待处理内容过期的天数阈值 |
+| total_count | int | 本轮发现的问题总数 |
+| issue_count | int | 本轮未关闭问题数，首版等于 total_count |
+| error_message | text null | 错误信息 |
+| started_at | datetime | 开始时间 |
+| finished_at | datetime null | 完成时间 |
+| created_at | datetime | 创建时间 |
+
+## 20.2 knowledge_maintenance_items
+
+记录每次知识维护巡检发现的问题。首版问题只读展示，后续再扩展忽略、修复建议和自动修复。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| id | bigint pk | 主键 |
+| item_uid | varchar(64) unique | 问题 ID |
+| run_uid | varchar(64) | 所属巡检运行 ID |
+| issue_type | varchar(64) | missing_source_content、duplicate_source_content、unarchived_personal_record、empty_vector_export、stale_vector_chunk |
+| severity | varchar(32) | high、medium、low |
+| content_type | varchar(64) | source_content、personal_record、vector_export 等 |
+| source_uid | varchar(64) null | 关联 Source UID |
+| file_uid | varchar(64) null | 关联 Source File UID |
+| record_uid | varchar(64) null | 关联 Personal Record UID |
+| chunk_uid | varchar(64) null | 关联 chunk UID |
+| export_uid | varchar(64) null | 关联 vector export UID |
+| title | varchar(512) null | 便于 UI 展示的标题 |
+| summary | text | 问题摘要 |
+| evidence_json | json null | 证据 JSON，例如 hash、数量、目标 collection、创建时间 |
+| status | varchar(64) | open、resolved、ignored；首版只写 open |
 | created_at | datetime | 创建时间 |
 | updated_at | datetime | 更新时间 |
 

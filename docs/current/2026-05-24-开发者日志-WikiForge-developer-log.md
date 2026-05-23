@@ -2,8 +2,8 @@
 
 ## 版本索引 Version Index
 
-- 最新版本：v5.2
-- 最新小节：`2026-05-24 R6-1 / V2 向量导出契约完成`
+- 最新版本：v5.3
+- 最新小节：`2026-05-24 R6-3 / V2 知识维护巡检首版完成`
 - 推荐阅读：新 AI 开始工作时，先读本索引和最新小节，再按任务需要阅读历史小节。
 - 历史范围：v0.1-v0.9 记录需求发掘、架构评审、MVP0 骨架、微服务拆分和同日滚动归档规则；仅在追溯需求来源或架构决策时阅读。
 
@@ -94,6 +94,62 @@ Result: pass
 secret scan / forbidden tracked path scan
 Result: pass
 ```
+
+## 2026-05-24 R6-3 / V2 知识维护巡检首版完成
+
+本轮继续执行 R6 / V2 知识运行层。R6-2 Hybrid Search 依赖真实向量库选型和部署方式，暂时保持 Blocked；本轮转入不依赖外部选型的 R6-3：知识维护巡检。
+
+实现内容：
+
+- 新增 R6-3 Work Order：`docs/superpowers/plans/2026-05-24-V2知识维护巡检-WikiForge-r6-maintenance-lint-agent.md`。
+- 新增 `knowledge_maintenance_runs`、`knowledge_maintenance_items` Flyway migration。
+- 新增 Core API：
+  - `POST /api/v1/maintenance-runs`
+  - `GET /api/v1/maintenance-runs`
+  - `GET /api/v1/maintenance-items`
+- 首版规则覆盖：
+  - `missing_source_content`
+  - `duplicate_source_content`
+  - `unarchived_personal_record`
+  - `empty_vector_export`
+  - `stale_vector_chunk`
+- Dashboard 新增 `Maintenance 维护巡检` 区块，支持手动运行、查看运行记录、按 runUid / issueType / status 筛选问题。
+- 本轮只记录问题，不自动修复、不删除资料、不改写 Obsidian、不做定时任务。
+
+验证记录：
+
+```text
+RED: mvn -s %TEMP%\wikiforge-maven-settings.xml -gs %TEMP%\wikiforge-maven-settings.xml "-Dmaven.repo.local=E:\repository" -pl wikiforge-core-service -am "-Dtest=KnowledgeMaintenanceApiIntegrationTests,MigrationSqlCompatibilityTests" "-Dsurefire.failIfNoSpecifiedTests=false" test
+Result: expected fail, maintenance API 404 and migration file missing
+
+GREEN: mvn -s %TEMP%\wikiforge-maven-settings.xml -gs %TEMP%\wikiforge-maven-settings.xml "-Dmaven.repo.local=E:\repository" -pl wikiforge-core-service -am "-Dtest=KnowledgeMaintenanceApiIntegrationTests,MigrationSqlCompatibilityTests" "-Dsurefire.failIfNoSpecifiedTests=false" test
+Result: pass, Tests run: 10, Failures: 0, Errors: 0, Skipped: 0
+
+npm --prefix frontend run build
+Result: pass
+Known warnings: @vueuse/core PURE annotation warning, chunk size warning
+
+mvn -s %TEMP%\wikiforge-maven-settings.xml -gs %TEMP%\wikiforge-maven-settings.xml "-Dmaven.repo.local=E:\repository" test
+Result: pass, 5 modules, Tests run: 62, Failures: 0, Errors: 0, Skipped: 0
+
+docker compose -f deploy/docker-compose.yml config --quiet
+docker compose -f deploy/docker-compose.dev.yml config --quiet
+Result: pass
+
+git diff --check
+Result: pass
+
+secret scan / forbidden tracked path scan
+Result: pass
+
+http://localhost:3000/
+Result: 200, Vue app mount node present
+```
+
+发布收口：
+
+- 本轮准备合入 main、推送分支、创建 `2.0-v2-preview.2` 标签和 GitHub prerelease。
+- 当前会话缺少 Playwright 模块，未完成自动截图检查；前端已通过 TypeScript / Vite build，localhost 返回 200。
 
 ## 会话主题
 

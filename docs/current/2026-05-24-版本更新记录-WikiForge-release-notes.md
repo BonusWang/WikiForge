@@ -1,5 +1,40 @@
 # 2026-05-24 WikiForge 版本更新记录 Release Notes
 
+## 2.0-v2-preview.2 - R6-3 知识维护巡检
+
+发布日期：2026-05-24
+
+本版本在 R6-1 向量导出契约之后，补齐 V2 知识运行层的首版维护巡检能力。R6-2 Hybrid Search 仍等待真实向量库选型，本版本不引入向量数据库。
+
+### 更新内容
+
+- 新增 `knowledge_maintenance_runs` 和 `knowledge_maintenance_items` 表。
+- 新增 Core API：
+  - `POST /api/v1/maintenance-runs`
+  - `GET /api/v1/maintenance-runs`
+  - `GET /api/v1/maintenance-items`
+- 首版巡检规则覆盖：
+  - 空正文 Source Content。
+  - 重复正文 Source Content。
+  - 长期未归档 Personal Record。
+  - 已完成但 chunk 数为 0 的 Vector Export。
+  - 长期处于 `pending` 的 Content Chunk。
+- Dashboard 新增 `Maintenance 维护巡检` 区块，可手动运行巡检、查看运行记录、筛选问题列表。
+- PRD、技术架构、数据模型、Roadmap、开发者日志和归档索引同步到 R6-3 状态。
+
+### 验证结果
+
+- 后端定向 Maven 测试通过：`KnowledgeMaintenanceApiIntegrationTests` 和 `MigrationSqlCompatibilityTests` 合计 10 个测试，0 失败。
+- 后端全量 Maven 测试通过：5 个模块合计 62 个测试，0 失败。
+- 前端构建通过，保留既有 Rollup 大 chunk 和 VueUse PURE 注释 warning。
+- Docker Compose 生产与开发配置通过。
+- `git diff --check`、敏感信息扫描和禁止路径扫描通过。
+- `http://localhost:3000/` 返回 200 且包含 Vue app 挂载节点；当前会话缺少 Playwright 模块，未完成自动截图检查。
+
+### 版本边界
+
+本版本只做维护巡检发现和展示，不自动修复、不删除资料、不改写 Obsidian、不做定时任务、不接真实向量库、不做办公室视图。
+
 ## 2.0-v2-preview.1 - R6-1 向量导出契约
 
 发布日期：2026-05-24

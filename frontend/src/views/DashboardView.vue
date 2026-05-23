@@ -26,6 +26,11 @@ import {
   listPersonalRecords,
   writePersonalRecordObsidianNote
 } from '../api/lifeos';
+import {
+  createKnowledgeMaintenanceRun,
+  listKnowledgeMaintenanceItems,
+  listKnowledgeMaintenanceRuns
+} from '../api/knowledge-maintenance';
 import { listMcpCalls, listMcpTools } from '../api/mcp';
 import {
   generateSourceNoteDraft,
@@ -53,6 +58,10 @@ import type {
   PersonalRecordType,
   SensitivityLevel
 } from '../types/lifeos';
+import type {
+  KnowledgeMaintenanceItem,
+  KnowledgeMaintenanceRun
+} from '../types/knowledgeMaintenance';
 import type {
   ObsidianNote,
   ObsidianNotePreview,
@@ -100,6 +109,11 @@ const vectorExportForm = reactive({
   scope: 'all' as VectorExportScope,
   targetCollection: 'wikiforge_default',
   maxChunkChars: 1600,
+  limit: 1000
+});
+
+const maintenanceForm = reactive({
+  staleDays: 7,
   limit: 1000
 });
 
@@ -207,6 +221,29 @@ const vectorExportPage = ref(1);
 const vectorExportPageSize = ref(20);
 const vectorExportTotal = ref(0);
 const vectorExportStatusFilter = ref('');
+const maintenanceRuns = ref<KnowledgeMaintenanceRun[]>([]);
+const maintenanceItems = ref<KnowledgeMaintenanceItem[]>([]);
+const maintenanceRunCreating = ref(false);
+const maintenanceRunsLoading = ref(false);
+const maintenanceItemsLoading = ref(false);
+const maintenanceRunPage = ref(1);
+const maintenanceRunPageSize = ref(10);
+const maintenanceRunTotal = ref(0);
+const maintenanceItemPage = ref(1);
+const maintenanceItemPageSize = ref(20);
+const maintenanceItemTotal = ref(0);
+const maintenanceRunStatusFilter = ref('');
+const maintenanceRunUidFilter = ref('');
+const maintenanceIssueTypeFilter = ref('');
+const maintenanceItemStatusFilter = ref('open');
+
+const maintenanceIssueTypeOptions = [
+  { label: '空正文 missing_source_content', value: 'missing_source_content' },
+  { label: '重复正文 duplicate_source_content', value: 'duplicate_source_content' },
+  { label: '未归档记录 unarchived_personal_record', value: 'unarchived_personal_record' },
+  { label: '空导出 empty_vector_export', value: 'empty_vector_export' },
+  { label: '待向量化分块 stale_vector_chunk', value: 'stale_vector_chunk' }
+];
 
 const selectedJobStatus = computed(() => {
   return selectedJobDetail.value?.status
@@ -509,6 +546,65 @@ async function createVectorExportJob() {
   }
 }
 
+async function refreshMaintenanceRuns() {
+  maintenanceRunsLoading.value = true;
+  try {
+    const result = await listKnowledgeMaintenanceRuns({
+      status: optionalText(maintenanceRunStatusFilter.value),
+      page: maintenanceRunPage.value,
+      pageSize: maintenanceRunPageSize.value
+    });
+    maintenanceRuns.value = result.items;
+    maintenanceRunTotal.value = result.total;
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '维护巡检运行记录加载失败');
+  } finally {
+    maintenanceRunsLoading.value = false;
+  }
+}
+
+async function refreshMaintenanceItems() {
+  maintenanceItemsLoading.value = true;
+  try {
+    const result = await listKnowledgeMaintenanceItems({
+      runUid: optionalText(maintenanceRunUidFilter.value),
+      issueType: optionalText(maintenanceIssueTypeFilter.value),
+      status: optionalText(maintenanceItemStatusFilter.value),
+      page: maintenanceItemPage.value,
+      pageSize: maintenanceItemPageSize.value
+    });
+    maintenanceItems.value = result.items;
+    maintenanceItemTotal.value = result.total;
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '维护巡检问题列表加载失败');
+  } finally {
+    maintenanceItemsLoading.value = false;
+  }
+}
+
+async function refreshKnowledgeMaintenance() {
+  await Promise.all([refreshMaintenanceRuns(), refreshMaintenanceItems()]);
+}
+
+async function createMaintenanceRunNow() {
+  maintenanceRunCreating.value = true;
+  try {
+    const result = await createKnowledgeMaintenanceRun({
+      staleDays: maintenanceForm.staleDays,
+      limit: maintenanceForm.limit
+    });
+    ElMessage.success(`维护巡检完成：${result.issueCount} issues`);
+    maintenanceRunUidFilter.value = result.runUid;
+    maintenanceRunPage.value = 1;
+    maintenanceItemPage.value = 1;
+    await refreshKnowledgeMaintenance();
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '维护巡检运行失败');
+  } finally {
+    maintenanceRunCreating.value = false;
+  }
+}
+
 async function createLifePersonalRecord() {
   const title = personalRecordForm.title.trim();
   const rawContent = personalRecordForm.rawContent.trim();
@@ -736,6 +832,32 @@ function handleVectorExportFilterChange() {
   void refreshVectorExports();
 }
 
+function handleMaintenanceRunPageChange(page: number) {
+  maintenanceRunPage.value = page;
+  void refreshMaintenanceRuns();
+}
+
+function handleMaintenanceItemPageChange(page: number) {
+  maintenanceItemPage.value = page;
+  void refreshMaintenanceItems();
+}
+
+function handleMaintenanceRunFilterChange() {
+  maintenanceRunPage.value = 1;
+  void refreshMaintenanceRuns();
+}
+
+function handleMaintenanceItemFilterChange() {
+  maintenanceItemPage.value = 1;
+  void refreshMaintenanceItems();
+}
+
+function selectMaintenanceRun(run: KnowledgeMaintenanceRun) {
+  maintenanceRunUidFilter.value = run.runUid;
+  maintenanceItemPage.value = 1;
+  void refreshMaintenanceItems();
+}
+
 function handleStatusFilterChange() {
   jobPage.value = 1;
   void refreshJobs();
@@ -833,6 +955,29 @@ function vectorExportTagType(status: string) {
   return 'info';
 }
 
+function maintenanceSeverityTagType(severity: string) {
+  if (severity === 'high') {
+    return 'danger';
+  }
+  if (severity === 'medium') {
+    return 'warning';
+  }
+  return 'info';
+}
+
+function maintenanceStatusTagType(status: string) {
+  if (status === 'completed' || status === 'resolved') {
+    return 'success';
+  }
+  if (status === 'failed') {
+    return 'danger';
+  }
+  if (status === 'open') {
+    return 'warning';
+  }
+  return 'info';
+}
+
 function recordTypeLabel(recordType: string) {
   return personalRecordTypeOptions.find((item) => item.value === recordType)?.label || recordType;
 }
@@ -895,6 +1040,7 @@ onMounted(() => {
   void refreshMcpPreview();
   void refreshLifeOs();
   void refreshVectorExports();
+  void refreshKnowledgeMaintenance();
 });
 </script>
 
@@ -1054,6 +1200,174 @@ onMounted(() => {
             </el-button>
           </div>
         </el-form>
+      </el-card>
+
+      <el-card shadow="never">
+        <template #header>
+          <div class="section-title">
+            <div class="card-title">
+              <el-icon><SetUp /></el-icon>
+              Maintenance 维护巡检
+            </div>
+            <el-button
+              :loading="maintenanceRunsLoading || maintenanceItemsLoading"
+              @click="refreshKnowledgeMaintenance"
+            >
+              <el-icon><Refresh /></el-icon>
+              刷新巡检
+            </el-button>
+          </div>
+        </template>
+
+        <el-form class="maintenance-form" label-position="top">
+          <el-form-item label="staleDays">
+            <el-input-number
+              v-model="maintenanceForm.staleDays"
+              :min="1"
+              :max="365"
+              controls-position="right"
+            />
+          </el-form-item>
+          <el-form-item label="limit">
+            <el-input-number
+              v-model="maintenanceForm.limit"
+              :min="1"
+              :max="10000"
+              controls-position="right"
+            />
+          </el-form-item>
+          <div class="form-actions">
+            <el-tag effect="plain">manual lint</el-tag>
+            <el-button :loading="maintenanceRunCreating" type="primary" @click="createMaintenanceRunNow">
+              运行巡检
+            </el-button>
+          </div>
+        </el-form>
+
+        <div class="maintenance-board">
+          <div class="maintenance-pane">
+            <div class="maintenance-toolbar">
+              <div class="card-title">运行记录</div>
+              <el-select
+                v-model="maintenanceRunStatusFilter"
+                clearable
+                placeholder="status"
+                @change="handleMaintenanceRunFilterChange"
+              >
+                <el-option label="completed" value="completed" />
+                <el-option label="failed" value="failed" />
+              </el-select>
+            </div>
+            <el-table
+              v-loading="maintenanceRunsLoading"
+              :data="maintenanceRuns"
+              border
+              empty-text="暂无维护巡检运行"
+            >
+              <el-table-column prop="createdAt" label="createdAt" min-width="170" show-overflow-tooltip />
+              <el-table-column prop="runUid" label="runUid" min-width="190" show-overflow-tooltip />
+              <el-table-column prop="status" label="status" width="120">
+                <template #default="scope">
+                  <el-tag :type="maintenanceStatusTagType(scope.row.status)">
+                    {{ scope.row.status }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="issueCount" label="issues" width="90" align="right" />
+              <el-table-column fixed="right" label="操作" width="100">
+                <template #default="scope">
+                  <el-button link type="primary" @click="selectMaintenanceRun(scope.row)">
+                    查看
+                  </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+            <div class="pagination-row">
+              <el-pagination
+                v-if="maintenanceRunTotal > maintenanceRunPageSize"
+                background
+                layout="prev, pager, next"
+                :current-page="maintenanceRunPage"
+                :page-size="maintenanceRunPageSize"
+                :total="maintenanceRunTotal"
+                @current-change="handleMaintenanceRunPageChange"
+              />
+            </div>
+          </div>
+
+          <div class="maintenance-pane">
+            <div class="maintenance-toolbar issue-toolbar">
+              <el-input
+                v-model="maintenanceRunUidFilter"
+                clearable
+                placeholder="runUid"
+                @change="handleMaintenanceItemFilterChange"
+                @clear="handleMaintenanceItemFilterChange"
+              />
+              <el-select
+                v-model="maintenanceIssueTypeFilter"
+                clearable
+                placeholder="issueType"
+                @change="handleMaintenanceItemFilterChange"
+              >
+                <el-option
+                  v-for="item in maintenanceIssueTypeOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
+              <el-select
+                v-model="maintenanceItemStatusFilter"
+                clearable
+                placeholder="status"
+                @change="handleMaintenanceItemFilterChange"
+              >
+                <el-option label="open" value="open" />
+                <el-option label="resolved" value="resolved" />
+                <el-option label="ignored" value="ignored" />
+              </el-select>
+            </div>
+            <el-table
+              v-loading="maintenanceItemsLoading"
+              :data="maintenanceItems"
+              border
+              empty-text="暂无维护巡检问题"
+            >
+              <el-table-column prop="createdAt" label="createdAt" min-width="170" show-overflow-tooltip />
+              <el-table-column prop="issueType" label="issueType" min-width="210" show-overflow-tooltip />
+              <el-table-column prop="severity" label="severity" width="110">
+                <template #default="scope">
+                  <el-tag :type="maintenanceSeverityTagType(scope.row.severity)">
+                    {{ scope.row.severity }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="contentType" label="contentType" min-width="140" show-overflow-tooltip />
+              <el-table-column prop="title" label="title" min-width="180" show-overflow-tooltip />
+              <el-table-column prop="summary" label="summary" min-width="260" show-overflow-tooltip />
+              <el-table-column prop="evidenceJson" label="evidence" min-width="220" show-overflow-tooltip />
+              <el-table-column prop="status" label="status" width="110">
+                <template #default="scope">
+                  <el-tag :type="maintenanceStatusTagType(scope.row.status)">
+                    {{ scope.row.status }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+            </el-table>
+            <div class="pagination-row">
+              <el-pagination
+                v-if="maintenanceItemTotal > maintenanceItemPageSize"
+                background
+                layout="prev, pager, next"
+                :current-page="maintenanceItemPage"
+                :page-size="maintenanceItemPageSize"
+                :total="maintenanceItemTotal"
+                @current-change="handleMaintenanceItemPageChange"
+              />
+            </div>
+          </div>
+        </div>
       </el-card>
 
       <el-card shadow="never">

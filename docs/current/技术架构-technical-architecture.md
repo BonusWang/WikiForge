@@ -531,6 +531,24 @@ Vector Export Service 属于 GBrain 运行层。它不替代 Obsidian Wiki，而
 - pgvector
 - 其他本地或私有部署向量库
 
+### 3.10.1 Knowledge Maintenance Service
+
+职责：
+
+- 对已收集和已导出的知识资产做确定性巡检。
+- 发现空正文、重复正文、长期未归档个人记录、空向量导出和长期 pending chunk。
+- 把巡检结果写入 MySQL 运行账本，供 Web UI 和后续 Maintain Agent 查看。
+- 首版只记录问题，不自动修复、不删除资料、不改写 Obsidian。
+
+R6-3 首版实现范围：
+
+- Core Service 内提供 `POST /api/v1/maintenance-runs`、`GET /api/v1/maintenance-runs`、`GET /api/v1/maintenance-items`。
+- MySQL 新增 `knowledge_maintenance_runs` 和 `knowledge_maintenance_items`。
+- Dashboard 新增 `Maintenance 维护巡检` 区块，支持手动运行、查看运行记录和筛选问题列表。
+- 巡检规则基于现有 `source_contents`、`personal_records`、`vector_export_jobs` 和 `content_chunks`。
+
+本服务是后续 Maintain Agent 的最小账本基础，不要求本轮引入调度器、LLM、真实向量库或办公室视图。
+
 ### 3.11 MCP Service
 
 职责：
@@ -1202,8 +1220,8 @@ MVP 暂不引入：
 ### V2：知识运行层
 
 - Vector Export Service：R6-1 已完成本地 JSONL chunk 导出契约。
-- 向量库接入。
-- hybrid search。
-- Lint / Maintain Agent。
+- Knowledge Maintenance Service：R6-3 已完成手动巡检账本、维护问题列表和 Dashboard 入口。
+- 向量库接入：R6-2 仍等待向量库选型和部署方式确认。
+- hybrid search：依赖真实向量库接入后继续。
 - 办公室等距视图。
 - 定时总结和长期记忆。

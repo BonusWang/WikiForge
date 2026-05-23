@@ -94,4 +94,20 @@ class MigrationSqlCompatibilityTests {
             assertThat(migrationSql).contains("KEY idx_content_chunks_target_collection (target_collection)");
         }
     }
+
+    @Test
+    void knowledgeMaintenanceMigrationCreatesRunAndItemTables() throws Exception {
+        try (var inputStream = getClass().getResourceAsStream(
+                "/db/migration/V20260524_003__create_knowledge_maintenance_tables.sql"
+        )) {
+            assertThat(inputStream).isNotNull();
+            String migrationSql = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+            assertThat(migrationSql).contains("CREATE TABLE knowledge_maintenance_runs");
+            assertThat(migrationSql).contains("CREATE TABLE knowledge_maintenance_items");
+            assertThat(migrationSql).contains("run_uid VARCHAR(64) NOT NULL");
+            assertThat(migrationSql).contains("issue_type VARCHAR(64) NOT NULL");
+            assertThat(migrationSql).contains("evidence_json JSON NULL");
+            assertThat(migrationSql).contains("KEY idx_maintenance_items_status_created (status, created_at)");
+        }
+    }
 }

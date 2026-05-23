@@ -8,10 +8,10 @@
 
 ## 当前阶段
 
-- 当前版本：`2.0-v2-preview.1`
-- 当前阶段：R6-1 / V2 向量导出契约
-- 已完成：本地源文件归集、Obsidian Source Note、正文解析、AI 审核、MCP Preview、LifeOS 个人记录、JSONL chunk 导出
-- 未完成：真实向量库接入、Hybrid Search、Lint / Maintain Agent、办公室视图、定时总结和长期记忆
+- 当前版本：`2.0-v2-preview.2`
+- 当前阶段：R6-3 / V2 知识维护巡检
+- 已完成：本地源文件归集、Obsidian Source Note、正文解析、AI 审核、MCP Preview、LifeOS 个人记录、JSONL chunk 导出、知识维护巡检
+- 未完成：真实向量库接入、Hybrid Search、办公室视图、定时总结和长期记忆
 
 ## 产品闭环
 
@@ -22,6 +22,7 @@
   -> AI 辅助整理与人工审核
   -> Obsidian Vault 归档
   -> MCP / UI / JSONL chunks 复用
+  -> 维护巡检发现空正文、重复内容和未归档记录
   -> 后续导入真实向量库
 ```
 
@@ -32,7 +33,7 @@
 - 数据库：MySQL 8.x
 - 知识沉淀：Obsidian Markdown Vault
 - 文件归集：本地 Raw Sources 目录
-- 当前运行层：MCP HTTP Preview、JSONL Vector Export
+- 当前运行层：MCP HTTP Preview、JSONL Vector Export、Knowledge Maintenance
 - 后续拓展：真实向量库、在线文档连接器、办公室视图、长期记忆
 
 ## 文档
@@ -43,10 +44,11 @@
 - [数据模型 Data Model](docs/current/数据模型-data-model.md)
 - [项目整体计划 Project Roadmap](docs/current/2026-05-24-项目整体计划-WikiForge-project-roadmap.md)
 - [R6-1 向量导出契约 Work Order](docs/superpowers/plans/2026-05-24-V2向量导出契约-WikiForge-r6-vector-export-contract.md)
+- [R6-3 知识维护巡检 Work Order](docs/superpowers/plans/2026-05-24-V2知识维护巡检-WikiForge-r6-maintenance-lint-agent.md)
 - [参考项目清单 Reference Projects](docs/current/2026-05-23-参考项目清单-WikiForge-reference-projects.md)
 - [开发者日志 Developer Log](docs/current/2026-05-24-开发者日志-WikiForge-developer-log.md)
 - [版本更新记录 Release Notes](docs/current/2026-05-24-版本更新记录-WikiForge-release-notes.md)
 
 ## 当前状态
 
-R6-1 已完成本地 JSONL chunk 导出契约。下一阶段建议先确认向量库选型和部署方式，再进入 R6-2 Hybrid Search。
+R6-3 已完成首版知识维护巡检。R6-2 Hybrid Search 仍等待向量库选型和部署方式；下一步可继续做 R6-4 办公室视图或先补 R6-3 的问题处理流。

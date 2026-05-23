@@ -2,9 +2,9 @@
 
 ## 版本信息
 
-- 文档版本：v3.2
-- 当前分支：`codex/r6-vector-export-contract`
-- 当前工程阶段：R6-1 / V2 向量导出契约完成，进入验证、提交推送和版本发布收口
+- 文档版本：v3.3
+- 当前分支：`codex/r6-maintenance-lint-agent`
+- 当前工程阶段：R6-3 / V2 知识维护巡检首版完成，准备发布 `2.0-v2-preview.2`
 - 当前产品主线：先把杂乱资料收集、整理、归档，再把个人 LifeOS 记录纳入统一系统，后续进入 AI 提炼、向量库和知识运行层
 
 ## 阅读规则
@@ -12,7 +12,7 @@
 新参与的 AI 或开发者先读：
 
 1. `AGENTS.md`
-2. `docs/archive/2026-05-24/2026-05-24-归档索引-archive-index-v0.2.md`
+2. `docs/archive/2026-05-24/2026-05-24-归档索引-archive-index-v0.3.md`
 3. 本文档
 4. 当前执行节点对应的计划文档或 Work Order
 5. 分支相关操作先读 `docs/current/分支管理策略-branch-strategy.md`
@@ -346,7 +346,7 @@ R5 首版完成记录：
 | --- | --- | --- | --- |
 | R6-1 | Done | 向量导出契约 | Source 正文 / Personal Record 可导出为 JSONL chunks |
 | R6-2 | Blocked | Hybrid Search：MySQL 条件 + 向量 + rerank | 等待向量库选型和部署方式确认 |
-| R6-3 | Later | Lint / Maintain Agent | 可发现重复、过期、孤立知识 |
+| R6-3 | Done | Lint / Maintain Agent 首版 | 可发现重复、空正文、未归档和向量导出异常 |
 | R6-4 | Later | 办公室视图 | Agent 状态和任务流可视化 |
 | R6-5 | Later | 定时总结和长期记忆 | 知识可持续演进 |
 
@@ -359,6 +359,13 @@ R6 当前执行指针：
 - [x] R6-1-4 Dashboard 增加 `Vector Export 向量导出` 区块。
 - [x] R6-1-5 更新需求、架构、数据模型、开发者日志、版本记录和归档索引。
 - [x] R6-1-6 验证、提交推送、合入 main、标签和发布。
+- [x] R6-3-0 确认 R6-2 Hybrid Search 因向量库选型阻塞，转入不依赖外部选型的维护巡检。
+- [x] R6-3-1 新增 `knowledge_maintenance_runs`、`knowledge_maintenance_items` DDL。
+- [x] R6-3-2 新增 `POST /api/v1/maintenance-runs`、`GET /api/v1/maintenance-runs`、`GET /api/v1/maintenance-items`。
+- [x] R6-3-3 实现空正文、重复正文、未归档个人记录、空向量导出、长期 pending chunk 五类巡检规则。
+- [x] R6-3-4 Dashboard 增加 `Maintenance 维护巡检` 区块。
+- [x] R6-3-5 更新需求、架构、数据模型、开发者日志、版本记录和归档索引。
+- [x] R6-3-6 验证、提交推送、合入 main、标签和发布。
 
 R6-1 完成记录：
 
@@ -368,6 +375,16 @@ R6-1 完成记录：
 - 导出文件写入 `WIKIFORGE_VECTOR_EXPORT_ROOT`，API 只返回相对路径，不暴露宿主机绝对路径。
 - 本轮不接真实向量库、不生成 embedding、不做 Hybrid Search、不做办公室视图和定时总结。
 - 验证完成：后端全量 58 个测试、前端构建、生产/开发 Compose config、Git 卫生、密钥扫描和禁止路径扫描均通过。
+
+R6-3 完成记录：
+
+- 新增 R6-3 Work Order：`docs/superpowers/plans/2026-05-24-V2知识维护巡检-WikiForge-r6-maintenance-lint-agent.md`。
+- 新增 `knowledge_maintenance_runs` 和 `knowledge_maintenance_items`，记录手动巡检运行与发现的问题。
+- Core Service 新增维护巡检 API：`POST /api/v1/maintenance-runs`、`GET /api/v1/maintenance-runs`、`GET /api/v1/maintenance-items`。
+- 首版规则覆盖 `missing_source_content`、`duplicate_source_content`、`unarchived_personal_record`、`empty_vector_export`、`stale_vector_chunk`。
+- Dashboard 新增 `Maintenance 维护巡检` 区块，可手动运行、查看运行记录、按 runUid / issueType / status 筛选问题。
+- 本轮不做自动修复、不做定时任务、不接真实向量库、不做办公室视图。
+- 验证完成：后端全量 62 个测试、前端构建、生产/开发 Compose config、Git 卫生、密钥扫描和禁止路径扫描均通过。
 
 ## 近期三轮执行计划
 
