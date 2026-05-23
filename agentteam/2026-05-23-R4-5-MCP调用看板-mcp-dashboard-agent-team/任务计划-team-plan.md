@@ -9,7 +9,8 @@
 - ( ) 主Agent：建立 Agent Team 目录、规则和计划
 - ( ) 前端开发Agent：实现 MCP 工具与调用日志展示
 - ( ) 后端开发Agent：检查 MCP 后端缺口并补强必要测试
-- (x) 主Agent：进入 OpenClaw / Hermes 本机接入说明
+- ( ) 主Agent：进入 OpenClaw / Hermes 本机接入说明
+- (x) 主Agent：集成验证、归档、提交推送和发布收口
 
 ## 节点清单
 
@@ -17,7 +18,7 @@
 - [x] R4-5-1 前端 MCP tools / calls 数据接入，只读展示优先
 - [x] R4-5-2 前端 Dashboard 展示 MCP 工具、调用结果和日志
 - [x] R4-5-3 后端补 `GET /api/v1/mcp/calls` 查询端点集成测试
-- [ ] R4-5-4 OpenClaw / Hermes 本机接入说明
+- [x] R4-5-4 OpenClaw / Hermes 本机接入说明
 - [ ] R4-5-5 集成验证、文档归档、提交推送和发布
 
 ## 本轮前端侦察结论
@@ -86,3 +87,11 @@
 - 后端定向：`McpPreviewApiIntegrationTests` 8 个测试通过。
 - 前端构建：`npm --prefix frontend run build` 通过，保留既有 Rollup 大 chunk / PURE 注释 warning。
 - 浏览器验证：`http://127.0.0.1:3002/` 可看到 MCP Preview、工具清单、调用日志列；无“调用工具”入口；控制台无 error。
+
+## R4-5-4 接入说明记录
+
+- 新增 `docs/current/2026-05-23-OpenClaw-Hermes接入说明-WikiForge-openclaw-hermes-mcp-integration.md`。
+- 文档说明 OpenClaw / Hermes 当前以 HTTP Tool / Custom Action / Connector / Bridge Script 调用 WikiForge MCP HTTP Preview。
+- 文档覆盖本机、Docker 外部容器、Compose 网络内三种 Base URL。
+- 文档提供 tools、calls、create_source、create_personal_record、search_sources、get_source、get_obsidian_note 的 PowerShell 示例。
+- 文档不包含真实 token、真实密钥或用户私密信息。
