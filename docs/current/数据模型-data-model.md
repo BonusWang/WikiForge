@@ -21,7 +21,8 @@ Flyway 不在第一个 migration 中创建全部长期规划表。
 | MVP 4 | `agent_runs`、`agent_steps`、`review_items` | Core Service，后续可拆 Agent Service | AI 辅助整理和审核队列 |
 | MVP 5 | `mcp_tool_calls`、`personal_records` | Core Service，后续可拆 MCP / Record Service | 轻量 MCP HTTP Preview、调用日志、个人记录最小写入 |
 | V1 | `personal_records` 扩展归档字段，复用 `sources/source_files/source_contents` | Core Service，后续可拆 Link / Record Service | 链接资料收集、个人记录 REST API、个人记录 Obsidian 归档 |
-| V2 | `mcp_servers`、`content_chunks`、`embedding_jobs`、办公室视图相关表 | MCP / Vector / Agent Service | 完整 MCP 配置、向量库和运行层 |
+| V2 / R6-1 | `vector_export_jobs`、`content_chunks` | Core Service，后续可拆 Vector Service | JSONL chunk 导出契约、embedding 状态预留 |
+| V2 后续 | `mcp_servers`、`embedding_jobs`、办公室视图相关表 | MCP / Vector / Agent Service | 完整 MCP 配置、真实向量库、混合检索和运行层 |
 
 ### 0.1.1 服务归属原则
 
@@ -579,7 +580,32 @@ agent_office_status
 - review
 - archive
 
-## 19. content_chunks
+## 19. vector_export_jobs
+
+记录 R6-1 向量导出任务。首版导出格式为 JSONL，不接真实向量库。
+
+对应 migration：
+
+```text
+V20260524_002__create_vector_export_tables.sql
+```
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| id | bigint pk | 主键 |
+| export_uid | varchar(64) unique | 导出任务 ID |
+| scope | varchar(64) | all、sources、personal_records |
+| target_collection | varchar(128) | 目标向量集合名称 |
+| export_format | varchar(32) | 当前固定为 jsonl |
+| status | varchar(64) | completed、failed；后续可扩展 running |
+| total_count | int | 导出的 chunk 数量，不是文档数量 |
+| export_file_name | varchar(255) null | 文件名 |
+| export_relative_path | varchar(1024) null | 相对 `vector_export_root` 的路径，不存本机绝对路径 |
+| error_message | text null | 错误信息 |
+| created_at | datetime | 创建时间 |
+| finished_at | datetime null | 完成时间 |
+
+## 20. content_chunks
 
 保存后续向量化所需的文本分块。第一版可以先生成和管理分块，不要求接入具体向量数据库。
 
@@ -587,25 +613,26 @@ agent_office_status
 | --- | --- | --- |
 | id | bigint pk | 主键 |
 | chunk_uid | varchar(64) unique | 分块 ID |
-| related_type | varchar(64) | source、note、project、topic、entity |
-| related_id | bigint | 关联对象 ID |
-| source_id | bigint null | 来源 Source |
-| note_id | bigint null | Obsidian Note |
-| chunk_index | int | 分块序号 |
+| export_uid | varchar(64) | 所属导出任务 ID |
+| content_type | varchar(64) | source_content、personal_record |
+| source_uid | varchar(64) null | 来源 Source UID |
+| file_uid | varchar(64) null | 来源 Source File UID |
+| record_uid | varchar(64) null | 个人记录 UID |
+| title | varchar(512) null | 标题 |
+| chunk_index | int | 同一文档内分块序号 |
 | chunk_text | longtext | 分块文本 |
-| chunk_hash | varchar(128) | 分块哈希 |
-| token_count | int | 估算 token 数 |
+| text_hash | varchar(128) | 分块文本 SHA-256 |
+| char_count | int | 字符数 |
+| token_estimate | int | 粗略估算 token 数 |
 | metadata_json | json | 来源、标题、路径、标签等元数据 |
-| embedding_status | varchar(64) | not_ready、pending、embedded、stale、failed |
-| vector_collection | varchar(128) null | 目标向量集合 |
-| vector_id | varchar(128) null | 向量库 ID |
-| embedded_at | datetime null | 向量化时间 |
+| embedding_status | varchar(64) | pending、embedded、stale、failed |
+| target_collection | varchar(128) | 目标向量集合 |
 | created_at | datetime | 创建时间 |
 | updated_at | datetime | 更新时间 |
 
-## 20. embedding_jobs
+## 21. embedding_jobs
 
-记录批量向量化任务。
+记录后续真实批量向量化任务。R6-1 暂不建表，等待向量库和 embedding provider 选型后实现。
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
@@ -624,7 +651,7 @@ agent_office_status
 | finished_at | datetime | 完成时间 |
 | created_at | datetime | 创建时间 |
 
-## 21. model_providers
+## 22. model_providers
 
 模型供应商配置。
 
@@ -640,7 +667,7 @@ agent_office_status
 | created_at | datetime | 创建时间 |
 | updated_at | datetime | 更新时间 |
 
-## 22. mcp_servers
+## 23. mcp_servers
 
 记录 MCP Server / Client 相关配置。MVP5 HTTP Preview 使用固定内置 server，不依赖动态 server 配置表；该表后续在完整 MCP Server / Client 阶段引入。
 
@@ -658,7 +685,7 @@ agent_office_status
 | created_at | datetime | 创建时间 |
 | updated_at | datetime | 更新时间 |
 
-## 23. mcp_tool_calls
+## 24. mcp_tool_calls
 
 记录 MCP 工具调用日志。MVP5 对应 migration 编号冻结为：
 
@@ -683,7 +710,7 @@ V20260523_006__create_mcp_preview_tables.sql
 | duration_ms | bigint | 执行耗时 |
 | created_at | datetime | 创建时间 |
 
-## 24. personal_records
+## 25. personal_records
 
 保存非文档型个人记录，例如消费、账单、邮件、人际关系、个人事件和普通笔记。MVP5 R4-4 已通过 `create_personal_record` 做最小结构化写入。V1 扩展为 REST API + Web UI + Obsidian 归档闭环，仍不做 AI 总结和定时重组。
 
@@ -707,7 +734,7 @@ V20260523_006__create_mcp_preview_tables.sql
 | created_at | datetime | 创建时间 |
 | updated_at | datetime | 更新时间 |
 
-## 25. system_settings
+## 26. system_settings
 
 系统配置。
 
@@ -739,7 +766,7 @@ V20260523_006__create_mcp_preview_tables.sql
 - `mcp_allowed_tools`
 - `personal_record_default_sensitivity`
 
-## 26. 状态枚举
+## 27. 状态枚举
 
 ### Source status
 
@@ -846,7 +873,7 @@ V20260523_006__create_mcp_preview_tables.sql
 - archived
 - failed
 
-## 27. 数据模型原则
+## 28. 数据模型原则
 
 - Source 是所有资料的中心对象。
 - 源文件整理是第一版核心能力，知识提炼可以在整理后再触发。

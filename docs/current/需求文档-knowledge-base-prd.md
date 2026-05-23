@@ -75,7 +75,7 @@ WikiForge 采用 **LLM Wiki + GBrain 融合路线**：
 - 支持 Markdown 主存储，以及 HTML 预览和报告导出。
 - 支持国内模型调用，并可通过 CC Switch 切换模型供应商。
 - 支持低风险资料自动归档，高价值、不确定、敏感资料进入人工审核。
-- 为后续批量导入向量库预留内容分块、embedding 状态和导出流程。
+- 已开始为后续批量导入向量库落地内容分块、embedding 状态和导出流程；R6-1 首版先提供 JSONL chunk 导出，不强依赖真实向量库。
 - 采用前后端分离架构，主要开发语言和后端技术栈为 Java。
 - 技术选型优先采用国内开发主流、成熟、维护活跃的框架和依赖，避免生僻冷门技术。
 
@@ -207,7 +207,8 @@ MVP 预留但不完整实现：
 
 ### V2：知识运行层
 
-- 向量库。
+- 向量导出契约：已落地 `POST /api/v1/vector-exports` 和 `GET /api/v1/vector-exports`，可把 Source 正文和个人记录导出为 JSONL chunks。
+- 向量库：后续接入 Qdrant / Milvus / pgvector 等私有化向量库。
 - hybrid search。
 - Lint Agent。
 - 维护 Agent。
@@ -649,13 +650,15 @@ MVP 预计支持：
 
 知识熔炉 WikiForge 的长期目标不是只做资料归档，而是把分散知识提炼成可被检索、问答和 Agent 调用的知识资产。向量库是后续规划中的重要组成部分。
 
-第一版需要为向量库预留：
+第一版需要为向量库预留并逐步落地：
 
 - Source Note、Topic、Project、Entity 等内容的可分块结构。
 - 每个分块的来源、路径、hash、更新时间和关联对象。
 - embedding 生成状态，如未生成、待更新、已生成、失败。
 - 批量导出接口，将整理后的 Markdown/Wiki 内容输出给向量化任务。
 - 未来接入向量库时，仍以 Obsidian Wiki 和 Source Note 作为可读事实来源。
+
+R6-1 已先完成可落地的导出契约：从 `source_contents.raw_text` 和 `personal_records.raw_content` 生成 JSONL 文件，并在 MySQL 中记录 `vector_export_jobs` 与 `content_chunks`。本轮暂不读取 Obsidian Markdown、不生成 embedding、不接真实向量库。
 
 第一版不要求完成向量检索，但文档结构和数据库模型不能阻碍后续批量向量化。
 

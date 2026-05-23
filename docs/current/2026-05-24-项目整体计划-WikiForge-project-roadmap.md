@@ -2,9 +2,9 @@
 
 ## 版本信息
 
-- 文档版本：v3.1
-- 当前分支：`codex/v1-lifeos-connectors`
-- 当前工程阶段：R5 / V1 在线资料与个人记录首版闭环验证完成，进入提交推送和版本发布收口
+- 文档版本：v3.2
+- 当前分支：`codex/r6-vector-export-contract`
+- 当前工程阶段：R6-1 / V2 向量导出契约完成，进入验证、提交推送和版本发布收口
 - 当前产品主线：先把杂乱资料收集、整理、归档，再把个人 LifeOS 记录纳入统一系统，后续进入 AI 提炼、向量库和知识运行层
 
 ## 阅读规则
@@ -12,7 +12,7 @@
 新参与的 AI 或开发者先读：
 
 1. `AGENTS.md`
-2. `docs/archive/2026-05-24/2026-05-24-归档索引-archive-index-v0.1.md`
+2. `docs/archive/2026-05-24/2026-05-24-归档索引-archive-index-v0.2.md`
 3. 本文档
 4. 当前执行节点对应的计划文档或 Work Order
 5. 分支相关操作先读 `docs/current/分支管理策略-branch-strategy.md`
@@ -81,7 +81,7 @@ WikiForge 采用“先整理，再提炼，再运行”的节奏。
 | [x] | S6 MVP4 AI 辅助整理 | Done | 接入国内模型，生成摘要、标签、分类建议和审核队列 | 0.07 | 人工审核后写入 Obsidian |
 | [x] | S7 MVP5 Orchestration + MCP | Done | 先建立长期开发编排控制台，再让外部 Agent 调用 WikiForge | 0.08 | Orchestration UI 可看任务，MCP 工具可创建记录、查询 Source、读取 Note |
 | [x] | S8 V1 在线资料与个人记录 | Done | 链接资料、邮件、账单、消费、人际关系等记录接入 | 1.0 | 多源记录进入统一整理系统 |
-| [ ] | S9 V2 知识运行层 | Next | 向量库、混合检索、维护 Agent、办公室视图 | 2.0 | 知识可被 Agent 长期调用和维护 |
+| [ ] | S9 V2 知识运行层 | In Progress | 向量库、混合检索、维护 Agent、办公室视图 | 2.0 | 知识可被 Agent 长期调用和维护 |
 
 ## 递进测试门禁 Progressive Test Gates
 
@@ -344,11 +344,30 @@ R5 首版完成记录：
 
 | 节点 | 状态 | 事项 | 验收 |
 | --- | --- | --- | --- |
-| R6-1 | Later | 向量库导出契约 | Source Note / chunk 可批量导出 |
-| R6-2 | Later | Hybrid Search：MySQL 条件 + 向量 + rerank | 查询更稳定 |
+| R6-1 | Done | 向量导出契约 | Source 正文 / Personal Record 可导出为 JSONL chunks |
+| R6-2 | Blocked | Hybrid Search：MySQL 条件 + 向量 + rerank | 等待向量库选型和部署方式确认 |
 | R6-3 | Later | Lint / Maintain Agent | 可发现重复、过期、孤立知识 |
 | R6-4 | Later | 办公室视图 | Agent 状态和任务流可视化 |
 | R6-5 | Later | 定时总结和长期记忆 | 知识可持续演进 |
+
+R6 当前执行指针：
+
+- [x] R6-1-0 自检当前阶段、冻结 R6-1 Work Order。
+- [x] R6-1-1 新增 `vector_export_jobs`、`content_chunks` DDL。
+- [x] R6-1-2 新增 `POST /api/v1/vector-exports`、`GET /api/v1/vector-exports`。
+- [x] R6-1-3 从 `source_contents.raw_text` 和 `personal_records.raw_content` 生成 JSONL chunks。
+- [x] R6-1-4 Dashboard 增加 `Vector Export 向量导出` 区块。
+- [x] R6-1-5 更新需求、架构、数据模型、开发者日志、版本记录和归档索引。
+- [x] R6-1-6 验证、提交推送、合入 main、标签和发布。
+
+R6-1 完成记录：
+
+- 新增 R6-1 Work Order：`docs/superpowers/plans/2026-05-24-V2向量导出契约-WikiForge-r6-vector-export-contract.md`。
+- 新增 `vector_export_jobs` 和 `content_chunks`，`total_count` 代表 chunk 数量。
+- `content_chunks.embedding_status` 首版固定为 `pending`，为后续真实向量库导入保留状态。
+- 导出文件写入 `WIKIFORGE_VECTOR_EXPORT_ROOT`，API 只返回相对路径，不暴露宿主机绝对路径。
+- 本轮不接真实向量库、不生成 embedding、不做 Hybrid Search、不做办公室视图和定时总结。
+- 验证完成：后端全量 58 个测试、前端构建、生产/开发 Compose config、Git 卫生、密钥扫描和禁止路径扫描均通过。
 
 ## 近期三轮执行计划
 
@@ -473,7 +492,7 @@ Pull request URL: https://github.com/BonusWang/WikiForge/pull/new/codex/mvp2-obs
 ## 当前不可提前做的事
 
 - 不在 MVP2.1 前引入大模型总结。
-- 不在文档解析前引入向量库。
+- 不在 R6-1 导出契约稳定前引入真实向量库和 Hybrid Search。
 - 不在 MCP 工具清单冻结前实现 MCP 服务。
 - 不在个人记录契约冻结前写账单、邮件、人际关系表。
 - 不把 `E:\WikiForgeVault`、Raw Sources、运行数据或 `.env` 提交到 Git。

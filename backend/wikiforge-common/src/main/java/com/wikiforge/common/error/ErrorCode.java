@@ -22,6 +22,9 @@ public enum ErrorCode {
     PERSONAL_RECORD_NOT_FOUND("RECORD_002", "personal record not found"),
     PERSONAL_RECORD_INVALID_INPUT("RECORD_003", "invalid personal record input"),
     LINK_SOURCE_INVALID_INPUT("LINK_SOURCE_001", "invalid link source input"),
+    VECTOR_EXPORT_INVALID_INPUT("VECTOR_EXPORT_001", "invalid vector export input"),
+    VECTOR_EXPORT_JOB_NOT_FOUND("VECTOR_EXPORT_002", "vector export job not found"),
+    VECTOR_EXPORT_FAILED("VECTOR_EXPORT_003", "vector export failed"),
     ORCHESTRATION_TASK_NOT_FOUND("ORCHESTRATION_001", "orchestration task not found"),
     WORKER_REJECTED_IMPORT_TASK("WORKER_001", "worker rejected import task"),
     VALIDATION_FAILED("COMMON_001", "validation failed");

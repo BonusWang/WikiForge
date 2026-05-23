@@ -32,6 +32,7 @@ services:
       WIKIFORGE_INTERNAL_API_TOKEN: ${WIKIFORGE_INTERNAL_API_TOKEN:-change-me}
       WIKIFORGE_RAW_SOURCES_ROOT: ${WIKIFORGE_RAW_SOURCES_ROOT:-/data/wikiforge/raw-sources}
       WIKIFORGE_RAW_SOURCES_PATH: ${WIKIFORGE_RAW_SOURCES_ROOT:-/data/wikiforge/raw-sources}
+      WIKIFORGE_VECTOR_EXPORT_ROOT: ${WIKIFORGE_VECTOR_EXPORT_ROOT:-/data/wikiforge/vector-exports}
       WIKIFORGE_OBSIDIAN_VAULT_PATH: ${WIKIFORGE_OBSIDIAN_VAULT_PATH:-/data/wikiforge/obsidian-vault}
       WIKIFORGE_OBSIDIAN_VAULT_NAME: ${WIKIFORGE_OBSIDIAN_VAULT_NAME:-WikiForgeVault}
       WIKIFORGE_ALLOWED_SCAN_ROOTS: ${WIKIFORGE_ALLOWED_SCAN_ROOTS:-/data/wikiforge/imports}
@@ -52,6 +53,7 @@ services:
       - "${WIKIFORGE_PORT_BIND:-127.0.0.1}:8080:8080"
     volumes:
       - ${WIKIFORGE_HOST_RAW_SOURCES_ROOT:-../data/raw-sources}:${WIKIFORGE_RAW_SOURCES_ROOT:-/data/wikiforge/raw-sources}
+      - ${WIKIFORGE_HOST_VECTOR_EXPORT_ROOT:-../data/vector-exports}:${WIKIFORGE_VECTOR_EXPORT_ROOT:-/data/wikiforge/vector-exports}
       - ${WIKIFORGE_HOST_OBSIDIAN_VAULT_PATH:-../data/obsidian-vault}:/data/wikiforge/obsidian-vault
       - ../data/imports:/data/wikiforge/imports
       - ../data/logs/core-service:/app/logs
@@ -102,7 +104,7 @@ services:
     environment:
       ORCHESTRATION_SERVER_PORT: 8090
       WIKIFORGE_WORKFLOW_ENTRY: ${WIKIFORGE_WORKFLOW_ENTRY:-WORKFLOW.md}
-      WIKIFORGE_PROJECT_ROADMAP: ${WIKIFORGE_PROJECT_ROADMAP:-docs/current/2026-05-23-项目整体计划-WikiForge-project-roadmap.md}
+      WIKIFORGE_PROJECT_ROADMAP: ${WIKIFORGE_PROJECT_ROADMAP:-docs/current/2026-05-24-项目整体计划-WikiForge-project-roadmap.md}
       WIKIFORGE_ACTIVE_BRANCH: ${WIKIFORGE_ACTIVE_BRANCH:-main}
     ports:
       - "${WIKIFORGE_PORT_BIND:-127.0.0.1}:8090:8090"

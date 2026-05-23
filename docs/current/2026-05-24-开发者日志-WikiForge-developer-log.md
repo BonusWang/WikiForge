@@ -2,8 +2,8 @@
 
 ## 版本索引 Version Index
 
-- 最新版本：v5.1
-- 最新小节：`2026-05-24 R5 / V1 在线资料与个人记录首版完成`
+- 最新版本：v5.2
+- 最新小节：`2026-05-24 R6-1 / V2 向量导出契约完成`
 - 推荐阅读：新 AI 开始工作时，先读本索引和最新小节，再按任务需要阅读历史小节。
 - 历史范围：v0.1-v0.9 记录需求发掘、架构评审、MVP0 骨架、微服务拆分和同日滚动归档规则；仅在追溯需求来源或架构决策时阅读。
 
@@ -46,6 +46,53 @@
 - Docker Compose config：生产与开发配置均通过。
 - Git 卫生：`git diff --check` 通过，禁止路径扫描未发现 `node_modules`、`dist`、`target`、真实 `.env`、Vault 或 Raw Sources 被跟踪，敏感信息扫描未命中用户提供的 MiniMax token。
 - 浏览器自动化：当前会话未能加载 Playwright 模块，未完成浏览器截图验证；前端已通过 TypeScript 和 Vite 构建验证。
+
+## 2026-05-24 R6-1 / V2 向量导出契约完成
+
+本轮根据最新 Roadmap 进入 R6 / V2 知识运行层，但没有一次性上真实向量库、混合检索、维护 Agent 和办公室视图，而是先完成可落地的导出契约。
+
+实现内容：
+
+- 新增 R6-1 Work Order：`docs/superpowers/plans/2026-05-24-V2向量导出契约-WikiForge-r6-vector-export-contract.md`。
+- 新增 `vector_export_jobs` 和 `content_chunks` Flyway migration。
+- 新增 Core API：`POST /api/v1/vector-exports`、`GET /api/v1/vector-exports`。
+- `scope=all/sources/personal_records` 支持从 `source_contents.raw_text` 和 `personal_records.raw_content` 生成 JSONL chunks。
+- chunk 账本写入 `content_chunks`，`embedding_status` 初始为 `pending`，为后续真实向量库导入预留。
+- 导出文件写入 `WIKIFORGE_VECTOR_EXPORT_ROOT`，API 只返回相对路径，避免暴露宿主机绝对路径。
+- Dashboard 新增 `Vector Export 向量导出` 操作区，支持创建导出任务和查看历史任务。
+
+挂起事项：
+
+- R6-2 真实向量库接入与 Hybrid Search。
+- R6-3 Lint / Maintain Agent。
+- R6-4 办公室视图。
+- R6-5 定时总结和长期记忆。
+
+验证记录：
+
+```text
+mvn -s %TEMP%/wikiforge-maven-settings.xml -pl wikiforge-core-service -am "-Dtest=VectorExportApiIntegrationTests,MigrationSqlCompatibilityTests" "-Dsurefire.failIfNoSpecifiedTests=false" test
+Result: pass, Tests run: 8, Failures: 0, Errors: 0, Skipped: 0
+
+mvn -s %TEMP%/wikiforge-maven-settings.xml test
+Result: pass, 5 modules, Tests run: 58, Failures: 0, Errors: 0, Skipped: 0
+
+npm --prefix frontend run build
+Result: pass
+Known warnings: @vueuse/core PURE annotation warning, chunk size warning
+
+docker compose -f deploy/docker-compose.yml config --quiet
+Result: pass
+
+docker compose -f deploy/docker-compose.dev.yml config --quiet
+Result: pass
+
+git diff --check
+Result: pass
+
+secret scan / forbidden tracked path scan
+Result: pass
+```
 
 ## 会话主题
 

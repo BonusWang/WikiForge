@@ -93,6 +93,11 @@ public class CoreRuntimeProperties {
         return firstConfigured("wikiforge.obsidian-vault-path", "WIKIFORGE_OBSIDIAN_VAULT_PATH");
     }
 
+    public String vectorExportRoot() {
+        String configured = firstConfigured("wikiforge.vector-export-root", "WIKIFORGE_VECTOR_EXPORT_ROOT");
+        return configured == null ? "./data/vector-exports" : configured;
+    }
+
     public String obsidianVaultName() {
         String configured = firstConfigured("wikiforge.obsidian-vault-name", "WIKIFORGE_OBSIDIAN_VAULT_NAME");
         if (configured != null) {

@@ -36,6 +36,7 @@ import {
   writeSourceNote
 } from '../api/obsidian';
 import { approveReviewItem, createAiReviewRun, listReviewItems } from '../api/review';
+import { createVectorExport, listVectorExports } from '../api/vector-exports';
 import { fetchBackendHealth, type BackendHealth } from '../services/http';
 import { useAppStore } from '../stores/app';
 import type {
@@ -60,6 +61,7 @@ import type {
 } from '../types/obsidianNotes';
 import type { McpCallStatus, McpToolCallLog, McpToolDefinition } from '../types/mcp';
 import type { CreateAiReviewRunRequest, ReviewItem } from '../types/review';
+import type { VectorExportJob, VectorExportScope } from '../types/vectorExports';
 
 const appStore = useAppStore();
 const backendHealth = ref<BackendHealth | null>(null);
@@ -92,6 +94,13 @@ const personalRecordForm = reactive({
   sourceRef: '',
   structuredText: '',
   sensitivityLevel: 'medium' as SensitivityLevel
+});
+
+const vectorExportForm = reactive({
+  scope: 'all' as VectorExportScope,
+  targetCollection: 'wikiforge_default',
+  maxChunkChars: 1600,
+  limit: 1000
 });
 
 const statusOptions: ImportJobStatus[] = [
@@ -191,6 +200,13 @@ const personalRecordTypeFilter = ref<PersonalRecordType | ''>('');
 const personalRecordStatusFilter = ref('');
 const personalRecordSourceFilter = ref('');
 const archivingRecordUid = ref('');
+const vectorExports = ref<VectorExportJob[]>([]);
+const vectorExportCreating = ref(false);
+const vectorExportsLoading = ref(false);
+const vectorExportPage = ref(1);
+const vectorExportPageSize = ref(20);
+const vectorExportTotal = ref(0);
+const vectorExportStatusFilter = ref('');
 
 const selectedJobStatus = computed(() => {
   return selectedJobDetail.value?.status
@@ -451,6 +467,48 @@ async function refreshLifeOs() {
   await Promise.all([refreshPersonalRecords(), refreshPersonalSummary()]);
 }
 
+async function refreshVectorExports() {
+  vectorExportsLoading.value = true;
+  try {
+    const result = await listVectorExports({
+      status: optionalText(vectorExportStatusFilter.value),
+      page: vectorExportPage.value,
+      pageSize: vectorExportPageSize.value
+    });
+    vectorExports.value = result.items;
+    vectorExportTotal.value = result.total;
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '向量导出任务加载失败');
+  } finally {
+    vectorExportsLoading.value = false;
+  }
+}
+
+async function createVectorExportJob() {
+  const targetCollection = vectorExportForm.targetCollection.trim();
+  if (!targetCollection) {
+    ElMessage.warning('targetCollection 必填');
+    return;
+  }
+
+  vectorExportCreating.value = true;
+  try {
+    const result = await createVectorExport({
+      scope: vectorExportForm.scope,
+      targetCollection,
+      maxChunkChars: vectorExportForm.maxChunkChars,
+      limit: vectorExportForm.limit
+    });
+    ElMessage.success(`向量导出完成：${result.totalCount} chunks`);
+    vectorExportPage.value = 1;
+    await refreshVectorExports();
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '向量导出创建失败');
+  } finally {
+    vectorExportCreating.value = false;
+  }
+}
+
 async function createLifePersonalRecord() {
   const title = personalRecordForm.title.trim();
   const rawContent = personalRecordForm.rawContent.trim();
@@ -668,6 +726,16 @@ function handlePersonalRecordFilterChange() {
   void refreshPersonalRecords();
 }
 
+function handleVectorExportPageChange(page: number) {
+  vectorExportPage.value = page;
+  void refreshVectorExports();
+}
+
+function handleVectorExportFilterChange() {
+  vectorExportPage.value = 1;
+  void refreshVectorExports();
+}
+
 function handleStatusFilterChange() {
   jobPage.value = 1;
   void refreshJobs();
@@ -752,6 +820,19 @@ function personalRecordTagType(status: string) {
   return 'info';
 }
 
+function vectorExportTagType(status: string) {
+  if (status === 'completed') {
+    return 'success';
+  }
+  if (status === 'failed') {
+    return 'danger';
+  }
+  if (status === 'running') {
+    return 'warning';
+  }
+  return 'info';
+}
+
 function recordTypeLabel(recordType: string) {
   return personalRecordTypeOptions.find((item) => item.value === recordType)?.label || recordType;
 }
@@ -813,6 +894,7 @@ onMounted(() => {
   void refreshReviewItems();
   void refreshMcpPreview();
   void refreshLifeOs();
+  void refreshVectorExports();
 });
 </script>
 
@@ -856,8 +938,8 @@ onMounted(() => {
             工程阶段
           </div>
         </template>
-        <p class="metric">V1</p>
-        <p class="muted">在线资料与个人记录</p>
+        <p class="metric">V2</p>
+        <p class="muted">向量导出与知识运行层</p>
       </el-card>
 
       <el-card shadow="never">
@@ -1214,6 +1296,107 @@ onMounted(() => {
             :page-size="personalRecordPageSize"
             :total="personalRecordTotal"
             @current-change="handlePersonalRecordPageChange"
+          />
+        </div>
+      </el-card>
+
+      <el-card shadow="never">
+        <template #header>
+          <div class="section-title">
+            <div class="card-title">
+              <el-icon><Cpu /></el-icon>
+              Vector Export 向量导出
+            </div>
+            <el-button :loading="vectorExportsLoading" @click="refreshVectorExports">
+              <el-icon><Refresh /></el-icon>
+              刷新导出
+            </el-button>
+          </div>
+        </template>
+
+        <el-form class="vector-export-form" label-position="top">
+          <el-form-item label="scope">
+            <el-select v-model="vectorExportForm.scope">
+              <el-option label="全部 all" value="all" />
+              <el-option label="资料 sources" value="sources" />
+              <el-option label="个人记录 personal_records" value="personal_records" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="targetCollection" required>
+            <el-input
+              v-model="vectorExportForm.targetCollection"
+              clearable
+              placeholder="wikiforge_default"
+            />
+          </el-form-item>
+          <el-form-item label="maxChunkChars">
+            <el-input-number
+              v-model="vectorExportForm.maxChunkChars"
+              :min="200"
+              :max="8000"
+              :step="200"
+              controls-position="right"
+            />
+          </el-form-item>
+          <el-form-item label="limit">
+            <el-input-number
+              v-model="vectorExportForm.limit"
+              :min="1"
+              :max="10000"
+              controls-position="right"
+            />
+          </el-form-item>
+          <div class="form-actions">
+            <el-tag effect="plain">format: jsonl</el-tag>
+            <el-button :loading="vectorExportCreating" type="primary" @click="createVectorExportJob">
+              生成导出
+            </el-button>
+          </div>
+        </el-form>
+
+        <div class="lifeos-record-toolbar">
+          <el-select
+            v-model="vectorExportStatusFilter"
+            clearable
+            placeholder="status"
+            @change="handleVectorExportFilterChange"
+          >
+            <el-option label="completed" value="completed" />
+            <el-option label="failed" value="failed" />
+          </el-select>
+        </div>
+
+        <el-table
+          v-loading="vectorExportsLoading"
+          :data="vectorExports"
+          border
+          empty-text="暂无向量导出任务"
+        >
+          <el-table-column prop="createdAt" label="createdAt" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="exportUid" label="exportUid" min-width="190" show-overflow-tooltip />
+          <el-table-column prop="scope" label="scope" width="140" show-overflow-tooltip />
+          <el-table-column prop="targetCollection" label="collection" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="status" label="status" width="120">
+            <template #default="scope">
+              <el-tag :type="vectorExportTagType(scope.row.status)">
+                {{ scope.row.status }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="totalCount" label="chunks" width="100" align="right" />
+          <el-table-column prop="exportRelativePath" label="relativePath" min-width="260" show-overflow-tooltip />
+          <el-table-column prop="errorMessage" label="error" min-width="180" show-overflow-tooltip />
+        </el-table>
+
+        <div class="pagination-row">
+          <el-pagination
+            v-if="vectorExportTotal > vectorExportPageSize"
+            background
+            layout="prev, pager, next"
+            :current-page="vectorExportPage"
+            :page-size="vectorExportPageSize"
+            :total="vectorExportTotal"
+            @current-change="handleVectorExportPageChange"
           />
         </div>
       </el-card>

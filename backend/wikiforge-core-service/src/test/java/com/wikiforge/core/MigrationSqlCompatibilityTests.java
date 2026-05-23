@@ -78,4 +78,20 @@ class MigrationSqlCompatibilityTests {
             assertThat(migrationSql).contains("idx_personal_records_archived_at");
         }
     }
+
+    @Test
+    void vectorExportMigrationCreatesJobAndChunkTables() throws Exception {
+        try (var inputStream = getClass().getResourceAsStream(
+                "/db/migration/V20260524_002__create_vector_export_tables.sql"
+        )) {
+            assertThat(inputStream).isNotNull();
+            String migrationSql = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+            assertThat(migrationSql).contains("CREATE TABLE vector_export_jobs");
+            assertThat(migrationSql).contains("CREATE TABLE content_chunks");
+            assertThat(migrationSql).contains("export_relative_path VARCHAR(1024) NULL");
+            assertThat(migrationSql).contains("chunk_text LONGTEXT NOT NULL");
+            assertThat(migrationSql).contains("embedding_status VARCHAR(64) NOT NULL DEFAULT 'pending'");
+            assertThat(migrationSql).contains("KEY idx_content_chunks_target_collection (target_collection)");
+        }
+    }
 }

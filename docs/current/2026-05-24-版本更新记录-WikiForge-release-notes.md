@@ -1,5 +1,34 @@
 # 2026-05-24 WikiForge 版本更新记录 Release Notes
 
+## 2.0-v2-preview.1 - R6-1 向量导出契约
+
+发布日期：2026-05-24
+
+本版本进入 V2 知识运行层的第一步：不直接接真实向量库，先把 Source 正文和个人记录稳定导出成 JSONL chunks。
+
+### 更新内容
+
+- 新增 `vector_export_jobs` 和 `content_chunks` 表。
+- 新增 Core API：
+  - `POST /api/v1/vector-exports`
+  - `GET /api/v1/vector-exports`
+- 支持从 `source_contents.raw_text` 和 `personal_records.raw_content` 生成 chunks。
+- 导出文件写入 `WIKIFORGE_VECTOR_EXPORT_ROOT`，API 只返回相对路径。
+- Dashboard 新增 `Vector Export 向量导出` 区块，可创建导出任务并查看历史。
+- `.env.example` 和 Docker Compose 增加向量导出目录配置。
+
+### 验证结果
+
+- 后端定向 Maven 测试通过：`VectorExportApiIntegrationTests` 和 `MigrationSqlCompatibilityTests` 合计 8 个测试，0 失败。
+- 后端全量 Maven 测试通过：5 个模块合计 58 个测试，0 失败。
+- 前端构建通过，保留既有 Rollup 大 chunk 和 VueUse PURE 注释 warning。
+- Docker Compose 生产与开发配置通过。
+- `git diff --check`、敏感信息扫描和禁止路径扫描通过。
+
+### 版本边界
+
+本版本只完成导出契约，不包含真实向量库、embedding 生成、hybrid search、Lint / Maintain Agent、办公室视图和定时总结。
+
 ## 1.0-v1-preview.1 - V1 在线资料与个人记录
 
 发布日期：2026-05-24

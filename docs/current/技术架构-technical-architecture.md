@@ -512,7 +512,14 @@ obsidian://open?vault=<vault_name>&file=<vault_relative_path>
 - 批量导出待向量化内容。
 - 管理 embedding 生成状态，方便后续接入向量库。
 
-第一版可以只完成分块和导出，不要求接入具体向量数据库。
+R6-1 首版实现范围：
+
+- Core Service 内提供 `POST /api/v1/vector-exports` 和 `GET /api/v1/vector-exports`。
+- 输入 `scope`、`targetCollection`、`maxChunkChars`、`limit` 后，从 `source_contents.raw_text` 与 `personal_records.raw_content` 生成 JSONL chunks。
+- MySQL 记录 `vector_export_jobs` 和 `content_chunks`，其中 `content_chunks.embedding_status` 初始为 `pending`。
+- 导出文件写入 `WIKIFORGE_VECTOR_EXPORT_ROOT`，API 只返回相对路径 `exportRelativePath`，不返回宿主机绝对路径。
+
+第一版只完成分块和导出，不要求接入具体向量数据库。
 
 Vector Export Service 属于 GBrain 运行层。它不替代 Obsidian Wiki，而是把稳定 Wiki 内容和结构化记录转换成可被 Agent 检索和调用的运行态知识。
 
@@ -1194,7 +1201,7 @@ MVP 暂不引入：
 
 ### V2：知识运行层
 
-- Vector Export Service。
+- Vector Export Service：R6-1 已完成本地 JSONL chunk 导出契约。
 - 向量库接入。
 - hybrid search。
 - Lint / Maintain Agent。
