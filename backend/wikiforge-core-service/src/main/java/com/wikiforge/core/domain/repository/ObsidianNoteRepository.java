@@ -10,4 +10,6 @@ public interface ObsidianNoteRepository {
     Optional<ObsidianNote> findByNoteUid(String noteUid);
 
     Optional<ObsidianNote> findBySourceFileUid(String fileUid);
+
+    Optional<ObsidianNote> findLatest();
 }

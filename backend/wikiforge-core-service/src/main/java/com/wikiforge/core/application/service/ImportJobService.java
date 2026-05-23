@@ -16,6 +16,7 @@ import com.wikiforge.core.domain.model.ImportJob;
 import com.wikiforge.core.domain.model.ImportJobPage;
 import com.wikiforge.core.domain.model.ImportJobStatus;
 import com.wikiforge.core.domain.model.ImportType;
+import com.wikiforge.core.domain.model.ObsidianNote;
 import com.wikiforge.core.domain.model.OrganizeMode;
 import com.wikiforge.core.domain.model.ParseStatus;
 import com.wikiforge.core.domain.model.RawOrganizeStatus;
@@ -23,6 +24,7 @@ import com.wikiforge.core.domain.model.SourceFilePage;
 import com.wikiforge.core.domain.model.SourceFileRecord;
 import com.wikiforge.core.domain.model.SourceFileSubmission;
 import com.wikiforge.core.domain.repository.ImportJobRepository;
+import com.wikiforge.core.domain.repository.ObsidianNoteRepository;
 import com.wikiforge.core.domain.repository.SourceFileRepository;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -45,17 +47,20 @@ public class ImportJobService {
 
     private final ImportJobRepository importJobRepository;
     private final SourceFileRepository sourceFileRepository;
+    private final ObsidianNoteRepository obsidianNoteRepository;
     private final CoreRuntimeProperties runtimeProperties;
     private final WorkerImportJobClient workerImportJobClient;
 
     public ImportJobService(
             ImportJobRepository importJobRepository,
             SourceFileRepository sourceFileRepository,
+            ObsidianNoteRepository obsidianNoteRepository,
             CoreRuntimeProperties runtimeProperties,
             WorkerImportJobClient workerImportJobClient
     ) {
         this.importJobRepository = importJobRepository;
         this.sourceFileRepository = sourceFileRepository;
+        this.obsidianNoteRepository = obsidianNoteRepository;
         this.runtimeProperties = runtimeProperties;
         this.workerImportJobClient = workerImportJobClient;
     }
@@ -240,6 +245,7 @@ public class ImportJobService {
     }
 
     private SourceFileResponse toResponse(SourceFileRecord sourceFile) {
+        ObsidianNote obsidianNote = obsidianNoteRepository.findBySourceFileUid(sourceFile.fileUid()).orElse(null);
         return new SourceFileResponse(
                 sourceFile.fileUid(),
                 sourceFile.sourceUid(),
@@ -254,6 +260,12 @@ public class ImportJobService {
                 sourceFile.parseStatus(),
                 sourceFile.organizeStatus(),
                 sourceFile.duplicateOfFileUid(),
+                obsidianNote == null ? null : obsidianNote.noteUid(),
+                obsidianNote == null ? null : obsidianNote.status(),
+                obsidianNote == null ? null : obsidianNote.title(),
+                obsidianNote == null ? null : obsidianNote.vaultPath(),
+                obsidianNote == null ? null : obsidianNote.obsidianUri(),
+                obsidianNote == null ? null : toOffset(obsidianNote.createdAt()),
                 toOffset(sourceFile.createdAt())
         );
     }

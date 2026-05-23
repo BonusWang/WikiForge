@@ -1,4 +1,4 @@
-# 2026-05-22 知识熔炉 WikiForge MVP 实施计划 v0.5
+# 2026-05-23 知识熔炉 WikiForge MVP 实施计划 MVP Implementation Plan v0.5
 
 ## 0. 架构评审后的执行调整
 

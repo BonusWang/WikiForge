@@ -1,4 +1,4 @@
-# MVP0 服务拆分 WikiForge MVP0 Service Split Implementation Plan
+# 2026-05-23 WikiForge MVP0 服务拆分 Service Split Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -96,7 +96,7 @@ deploy/
 ## Task 5: Verification And Archive
 
 **Files:**
-- Modify: `docs/2026-05-22-开发者日志-WikiForge-developer-log.md`
+- Modify: `docs/current/2026-05-23-开发者日志-WikiForge-developer-log.md`
 - Modify/Add: `docs/archive/2026-05-23/*`
 
 - [ ] Run backend test and package with local Maven repository.

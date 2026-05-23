@@ -8,6 +8,7 @@ import com.wikiforge.common.filesystem.PathSafety;
 import com.wikiforge.core.application.dto.ObsidianInitResponse;
 import com.wikiforge.core.application.dto.ObsidianNotePreviewResponse;
 import com.wikiforge.core.application.dto.ObsidianNoteResponse;
+import com.wikiforge.core.application.dto.ObsidianVaultStatusResponse;
 import com.wikiforge.core.application.dto.SourceNoteDraftResponse;
 import com.wikiforge.core.domain.model.ObsidianNote;
 import com.wikiforge.core.domain.model.SourceFileRecord;
@@ -78,9 +79,65 @@ public class ObsidianVaultService {
     }
 
     @Transactional(readOnly = true)
+    public ObsidianVaultStatusResponse status() {
+        String configuredPath = runtimeProperties.obsidianVaultPath();
+        ObsidianNote latestNote = obsidianNoteRepository.findLatest().orElse(null);
+        OffsetDateTime lastWrittenAt = latestNote == null ? null : toOffset(latestNote.createdAt());
+        String lastNoteUid = latestNote == null ? null : latestNote.noteUid();
+        if (configuredPath == null || configuredPath.isBlank()) {
+            return new ObsidianVaultStatusResponse(
+                    runtimeProperties.obsidianVaultName(),
+                    configuredPath,
+                    false,
+                    false,
+                    false,
+                    lastNoteUid,
+                    lastWrittenAt,
+                    "obsidian vault path is not configured"
+            );
+        }
+        try {
+            Path root = PathSafety.normalizeAbsolute(Path.of(configuredPath));
+            boolean exists = Files.isDirectory(root, LinkOption.NOFOLLOW_LINKS);
+            Path sourceNoteDirectory = root.resolve(SOURCE_NOTE_DIRECTORY).normalize();
+            boolean sourceNoteDirectoryExists = sourceNoteDirectory.startsWith(root)
+                    && Files.isDirectory(sourceNoteDirectory, LinkOption.NOFOLLOW_LINKS);
+            return new ObsidianVaultStatusResponse(
+                    runtimeProperties.obsidianVaultName(),
+                    root.toString(),
+                    exists,
+                    exists && Files.isWritable(root),
+                    sourceNoteDirectoryExists,
+                    lastNoteUid,
+                    lastWrittenAt,
+                    null
+            );
+        } catch (RuntimeException exception) {
+            return new ObsidianVaultStatusResponse(
+                    runtimeProperties.obsidianVaultName(),
+                    configuredPath,
+                    false,
+                    false,
+                    false,
+                    lastNoteUid,
+                    lastWrittenAt,
+                    exception.getMessage()
+            );
+        }
+    }
+
+    @Transactional(readOnly = true)
     public SourceNoteDraftResponse generateDraft(String fileUid) {
         SourceFileRecord sourceFile = findSourceFile(fileUid);
         return buildDraft(sourceFile);
+    }
+
+    @Transactional(readOnly = true)
+    public ObsidianNoteResponse findSourceFileNote(String fileUid) {
+        SourceFileRecord sourceFile = findSourceFile(fileUid);
+        return obsidianNoteRepository.findBySourceFileUid(fileUid)
+                .map(note -> toResponse(note, sourceFile))
+                .orElse(null);
     }
 
     @Transactional

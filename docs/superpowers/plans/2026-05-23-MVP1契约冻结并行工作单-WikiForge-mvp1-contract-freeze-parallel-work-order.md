@@ -1,4 +1,4 @@
-# MVP1 Contract Freeze Parallel Work Order
+# 2026-05-23 WikiForge MVP1 契约冻结并行工作单 Contract Freeze Parallel Work Order
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` when dispatching tasks, or `superpowers:executing-plans` for inline execution. This document freezes the MVP1 contract before Core, Worker, UI, DevOps, Test/Review, and Docs work in parallel.
 
@@ -571,7 +571,7 @@ Legacy compatibility:
 - `docs/superpowers/plans/2026-05-23-MVP1契约冻结并行工作单-WikiForge-mvp1-contract-freeze-parallel-work-order.md`
 - `docs/数据模型-data-model.md`
 - `docs/技术架构-technical-architecture.md`
-- `docs/2026-05-22-MVP实施计划-WikiForge-mvp-implementation-plan.md`
+- `docs/current/2026-05-23-MVP实施计划-WikiForge-mvp-implementation-plan.md`
 
 禁止修改文件：
 

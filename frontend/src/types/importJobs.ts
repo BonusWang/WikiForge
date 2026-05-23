@@ -62,5 +62,11 @@ export interface SourceFile {
   parseStatus?: string | null;
   organizeStatus: string;
   duplicateOfFileUid?: string | null;
+  obsidianNoteUid?: string | null;
+  obsidianNoteStatus?: string | null;
+  obsidianNoteTitle?: string | null;
+  obsidianVaultPath?: string | null;
+  obsidianUri?: string | null;
+  obsidianNoteCreatedAt?: string | null;
   createdAt: string;
 }

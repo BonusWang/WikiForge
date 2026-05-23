@@ -1,9 +1,9 @@
-# 2026-05-22 知识熔炉 WikiForge 开发者日志
+# 2026-05-23 知识熔炉 WikiForge 开发者日志 Developer Log
 
 ## 版本索引 Version Index
 
-- 最新版本：v2.3
-- 最新小节：`2026-05-23 R0-5 提交推送完成`
+- 最新版本：v2.4
+- 最新小节：`2026-05-23 文档一致性规则修正`
 - 推荐阅读：新 AI 开始工作时，先读本索引和最新小节，再按任务需要阅读历史小节。
 - 历史范围：v0.1-v0.9 记录需求发掘、架构评审、MVP0 骨架、微服务拆分和同日滚动归档规则；仅在追溯需求来源或架构决策时阅读。
 
@@ -638,13 +638,13 @@ MCP tools 规划：
 - `docs/需求文档-knowledge-base-prd.md`
 - `docs/技术架构-technical-architecture.md`
 - `docs/数据模型-data-model.md`
-- `docs/2026-05-22-参考项目清单-WikiForge-reference-projects.md`
+- `docs/current/2026-05-23-参考项目清单-WikiForge-reference-projects.md`
 - `docs/2026-05-22-需求完整度自检-WikiForge-requirements-completeness-review.md`
-- `docs/2026-05-22-MVP实施计划-WikiForge-mvp-implementation-plan.md`
+- `docs/current/2026-05-23-MVP实施计划-WikiForge-mvp-implementation-plan.md`
 
 本开发者日志：
 
-- `docs/2026-05-22-开发者日志-WikiForge-developer-log.md`
+- `docs/current/2026-05-23-开发者日志-WikiForge-developer-log.md`
 
 ## 下一步建议
 
@@ -836,7 +836,7 @@ docs/2026-05-23-架构评审结论-WikiForge-architecture-review-conclusion.md
 ```text
 docs/架构决策-DECISIONS.md
 docs/数据模型-data-model.md
-docs/2026-05-22-MVP实施计划-WikiForge-mvp-implementation-plan.md
+docs/current/2026-05-23-MVP实施计划-WikiForge-mvp-implementation-plan.md
 docs/archive/2026-05-23/2026-05-23-架构决策-DECISIONS-v0.2.md
 docs/archive/2026-05-23/2026-05-23-数据模型-data-model-v0.3.md
 docs/archive/2026-05-23/2026-05-23-MVP实施计划-WikiForge-mvp-implementation-plan-v0.2.md
@@ -1016,7 +1016,7 @@ docs/ai-skills/wikiforge-development/references/development-workflow.md
 AGENTS.md
 docs/技术架构-technical-architecture.md
 docs/数据模型-data-model.md
-docs/2026-05-22-MVP实施计划-WikiForge-mvp-implementation-plan.md
+docs/current/2026-05-23-MVP实施计划-WikiForge-mvp-implementation-plan.md
 docs/架构决策-DECISIONS.md
 docs/2026-05-23-微服务架构与AI开发Skill设计-WikiForge-microservice-ai-skill-design.md
 ```
@@ -1386,8 +1386,8 @@ docs/archive/2026-05-23/2026-05-23-MVP1契约冻结并行工作单-WikiForge-mvp
 同步更新：
 
 ```text
-docs/2026-05-22-参考项目清单-WikiForge-reference-projects.md
-docs/2026-05-22-MVP实施计划-WikiForge-mvp-implementation-plan.md
+docs/current/2026-05-23-参考项目清单-WikiForge-reference-projects.md
+docs/current/2026-05-23-MVP实施计划-WikiForge-mvp-implementation-plan.md
 docs/archive/2026-05-23/2026-05-23-参考项目清单-WikiForge-reference-projects-v0.3.md
 docs/archive/2026-05-23/2026-05-23-MVP实施计划-WikiForge-mvp-implementation-plan-v0.4.md
 docs/archive/2026-05-23/2026-05-23-开发者日志-WikiForge-developer-log-v1.7.md
@@ -1692,10 +1692,80 @@ Pull request URL: https://github.com/BonusWang/WikiForge/pull/new/codex/mvp2-obs
 节点状态更新：
 
 - R0-5 提交推送：Done。
-- R0-6 版本标签、GitHub Release 和正式版本发布定义：Blocked，等待用户确认。
+- R0-6 版本标签、GitHub Release 和正式版本发布定义：External Pending，等待用户确认但不阻塞内部开发递进。
 
 边界确认：
 
 - 未创建标签 `0.04`。
 - 未创建 GitHub Release。
 - 当前只是推送开发分支，便于后续复核、PR 或继续开发。
+
+## 2026-05-23 发布边界修正与 MVP2.1 启动
+
+用户修正了版本发布边界：
+
+- GitHub 版本标签和 GitHub Release 属于对外宣导和正式发布定义。
+- 对外发布定义由用户确认。
+- 项目内开发代码提交、分支推送和下一工作流递进不应受版本标签和 Release 影响。
+
+本次修正：
+
+- `AGENTS.md` 增加规则：版本标签和 GitHub Release 不阻塞内部开发递进。
+- 项目整体计划将 S3 / R0 标记为内部开发基线已完成。
+- 当前执行指针移动到 S4 / R1 MVP2.1 可用性加固。
+- R0-6 状态调整为 External Pending，不再作为开发阻塞节点。
+- 新建开发分支：`codex/mvp2.1-usability-hardening`。
+
+MVP2.1 第一轮目标：
+
+- Source Files 展示是否已有 Obsidian Note。
+- 支持读取已有 Note，不自动重复写入。
+- 增加 Vault 状态面板。
+- 重复写入策略先采用“已有则预览，不自动重复写入”。
+
+## 2026-05-23 MVP2.1 可用性加固完成
+
+本轮按用户修正后的发布边界继续推进内部开发流程：GitHub 版本标签和 GitHub Release 只作为外部发布宣导事项，由用户确认，不阻塞开发分支提交、推送和下一工作流递进。
+
+完成内容：
+
+- 后端新增 `GET /api/v1/obsidian/status`，返回 Vault 路径、存在性、可写状态、Sources 目录状态和最近写入 Note。
+- 后端新增 `GET /api/v1/source-files/{fileUid}/obsidian-note`，支持按 Source File 读取最近写入的 Obsidian Note。
+- Source Files 列表响应补充最新 Obsidian Note 摘要字段。
+- 前端 Dashboard 增加 Obsidian Vault 状态卡片。
+- Source Files 表格增加 Obsidian 写入状态，已写入文件默认预览已有 Note，未写入文件才生成草案。
+- 重复写入默认策略明确为“已有则预览，不自动重复写入”；覆盖、另存、版本化策略放到后续增强。
+- 集成测试补充 Vault 状态、最近 Note 查询和列表状态字段。
+
+验证记录：
+
+```text
+后端 Maven 多模块测试：Pass
+前端 npm run build：Pass
+```
+
+当前节点：
+
+- R1-1 已写 Note 状态与读取已有 Note：Done。
+- R1-2 Vault 状态面板：Done。
+- R1-3 重复写入默认策略：Done。
+- R1-4 MVP2.1 回归验证记录：Done。
+- R1-5 文档归档和提交推送：本次提交推送后视为 Done。
+
+## 2026-05-23 文档一致性规则修正
+
+用户指出开发者日志 current 文件仍使用 2026-05-22 日期，容易误导后续 Agent；同时要求检查其他文档是否存在类似日期、状态和纯英文标题问题。
+
+本轮修正：
+
+- current 开发者日志改名为 `docs/current/2026-05-23-开发者日志-WikiForge-developer-log.md`。
+- current MVP 实施计划和参考项目清单从 2026-05-22 前缀改为 2026-05-23 前缀。
+- `README.md` 和 `docs/README.md` 同步更新 current 文档入口。
+- `docs/superpowers/plans/` 中纯英文 H1 补充中文语义。
+- `AGENTS.md` 补充文档命名规则：项目文档使用中文名 + EnglishName；`README.md`、`AGENTS.md`、`SKILL.md` 等生态约定文件保持原名，不为了中文化改名。
+- 新增 `docs/process/2026-05-23-文档一致性自检-WikiForge-docs-consistency-check.md`。
+
+边界：
+
+- 历史归档旧版本保留原貌，避免破坏历史追溯。
+- 只修正 current、最新快照、入口文档和活跃 Work Order。

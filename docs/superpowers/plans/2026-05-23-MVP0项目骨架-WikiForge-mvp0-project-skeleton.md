@@ -1,4 +1,4 @@
-# MVP 0 Project Skeleton Implementation Plan
+# 2026-05-23 WikiForge MVP0 项目骨架 Project Skeleton Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -102,7 +102,7 @@
 ## Task 6: Documentation Log
 
 **Files:**
-- Modify: `docs/2026-05-22-开发者日志-WikiForge-developer-log.md`
+- Modify: `docs/current/2026-05-23-开发者日志-WikiForge-developer-log.md`
 - Add archive snapshots under `docs/archive/2026-05-23/`
 
 - [x] Record that MVP 0 development started.

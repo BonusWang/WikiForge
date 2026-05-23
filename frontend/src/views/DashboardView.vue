@@ -21,6 +21,8 @@ import {
 } from '../api/import-jobs';
 import {
   generateSourceNoteDraft,
+  getObsidianStatus,
+  getSourceFileObsidianNote,
   initializeObsidianVault,
   previewObsidianNote,
   writeSourceNote
@@ -34,7 +36,12 @@ import type {
   ImportJobStatus,
   SourceFile
 } from '../types/importJobs';
-import type { ObsidianNote, ObsidianNotePreview, SourceNoteDraft } from '../types/obsidianNotes';
+import type {
+  ObsidianNote,
+  ObsidianNotePreview,
+  ObsidianVaultStatus,
+  SourceNoteDraft
+} from '../types/obsidianNotes';
 
 const appStore = useAppStore();
 const backendHealth = ref<BackendHealth | null>(null);
@@ -82,6 +89,8 @@ const sourceFilePageSize = ref(50);
 const sourceFileTotal = ref(0);
 const sourceFilesLoading = ref(false);
 const vaultInitializing = ref(false);
+const vaultStatus = ref<ObsidianVaultStatus | null>(null);
+const vaultStatusLoading = ref(false);
 const selectedSourceFile = ref<SourceFile | null>(null);
 const sourceNoteDrawerVisible = ref(false);
 const sourceNoteLoadingFileUid = ref('');
@@ -89,6 +98,7 @@ const sourceNoteDraft = ref<SourceNoteDraft | null>(null);
 const writtenNote = ref<ObsidianNote | null>(null);
 const notePreview = ref<ObsidianNotePreview | null>(null);
 const noteMarkdown = ref('');
+const sourceNoteMode = ref<'draft' | 'existing'>('draft');
 const writeNoteLoading = ref(false);
 const previewNoteLoading = ref(false);
 
@@ -96,6 +106,19 @@ const selectedJobStatus = computed(() => {
   return selectedJobDetail.value?.status
     ? statusLabels[selectedJobDetail.value.status]
     : 'Not selected';
+});
+
+const vaultStatusLabel = computed(() => {
+  if (!vaultStatus.value) {
+    return 'UNKNOWN';
+  }
+  if (vaultStatus.value.exists && vaultStatus.value.writable) {
+    return 'READY';
+  }
+  if (vaultStatus.value.exists) {
+    return 'READ ONLY';
+  }
+  return 'MISSING';
 });
 
 async function refreshHealth() {
@@ -206,11 +229,23 @@ async function refreshSelectedJob() {
   await Promise.all([refreshJobDetail(), refreshSourceFiles()]);
 }
 
+async function refreshVaultStatus() {
+  vaultStatusLoading.value = true;
+  try {
+    vaultStatus.value = await getObsidianStatus();
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : 'Obsidian Vault 状态加载失败');
+  } finally {
+    vaultStatusLoading.value = false;
+  }
+}
+
 async function initializeVault() {
   vaultInitializing.value = true;
   try {
     const result = await initializeObsidianVault();
     ElMessage.success(`Vault 已初始化：${result.vaultName}`);
+    await refreshVaultStatus();
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : 'Obsidian Vault 初始化失败');
   } finally {
@@ -218,13 +253,46 @@ async function initializeVault() {
   }
 }
 
-async function openSourceNoteDraft(sourceFile: SourceFile) {
+function resetSourceNoteState(sourceFile: SourceFile, mode: 'draft' | 'existing') {
   selectedSourceFile.value = sourceFile;
   sourceNoteDrawerVisible.value = true;
+  sourceNoteMode.value = mode;
   sourceNoteDraft.value = null;
   writtenNote.value = null;
   notePreview.value = null;
   noteMarkdown.value = '';
+}
+
+async function openSourceNote(sourceFile: SourceFile) {
+  if (sourceFile.obsidianNoteUid) {
+    await openExistingSourceNote(sourceFile);
+    return;
+  }
+  await openSourceNoteDraft(sourceFile);
+}
+
+async function openExistingSourceNote(sourceFile: SourceFile) {
+  resetSourceNoteState(sourceFile, 'existing');
+  sourceNoteLoadingFileUid.value = sourceFile.fileUid;
+
+  try {
+    const note = await getSourceFileObsidianNote(sourceFile.fileUid);
+    if (!note) {
+      ElMessage.info('该文件尚未写入 Source Note，已切换为草案模式');
+      await openSourceNoteDraft(sourceFile);
+      return;
+    }
+    writtenNote.value = note;
+    await loadNotePreview(note.noteUid);
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '已有 Source Note 加载失败');
+  } finally {
+    sourceNoteLoadingFileUid.value = '';
+  }
+}
+
+async function openSourceNoteDraft(sourceFile: SourceFile) {
+  resetSourceNoteState(sourceFile, 'draft');
   sourceNoteLoadingFileUid.value = sourceFile.fileUid;
 
   try {
@@ -249,8 +317,10 @@ async function persistSourceNote() {
       markdown: noteMarkdown.value
     });
     writtenNote.value = note;
+    sourceNoteMode.value = 'existing';
     ElMessage.success('Source Note 已写入 Obsidian Vault');
     await loadNotePreview(note.noteUid);
+    await Promise.all([refreshSourceFiles(), refreshVaultStatus()]);
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : 'Source Note 写入失败');
   } finally {
@@ -327,6 +397,7 @@ function formatBytes(value: number) {
 onMounted(() => {
   void refreshHealth();
   void refreshJobs();
+  void refreshVaultStatus();
 });
 </script>
 
@@ -370,8 +441,8 @@ onMounted(() => {
             工程阶段
           </div>
         </template>
-        <p class="metric">MVP 2</p>
-        <p class="muted">Obsidian Source Note</p>
+        <p class="metric">MVP 2.1</p>
+        <p class="muted">可用性加固</p>
       </el-card>
 
       <el-card shadow="never">
@@ -394,6 +465,34 @@ onMounted(() => {
         </template>
         <p class="metric">{{ sourceFileTotal }}</p>
         <p class="muted">{{ selectedJobStatus }}</p>
+      </el-card>
+
+      <el-card shadow="never" v-loading="vaultStatusLoading">
+        <template #header>
+          <div class="section-title compact">
+            <div class="card-title">
+              <el-icon><FolderAdd /></el-icon>
+              Obsidian Vault
+            </div>
+            <el-button link type="primary" @click="refreshVaultStatus">
+              <el-icon><Refresh /></el-icon>
+            </el-button>
+          </div>
+        </template>
+        <p class="metric" :class="{ ok: vaultStatus?.exists && vaultStatus?.writable }">
+          {{ vaultStatusLabel }}
+        </p>
+        <p class="muted truncate" :title="vaultStatus?.vaultPath || ''">
+          {{ vaultStatus?.vaultPath || '等待检测' }}
+        </p>
+        <div class="vault-status-tags">
+          <el-tag size="small" :type="vaultStatus?.sourceNoteDirectoryExists ? 'success' : 'info'" effect="plain">
+            Sources
+          </el-tag>
+          <el-tag v-if="vaultStatus?.lastNoteUid" size="small" effect="plain">
+            {{ vaultStatus.lastNoteUid }}
+          </el-tag>
+        </div>
       </el-card>
     </section>
 
@@ -576,16 +675,26 @@ onMounted(() => {
           </el-table-column>
           <el-table-column prop="contentHash" label="contentHash" min-width="220" show-overflow-tooltip />
           <el-table-column prop="organizeStatus" label="organizeStatus" width="150" show-overflow-tooltip />
-          <el-table-column fixed="right" label="操作" width="150">
+          <el-table-column label="Obsidian" width="140">
+            <template #default="scope">
+              <el-tag
+                :type="scope.row.obsidianNoteUid ? 'success' : 'info'"
+                effect="plain"
+              >
+                {{ scope.row.obsidianNoteUid ? '已写入' : '未写入' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column fixed="right" label="操作" width="160">
             <template #default="scope">
               <el-button
                 link
                 type="primary"
                 :loading="sourceNoteLoadingFileUid === scope.row.fileUid"
-                @click="openSourceNoteDraft(scope.row)"
+                @click="openSourceNote(scope.row)"
               >
                 <el-icon><Document /></el-icon>
-                Source Note
+                {{ scope.row.obsidianNoteUid ? '预览 Note' : '生成 Note' }}
               </el-button>
             </template>
           </el-table-column>
@@ -611,6 +720,15 @@ onMounted(() => {
       :title="selectedSourceFile?.fileName || 'Source Note'"
     >
       <div class="source-note-panel">
+        <div class="source-note-mode-row">
+          <el-tag :type="sourceNoteMode === 'existing' ? 'success' : 'primary'" effect="plain">
+            {{ sourceNoteMode === 'existing' ? '已有 Source Note' : 'Source Note 草案' }}
+          </el-tag>
+          <span v-if="selectedSourceFile?.obsidianVaultPath" class="muted truncate">
+            {{ selectedSourceFile.obsidianVaultPath }}
+          </span>
+        </div>
+
         <div v-if="sourceNoteDraft" class="source-note-meta">
           <el-tag effect="plain">{{ sourceNoteDraft.vaultName }}</el-tag>
           <span>{{ sourceNoteDraft.vaultPath }}</span>
@@ -627,6 +745,7 @@ onMounted(() => {
 
         <div class="note-toolbar">
           <el-button
+            v-if="sourceNoteMode === 'draft'"
             type="primary"
             :disabled="!sourceNoteDraft"
             :loading="writeNoteLoading"
@@ -657,6 +776,7 @@ onMounted(() => {
           v-model="noteMarkdown"
           class="markdown-editor"
           type="textarea"
+          :readonly="sourceNoteMode === 'existing'"
           :rows="22"
           resize="vertical"
         />

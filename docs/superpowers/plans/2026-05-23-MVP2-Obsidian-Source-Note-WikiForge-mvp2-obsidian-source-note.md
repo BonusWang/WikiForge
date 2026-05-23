@@ -1,4 +1,4 @@
-# MVP2 Obsidian Source Note Implementation Plan
+# 2026-05-23 WikiForge MVP2 Obsidian Source Note 实施计划 Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -160,8 +160,8 @@ Response:
 - Modify: `.env.example`
 - Modify: `deploy/docker-compose.yml`
 - Modify: `docs/current/技术架构-technical-architecture.md`
-- Modify: `docs/current/2026-05-22-MVP实施计划-WikiForge-mvp-implementation-plan.md`
-- Modify: `docs/current/2026-05-22-开发者日志-WikiForge-developer-log.md`
+- Modify: `docs/current/2026-05-23-MVP实施计划-WikiForge-mvp-implementation-plan.md`
+- Modify: `docs/current/2026-05-23-开发者日志-WikiForge-developer-log.md`
 - Archive snapshots under `docs/archive/2026-05-23/`
 
 ---
@@ -767,7 +767,7 @@ Expected:
 ## Task 8: Docs And Archive
 
 **Files:**
-- Modify: `docs/current/2026-05-22-开发者日志-WikiForge-developer-log.md`
+- Modify: `docs/current/2026-05-23-开发者日志-WikiForge-developer-log.md`
 - Modify: `docs/archive/2026-05-23/2026-05-23-归档索引-archive-index-vX.Y.md`
 - Create or update latest snapshots for changed current docs.
 

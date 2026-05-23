@@ -18,6 +18,12 @@ public record SourceFileResponse(
         String parseStatus,
         String organizeStatus,
         String duplicateOfFileUid,
+        String obsidianNoteUid,
+        String obsidianNoteStatus,
+        String obsidianNoteTitle,
+        String obsidianVaultPath,
+        String obsidianUri,
+        OffsetDateTime obsidianNoteCreatedAt,
         OffsetDateTime createdAt
 ) {
 }

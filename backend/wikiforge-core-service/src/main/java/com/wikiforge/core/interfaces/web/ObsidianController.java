@@ -4,6 +4,7 @@ import com.wikiforge.common.web.ApiResponse;
 import com.wikiforge.core.application.dto.ObsidianInitResponse;
 import com.wikiforge.core.application.dto.ObsidianNotePreviewResponse;
 import com.wikiforge.core.application.dto.ObsidianNoteResponse;
+import com.wikiforge.core.application.dto.ObsidianVaultStatusResponse;
 import com.wikiforge.core.application.dto.SourceNoteDraftResponse;
 import com.wikiforge.core.application.dto.WriteSourceNoteRequest;
 import com.wikiforge.core.application.service.ObsidianVaultService;
@@ -27,6 +28,16 @@ public class ObsidianController {
     @PostMapping("/obsidian/init")
     public ApiResponse<ObsidianInitResponse> initializeVault() {
         return ApiResponse.ok(obsidianVaultService.initializeVault());
+    }
+
+    @GetMapping("/obsidian/status")
+    public ApiResponse<ObsidianVaultStatusResponse> status() {
+        return ApiResponse.ok(obsidianVaultService.status());
+    }
+
+    @GetMapping("/source-files/{fileUid}/obsidian-note")
+    public ApiResponse<ObsidianNoteResponse> findSourceFileNote(@PathVariable String fileUid) {
+        return ApiResponse.ok(obsidianVaultService.findSourceFileNote(fileUid));
     }
 
     @PostMapping("/source-files/{fileUid}/obsidian-note/draft")

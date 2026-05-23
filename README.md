@@ -35,11 +35,11 @@ MVP 的第一目标不是做完整 RAG，也不是做复杂多 Agent 平台，�
 - [需求文档 PRD](docs/current/需求文档-knowledge-base-prd.md)
 - [技术架构 Technical Architecture](docs/current/技术架构-technical-architecture.md)
 - [数据模型 Data Model](docs/current/数据模型-data-model.md)
-- [MVP 实施计划 Implementation Plan](docs/current/2026-05-22-MVP实施计划-WikiForge-mvp-implementation-plan.md)
-- [参考项目清单 Reference Projects](docs/current/2026-05-22-参考项目清单-WikiForge-reference-projects.md)
-- [开发者日志 Developer Log](docs/current/2026-05-22-开发者日志-WikiForge-developer-log.md)
+- [MVP 实施计划 Implementation Plan](docs/current/2026-05-23-MVP实施计划-WikiForge-mvp-implementation-plan.md)
+- [参考项目清单 Reference Projects](docs/current/2026-05-23-参考项目清单-WikiForge-reference-projects.md)
+- [开发者日志 Developer Log](docs/current/2026-05-23-开发者日志-WikiForge-developer-log.md)
 - [版本更新记录 Release Notes](docs/current/2026-05-23-版本更新记录-WikiForge-release-notes.md)
 
 ## 当前状态
 
-项目已进入 MVP1 本地源文件归集整理阶段，已跑通 Core / Worker / UI / MySQL 的本地路径扫描、Raw Sources 复制归集、MySQL 索引和 Web UI 状态查看闭环。当前版本标签为 `0.03`。
+项目已完成 MVP2.1 可用性加固，当前内部开发主线准备进入 MVP3 文档解析。GitHub 版本标签和 Release 由用户单独确认，不阻塞开发分支提交、推送和下一工作流递进。

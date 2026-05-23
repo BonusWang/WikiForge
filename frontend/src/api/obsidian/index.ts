@@ -3,6 +3,7 @@ import type {
   ObsidianInitResult,
   ObsidianNote,
   ObsidianNotePreview,
+  ObsidianVaultStatus,
   SourceNoteDraft,
   WriteSourceNoteRequest
 } from '../../types/obsidianNotes';
@@ -17,6 +18,21 @@ function unwrapResponse<T>(response: ApiResponse<T | null>): T {
 export async function initializeObsidianVault(): Promise<ObsidianInitResult> {
   const response = await http.post<ApiResponse<ObsidianInitResult | null>>('/v1/obsidian/init');
   return unwrapResponse(response.data);
+}
+
+export async function getObsidianStatus(): Promise<ObsidianVaultStatus> {
+  const response = await http.get<ApiResponse<ObsidianVaultStatus | null>>('/v1/obsidian/status');
+  return unwrapResponse(response.data);
+}
+
+export async function getSourceFileObsidianNote(fileUid: string): Promise<ObsidianNote | null> {
+  const response = await http.get<ApiResponse<ObsidianNote | null>>(
+    `/v1/source-files/${encodeURIComponent(fileUid)}/obsidian-note`
+  );
+  if (!response.data.success) {
+    throw new Error(response.data.message || 'Request failed');
+  }
+  return response.data.data;
 }
 
 export async function generateSourceNoteDraft(fileUid: string): Promise<SourceNoteDraft> {

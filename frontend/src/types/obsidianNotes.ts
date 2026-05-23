@@ -4,6 +4,17 @@ export interface ObsidianInitResult {
   createdDirectories: string[];
 }
 
+export interface ObsidianVaultStatus {
+  vaultName: string;
+  vaultPath?: string | null;
+  exists: boolean;
+  writable: boolean;
+  sourceNoteDirectoryExists: boolean;
+  lastNoteUid?: string | null;
+  lastWrittenAt?: string | null;
+  errorMessage?: string | null;
+}
+
 export interface SourceNoteDraft {
   fileUid: string;
   sourceUid: string;

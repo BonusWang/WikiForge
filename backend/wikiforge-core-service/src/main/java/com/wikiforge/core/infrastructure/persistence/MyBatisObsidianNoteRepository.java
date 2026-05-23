@@ -54,6 +54,16 @@ public class MyBatisObsidianNoteRepository implements ObsidianNoteRepository {
         return Optional.ofNullable(entity).map(this::toDomain);
     }
 
+    @Override
+    public Optional<ObsidianNote> findLatest() {
+        ObsidianNoteEntity entity = obsidianNoteMapper.selectOne(
+                new LambdaQueryWrapper<ObsidianNoteEntity>()
+                        .orderByDesc(ObsidianNoteEntity::getId)
+                        .last("LIMIT 1")
+        );
+        return Optional.ofNullable(entity).map(this::toDomain);
+    }
+
     private ObsidianNoteEntity toEntity(ObsidianNote note) {
         ObsidianNoteEntity entity = new ObsidianNoteEntity();
         entity.setId(note.id());

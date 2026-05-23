@@ -62,6 +62,7 @@ class ImportJobApiIntegrationTests {
         restTemplate.getRestTemplate().setRequestFactory(new JdkClientHttpRequestFactory());
         Files.createDirectories(ALLOWED_ROOT);
         Files.createDirectories(RAW_SOURCES_ROOT);
+        jdbcTemplate.execute("DROP TABLE IF EXISTS obsidian_notes");
         jdbcTemplate.execute("DROP TABLE IF EXISTS source_files");
         jdbcTemplate.execute("DROP TABLE IF EXISTS sources");
         jdbcTemplate.execute("DROP TABLE IF EXISTS import_jobs");
@@ -139,6 +140,27 @@ class ImportJobApiIntegrationTests {
                     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (id),
                     UNIQUE KEY uk_source_files_file_uid (file_uid)
+                )
+                """);
+        jdbcTemplate.execute("""
+                CREATE TABLE obsidian_notes (
+                    id BIGINT NOT NULL AUTO_INCREMENT,
+                    note_uid VARCHAR(64) NOT NULL,
+                    source_id BIGINT NOT NULL,
+                    source_file_id BIGINT NULL,
+                    note_type VARCHAR(64) NOT NULL DEFAULT 'source_note',
+                    vault_name VARCHAR(128) NOT NULL,
+                    vault_path VARCHAR(1024) NOT NULL,
+                    absolute_path CLOB NOT NULL,
+                    obsidian_uri CLOB NOT NULL,
+                    title VARCHAR(512) NOT NULL,
+                    frontmatter_json CLOB NULL,
+                    content_hash VARCHAR(128) NULL,
+                    status VARCHAR(64) NOT NULL DEFAULT 'written',
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY uk_obsidian_notes_note_uid (note_uid)
                 )
                 """);
     }
