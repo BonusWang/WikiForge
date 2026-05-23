@@ -2,9 +2,14 @@ package com.wikiforge.core;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.wikiforge.core.application.port.WorkerImportJobClient;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,12 +22,21 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @ActiveProfiles("test")
 @SpringBootTest(classes = WikiForgeCoreApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class McpPreviewApiIntegrationTests {
+
+    private static final Path TEST_ROOT = Path.of(
+            System.getProperty("java.io.tmpdir"),
+            "wikiforge-mcp-preview-test-" + UUID.randomUUID()
+    ).toAbsolutePath().normalize();
+    private static final Path OBSIDIAN_VAULT = TEST_ROOT.resolve("WikiForgeVault").normalize();
+    private static final String NOTE_VAULT_PATH = "00_Inbox_收集箱/Sources_来源/example.md";
 
     @Autowired
     private TestRestTemplate restTemplate;
@@ -33,8 +47,18 @@ class McpPreviewApiIntegrationTests {
     @MockBean
     private WorkerImportJobClient workerImportJobClient;
 
+    @DynamicPropertySource
+    static void coreProperties(DynamicPropertyRegistry registry) {
+        registry.add("wikiforge.obsidian-vault-path", OBSIDIAN_VAULT::toString);
+        registry.add("wikiforge.obsidian-vault-name", () -> "WikiForgeVault");
+    }
+
     @BeforeEach
-    void prepareSchema() {
+    void prepareSchema() throws Exception {
+        deleteDirectory(OBSIDIAN_VAULT);
+        Files.createDirectories(OBSIDIAN_VAULT.resolve("00_Inbox_收集箱/Sources_来源"));
+        Files.writeString(OBSIDIAN_VAULT.resolve(NOTE_VAULT_PATH), "# example note\n\nMCP note markdown");
+        jdbcTemplate.execute("DROP TABLE IF EXISTS personal_records");
         jdbcTemplate.execute("DROP TABLE IF EXISTS mcp_tool_calls");
         jdbcTemplate.execute("DROP TABLE IF EXISTS obsidian_notes");
         jdbcTemplate.execute("DROP TABLE IF EXISTS source_contents");
@@ -174,6 +198,26 @@ class McpPreviewApiIntegrationTests {
                     UNIQUE KEY uk_mcp_tool_calls_call_uid (call_uid)
                 )
                 """);
+        jdbcTemplate.execute("""
+                CREATE TABLE personal_records (
+                    id BIGINT NOT NULL AUTO_INCREMENT,
+                    record_uid VARCHAR(64) NOT NULL,
+                    record_type VARCHAR(64) NOT NULL,
+                    title VARCHAR(512) NOT NULL,
+                    occurred_at TIMESTAMP NULL,
+                    source_channel VARCHAR(128) NOT NULL DEFAULT 'mcp',
+                    source_ref CLOB NULL,
+                    raw_content CLOB NOT NULL,
+                    structured_json CLOB NULL,
+                    status VARCHAR(64) NOT NULL DEFAULT 'pending',
+                    sensitivity_level VARCHAR(32) NOT NULL DEFAULT 'medium',
+                    created_by VARCHAR(128) NOT NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY uk_personal_records_record_uid (record_uid)
+                )
+                """);
         seedSource();
     }
 
@@ -194,7 +238,8 @@ class McpPreviewApiIntegrationTests {
         assertThat(tools.get(0).path("enabled").asBoolean()).isTrue();
         assertThat(toTextList(tools.get(2).path("inputSchema").path("required")))
                 .contains("title", "rawContent");
-        assertThat(tools.get(3).path("enabled").asBoolean()).isFalse();
+        assertThat(tools.get(3).path("enabled").asBoolean()).isTrue();
+        assertThat(tools.get(4).path("enabled").asBoolean()).isTrue();
     }
 
     @Test
@@ -230,9 +275,9 @@ class McpPreviewApiIntegrationTests {
         assertThat(getResult.path("source").path("sourceUid").asText()).isEqualTo("src_test");
         assertThat(getResult.path("content").path("excerpt").asText()).contains("MCP 测试正文");
         assertThat(getResult.path("obsidianNote").path("vaultPath").asText())
-                .isEqualTo("00_Inbox_收集箱/Sources_来源/example.md");
+                .isEqualTo(NOTE_VAULT_PATH);
         assertThat(getResult.toString()).doesNotContain("E:/private/input/example.pdf");
-        assertThat(getResult.toString()).doesNotContain("E:/vault/00_Inbox_收集箱/Sources_来源/example.md");
+        assertThat(getResult.toString()).doesNotContain(OBSIDIAN_VAULT.toString());
 
         ResponseEntity<JsonNode> createResponse = restTemplate.postForEntity(
                 "/api/v1/mcp/tools/create_source/call",
@@ -265,26 +310,151 @@ class McpPreviewApiIntegrationTests {
     }
 
     @Test
-    void disabledToolReturnsContractErrorAndWritesFailedCallLog() {
+    void missingObsidianNoteReturnsContractErrorAndWritesFailedCallLog() {
         HttpHeaders headers = new HttpHeaders();
         headers.add("X-WikiForge-Caller-Type", "agent");
         headers.add("X-WikiForge-Caller-Id", "hermes");
 
         ResponseEntity<JsonNode> response = restTemplate.postForEntity(
                 "/api/v1/mcp/tools/get_obsidian_note/call",
-                new HttpEntity<>(Map.of("arguments", Map.of("noteUid", "note_test")), headers),
+                new HttpEntity<>(Map.of("arguments", Map.of("noteUid", "note_missing")), headers),
                 JsonNode.class
         );
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(response.getBody().path("code").asText()).isEqualTo("MCP_002");
+        assertThat(response.getBody().path("code").asText()).isEqualTo("MCP_005");
         Integer failedCallCount = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM mcp_tool_calls WHERE tool_name = 'get_obsidian_note' "
-                        + "AND status = 'failed' AND error_code = 'MCP_002' "
+                        + "AND status = 'failed' AND error_code = 'MCP_005' "
                         + "AND caller_type = 'agent' AND caller_id = 'hermes'",
                 Integer.class
         );
         assertThat(failedCallCount).isEqualTo(1);
+    }
+
+    @Test
+    void obsidianAndPersonalRecordToolsReturnSafeDataAndRedactLogs() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-WikiForge-Caller-Type", "agent");
+        headers.add("X-WikiForge-Caller-Id", "hermes");
+
+        ResponseEntity<JsonNode> noteResponse = restTemplate.postForEntity(
+                "/api/v1/mcp/tools/get_obsidian_note/call",
+                new HttpEntity<>(Map.of("arguments", Map.of("noteUid", "note_test", "includeMarkdown", true)), headers),
+                JsonNode.class
+        );
+
+        assertThat(noteResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode note = noteResponse.getBody().path("data").path("result");
+        assertThat(note.path("noteUid").asText()).isEqualTo("note_test");
+        assertThat(note.path("sourceUid").asText()).isEqualTo("src_test");
+        assertThat(note.path("fileUid").asText()).isEqualTo("file_test");
+        assertThat(note.path("vaultPath").asText()).isEqualTo(NOTE_VAULT_PATH);
+        assertThat(note.path("markdown").asText()).contains("MCP note markdown");
+        assertThat(note.toString()).doesNotContain(OBSIDIAN_VAULT.toString());
+
+        ResponseEntity<JsonNode> recordResponse = restTemplate.postForEntity(
+                "/api/v1/mcp/tools/create_personal_record/call",
+                new HttpEntity<>(Map.of("arguments", Map.of(
+                        "recordType", "expense",
+                        "title", "Coffee Bill",
+                        "rawContent", "sensitive personal expense detail",
+                        "structured", Map.of("amount", 18.5, "currency", "CNY"),
+                        "sourceChannel", "hermes",
+                        "sourceRef", "chat-123",
+                        "sensitivityLevel", "high"
+                )), headers),
+                JsonNode.class
+        );
+
+        assertThat(recordResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode record = recordResponse.getBody().path("data").path("result");
+        assertThat(record.path("recordUid").asText()).startsWith("record_");
+        assertThat(record.path("recordType").asText()).isEqualTo("expense");
+        assertThat(record.path("status").asText()).isEqualTo("pending");
+
+        Integer recordCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM personal_records WHERE record_uid = ? AND raw_content = ?",
+                Integer.class,
+                record.path("recordUid").asText(),
+                "sensitive personal expense detail"
+        );
+        assertThat(recordCount).isEqualTo(1);
+        String recordLog = jdbcTemplate.queryForObject(
+                "SELECT input_json FROM mcp_tool_calls WHERE tool_name = 'create_personal_record'",
+                String.class
+        );
+        assertThat(recordLog).doesNotContain("sensitive personal expense detail");
+        assertThat(recordLog).doesNotContain("amount");
+        assertThat(recordLog).contains("rawContentLength");
+        assertThat(recordLog).contains("structuredRedacted");
+        String noteLog = jdbcTemplate.queryForObject(
+                "SELECT output_json FROM mcp_tool_calls WHERE tool_name = 'get_obsidian_note'",
+                String.class
+        );
+        assertThat(noteLog).doesNotContain("MCP note markdown");
+        assertThat(noteLog).contains("markdownLength");
+    }
+
+    @Test
+    void obsidianNoteAbsoluteVaultPathIsBlockedEvenWithoutMarkdown() {
+        jdbcTemplate.update(
+                "UPDATE obsidian_notes SET vault_path = ? WHERE note_uid = 'note_test'",
+                OBSIDIAN_VAULT.resolve(NOTE_VAULT_PATH).toString()
+        );
+
+        ResponseEntity<JsonNode> response = restTemplate.postForEntity(
+                "/api/v1/mcp/tools/get_obsidian_note/call",
+                Map.of("arguments", Map.of("noteUid", "note_test", "includeMarkdown", false)),
+                JsonNode.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().path("code").asText()).isEqualTo("MCP_006");
+        assertThat(response.getBody().toString()).doesNotContain(OBSIDIAN_VAULT.toString());
+    }
+
+    @Test
+    void obsidianNoteSymlinkEscapeIsBlockedBeforeReading() throws Exception {
+        Path outsideFile = TEST_ROOT.resolve("outside-secret.md");
+        Path linkPath = OBSIDIAN_VAULT.resolve("00_Inbox_收集箱/Sources_来源/escape.md");
+        Files.writeString(outsideFile, "outside vault secret");
+        try {
+            Files.deleteIfExists(linkPath);
+            Files.createSymbolicLink(linkPath, outsideFile);
+        } catch (Exception exception) {
+            return;
+        }
+        jdbcTemplate.update(
+                "UPDATE obsidian_notes SET vault_path = ? WHERE note_uid = 'note_test'",
+                "00_Inbox_收集箱/Sources_来源/escape.md"
+        );
+
+        ResponseEntity<JsonNode> response = restTemplate.postForEntity(
+                "/api/v1/mcp/tools/get_obsidian_note/call",
+                Map.of("arguments", Map.of("noteUid", "note_test", "includeMarkdown", true)),
+                JsonNode.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().path("code").asText()).isEqualTo("MCP_006");
+        assertThat(response.getBody().toString()).doesNotContain("outside vault secret");
+    }
+
+    @Test
+    void invalidPersonalRecordTypeReturnsContractError() {
+        ResponseEntity<JsonNode> response = restTemplate.postForEntity(
+                "/api/v1/mcp/tools/create_personal_record/call",
+                Map.of("arguments", Map.of(
+                        "recordType", "unknown",
+                        "title", "bad record",
+                        "rawContent", "bad record content"
+                )),
+                JsonNode.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().path("code").asText()).isEqualTo("RECORD_001");
     }
 
     private List<String> toNames(JsonNode tools) {
@@ -345,11 +515,27 @@ class McpPreviewApiIntegrationTests {
                     obsidian_uri, title, status, created_at, updated_at
                 ) VALUES (
                     400, 'note_test', 100, 200, 'WikiForgeVault',
-                    '00_Inbox_收集箱/Sources_来源/example.md',
-                    'E:/vault/00_Inbox_收集箱/Sources_来源/example.md',
+                    ?,
+                    ?,
                     'obsidian://open?vault=WikiForgeVault&file=00_Inbox', 'example note',
                     'written', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
                 )
-                """);
+                """, NOTE_VAULT_PATH, OBSIDIAN_VAULT.resolve(NOTE_VAULT_PATH).toString());
+    }
+
+    private void deleteDirectory(Path path) throws Exception {
+        if (!Files.exists(path)) {
+            return;
+        }
+        try (Stream<Path> paths = Files.walk(path)) {
+            paths.sorted(Comparator.reverseOrder())
+                    .forEach(current -> {
+                        try {
+                            Files.deleteIfExists(current);
+                        } catch (Exception exception) {
+                            throw new IllegalStateException(exception);
+                        }
+                    });
+        }
     }
 }

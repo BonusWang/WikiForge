@@ -4,11 +4,16 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wikiforge.common.error.BusinessException;
 import com.wikiforge.common.error.ErrorCode;
+import com.wikiforge.common.filesystem.PathSafety;
 import com.wikiforge.core.application.dto.McpToolCallPageResponse;
 import com.wikiforge.core.application.dto.McpToolCallResponse;
 import com.wikiforge.core.application.dto.McpToolDefinition;
 import com.wikiforge.core.application.dto.McpToolListResponse;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.ResultSet;
@@ -18,6 +23,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HexFormat;
@@ -48,16 +54,25 @@ public class McpPreviewService {
     );
     private static final Set<String> SOURCE_TYPES = Set.of("text", "note", "link", "manual");
     private static final Set<String> PROCESSING_INTENTS = Set.of("organize_only", "extract_and_review");
+    private static final Set<String> RECORD_TYPES = Set.of("expense", "bill", "email", "relationship", "event", "note");
+    private static final Set<String> SENSITIVITY_LEVELS = Set.of("low", "medium", "high");
 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
     private final TransactionTemplate transactionTemplate;
+    private final CoreRuntimeProperties runtimeProperties;
     private final List<McpToolDefinition> tools;
 
-    public McpPreviewService(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper, TransactionTemplate transactionTemplate) {
+    public McpPreviewService(
+            JdbcTemplate jdbcTemplate,
+            ObjectMapper objectMapper,
+            TransactionTemplate transactionTemplate,
+            CoreRuntimeProperties runtimeProperties
+    ) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
         this.transactionTemplate = transactionTemplate;
+        this.runtimeProperties = runtimeProperties;
         this.tools = List.of(
                 tool(
                         "search_sources",
@@ -80,13 +95,13 @@ public class McpPreviewService {
                 tool(
                         "get_obsidian_note",
                         "Read a registered Obsidian note without exposing absolute paths.",
-                        false,
+                        true,
                         getObsidianNoteInputSchema()
                 ),
                 tool(
                         "create_personal_record",
                         "Create a personal record draft through MCP.",
-                        false,
+                        true,
                         createPersonalRecordInputSchema()
                 )
         );
@@ -101,6 +116,8 @@ public class McpPreviewService {
         String callUid = nextUid("mcp_call");
         LocalDateTime createdAt = LocalDateTime.now();
         long start = System.nanoTime();
+        String normalizedCallerType = normalizeCallerType(callerType);
+        String normalizedCallerId = normalizeCallerId(callerId);
         try {
             McpToolDefinition tool = findTool(toolName);
             if (!tool.enabled()) {
@@ -110,16 +127,18 @@ public class McpPreviewService {
                 case "search_sources" -> searchSources(safeArguments);
                 case "get_source" -> getSource(safeArguments);
                 case "create_source" -> createSource(safeArguments);
+                case "get_obsidian_note" -> getObsidianNote(safeArguments);
+                case "create_personal_record" -> createPersonalRecord(safeArguments, normalizedCallerId);
                 default -> throw new BusinessException(ErrorCode.MCP_TOOL_NOT_FOUND);
             });
             long durationMs = durationMs(start);
             saveCallLog(
                     callUid,
                     toolName,
-                    normalizeCallerType(callerType),
-                    normalizeCallerId(callerId),
+                    normalizedCallerType,
+                    normalizedCallerId,
                     sanitizedInput(toolName, safeArguments),
-                    result,
+                    sanitizedOutput(result),
                     "completed",
                     null,
                     null,
@@ -140,8 +159,8 @@ public class McpPreviewService {
             saveCallLog(
                     callUid,
                     toolName,
-                    normalizeCallerType(callerType),
-                    normalizeCallerId(callerId),
+                    normalizedCallerType,
+                    normalizedCallerId,
                     sanitizedInput(toolName, safeArguments),
                     Map.of(),
                     "failed",
@@ -380,6 +399,90 @@ public class McpPreviewService {
         return result;
     }
 
+    private Map<String, Object> getObsidianNote(Map<String, Object> arguments) {
+        String noteUid = requiredString(arguments, "noteUid");
+        boolean includeMarkdown = boolValue(arguments.get("includeMarkdown"), true);
+        List<Map<String, Object>> rows = jdbcTemplate.query(
+                "SELECT n.note_uid, n.title, n.vault_name, n.vault_path, n.obsidian_uri, n.status, "
+                        + "s.source_uid, sf.file_uid "
+                        + "FROM obsidian_notes n "
+                        + "JOIN sources s ON s.id = n.source_id "
+                        + "LEFT JOIN source_files sf ON sf.id = n.source_file_id "
+                        + "WHERE n.note_uid = ? LIMIT 1",
+                (rs, rowNum) -> {
+                    Map<String, Object> note = new LinkedHashMap<>();
+                    put(note, "noteUid", rs.getString("note_uid"));
+                    put(note, "sourceUid", rs.getString("source_uid"));
+                    put(note, "fileUid", rs.getString("file_uid"));
+                    put(note, "title", rs.getString("title"));
+                    put(note, "vaultName", rs.getString("vault_name"));
+                    put(note, "vaultPath", rs.getString("vault_path"));
+                    put(note, "obsidianUri", rs.getString("obsidian_uri"));
+                    put(note, "status", rs.getString("status"));
+                    return note;
+                },
+                noteUid
+        );
+        if (rows.isEmpty()) {
+            throw new BusinessException(ErrorCode.MCP_OBSIDIAN_NOTE_NOT_FOUND);
+        }
+        Map<String, Object> note = rows.get(0);
+        String vaultPath = safeVaultPathForOutput(stringValue(note.get("vaultPath")));
+        put(note, "vaultPath", vaultPath);
+        if (includeMarkdown) {
+            put(note, "markdown", readRegisteredNoteMarkdown(vaultPath));
+        }
+        return note;
+    }
+
+    private Map<String, Object> createPersonalRecord(Map<String, Object> arguments, String callerId) {
+        String recordType = requiredString(arguments, "recordType");
+        if (!RECORD_TYPES.contains(recordType)) {
+            throw new BusinessException(ErrorCode.PERSONAL_RECORD_INVALID_TYPE);
+        }
+        String title = requiredString(arguments, "title");
+        String rawContent = requiredString(arguments, "rawContent");
+        if (title.length() > 512 || rawContent.length() > 100000) {
+            throw new BusinessException(ErrorCode.MCP_INVALID_INPUT);
+        }
+        String sourceChannel = defaultString(arguments.get("sourceChannel"), "mcp");
+        String sourceRef = stringValue(arguments.get("sourceRef"));
+        String sensitivityLevel = defaultString(arguments.get("sensitivityLevel"), "medium");
+        requireOneOf(sensitivityLevel, SENSITIVITY_LEVELS, "sensitivityLevel");
+        if (sourceChannel.length() > 128 || (sourceRef != null && sourceRef.length() > 2048)) {
+            throw new BusinessException(ErrorCode.MCP_INVALID_INPUT);
+        }
+        Object structured = arguments.get("structured");
+        String recordUid = nextUid("record");
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime occurredAt = parseOptionalDateTime(arguments.get("occurredAt"));
+        jdbcTemplate.update("""
+                INSERT INTO personal_records (
+                    record_uid, record_type, title, occurred_at, source_channel, source_ref, raw_content,
+                    structured_json, status, sensitivity_level, created_by, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
+                """,
+                recordUid,
+                recordType,
+                title,
+                occurredAt,
+                sourceChannel,
+                sourceRef,
+                rawContent,
+                structured == null ? null : toJson(structured),
+                sensitivityLevel,
+                callerId,
+                now,
+                now
+        );
+        Map<String, Object> result = new LinkedHashMap<>();
+        put(result, "recordUid", recordUid);
+        put(result, "recordType", recordType);
+        put(result, "status", "pending");
+        put(result, "createdAt", toOffset(now));
+        return result;
+    }
+
     private McpToolDefinition findTool(String toolName) {
         return tools.stream()
                 .filter(tool -> tool.name().equals(toolName))
@@ -591,6 +694,42 @@ public class McpPreviewService {
         return sanitized;
     }
 
+    private Object sanitizedOutput(Object result) {
+        return sanitizeValueForLog(result);
+    }
+
+    private Object sanitizeValueForLog(Object value) {
+        if (value instanceof Map<?, ?> map) {
+            Map<String, Object> sanitized = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                String key = String.valueOf(entry.getKey());
+                Object entryValue = entry.getValue();
+                if ("markdown".equals(key) && entryValue instanceof String markdownText) {
+                    put(sanitized, "markdownLength", markdownText.length());
+                    put(sanitized, "markdownSha256", sha256(markdownText));
+                    continue;
+                }
+                if ("rawContent".equals(key) && entryValue instanceof String rawContentText) {
+                    put(sanitized, "rawContentLength", rawContentText.length());
+                    put(sanitized, "rawContentSha256", sha256(rawContentText));
+                    continue;
+                }
+                if ("structured".equals(key)) {
+                    put(sanitized, "structuredRedacted", true);
+                    continue;
+                }
+                put(sanitized, key, sanitizeValueForLog(entryValue));
+            }
+            return sanitized;
+        }
+        if (value instanceof List<?> list) {
+            return list.stream()
+                    .map(this::sanitizeValueForLog)
+                    .toList();
+        }
+        return value;
+    }
+
     private void saveCallLog(
             String callUid,
             String toolName,
@@ -663,6 +802,32 @@ public class McpPreviewService {
         return defaultValue;
     }
 
+    private boolean boolValue(Object value, boolean defaultValue) {
+        if (value instanceof Boolean booleanValue) {
+            return booleanValue;
+        }
+        if (value instanceof String text && hasText(text)) {
+            return Boolean.parseBoolean(text);
+        }
+        return defaultValue;
+    }
+
+    private LocalDateTime parseOptionalDateTime(Object value) {
+        String text = stringValue(value);
+        if (!hasText(text)) {
+            return null;
+        }
+        try {
+            return OffsetDateTime.parse(text).toLocalDateTime();
+        } catch (DateTimeParseException ignored) {
+            try {
+                return LocalDateTime.parse(text);
+            } catch (DateTimeParseException exception) {
+                throw new BusinessException(ErrorCode.MCP_INVALID_INPUT, "occurredAt is invalid");
+            }
+        }
+    }
+
     private void requireOneOf(String value, Set<String> allowedValues, String fieldName) {
         if (!allowedValues.contains(value)) {
             throw new BusinessException(ErrorCode.MCP_INVALID_INPUT, fieldName + " is invalid");
@@ -712,6 +877,67 @@ public class McpPreviewService {
             return null;
         }
         return dateTime.atZone(ZoneId.systemDefault()).toOffsetDateTime();
+    }
+
+    private String readRegisteredNoteMarkdown(String vaultPath) {
+        Path vaultRoot = vaultRoot();
+        Path notePath = resolveVaultPath(vaultRoot, vaultPath);
+        if (!Files.exists(notePath, LinkOption.NOFOLLOW_LINKS) && !Files.exists(notePath)) {
+            throw new BusinessException(ErrorCode.MCP_OBSIDIAN_NOTE_NOT_FOUND);
+        }
+        try {
+            Path realNotePath = notePath.toRealPath();
+            if (!realNotePath.startsWith(vaultRoot) || !Files.isRegularFile(realNotePath, LinkOption.NOFOLLOW_LINKS)) {
+                throw new BusinessException(ErrorCode.MCP_FORBIDDEN_PATH_EXPOSURE);
+            }
+            return Files.readString(realNotePath, StandardCharsets.UTF_8);
+        } catch (BusinessException exception) {
+            throw exception;
+        } catch (IOException exception) {
+            throw new BusinessException(ErrorCode.MCP_CALL_FAILED, "obsidian note cannot be read");
+        }
+    }
+
+    private Path vaultRoot() {
+        String configuredPath = runtimeProperties.obsidianVaultPath();
+        if (!hasText(configuredPath)) {
+            throw new BusinessException(ErrorCode.MCP_CALL_FAILED, "obsidian vault path is not configured");
+        }
+        try {
+            return PathSafety.normalizeAbsolute(Path.of(configuredPath)).toRealPath();
+        } catch (BusinessException exception) {
+            throw new BusinessException(ErrorCode.MCP_CALL_FAILED, "obsidian vault path is invalid");
+        } catch (IOException exception) {
+            throw new BusinessException(ErrorCode.MCP_CALL_FAILED, "obsidian vault path cannot be resolved");
+        }
+    }
+
+    private String safeVaultPathForOutput(String vaultPath) {
+        return relativeVaultPath(vaultPath).toString().replace('\\', '/');
+    }
+
+    private Path resolveVaultPath(Path vaultRoot, String vaultPath) {
+        Path relativePath = relativeVaultPath(vaultPath);
+        Path resolved = vaultRoot.resolve(relativePath).normalize();
+        if (!resolved.startsWith(vaultRoot)) {
+            throw new BusinessException(ErrorCode.MCP_FORBIDDEN_PATH_EXPOSURE);
+        }
+        return resolved;
+    }
+
+    private Path relativeVaultPath(String vaultPath) {
+        if (!hasText(vaultPath)) {
+            throw new BusinessException(ErrorCode.MCP_OBSIDIAN_NOTE_NOT_FOUND);
+        }
+        Path relativePath = Path.of(vaultPath);
+        if (relativePath.isAbsolute()) {
+            throw new BusinessException(ErrorCode.MCP_FORBIDDEN_PATH_EXPOSURE);
+        }
+        Path normalized = relativePath.normalize();
+        if (normalized.startsWith("..")) {
+            throw new BusinessException(ErrorCode.MCP_FORBIDDEN_PATH_EXPOSURE);
+        }
+        return normalized;
     }
 
     private long durationMs(long startNanos) {
