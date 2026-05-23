@@ -34,6 +34,34 @@ public class CoreRuntimeProperties {
         return firstConfigured("wikiforge.security.internal-api-token", "WIKIFORGE_INTERNAL_API_TOKEN");
     }
 
+    public String modelProvider() {
+        return firstConfigured("wikiforge.model.provider", "WIKIFORGE_MODEL_PROVIDER");
+    }
+
+    public String minimaxApiKey() {
+        return firstConfigured(
+                "wikiforge.model.minimax.api-key",
+                "WIKIFORGE_MINIMAX_API_KEY",
+                "wikiforge.model.api-key",
+                "WIKIFORGE_MODEL_API_KEY"
+        );
+    }
+
+    public String minimaxBaseUrl() {
+        String value = firstConfigured(
+                "wikiforge.model.minimax.base-url",
+                "WIKIFORGE_MINIMAX_BASE_URL"
+        );
+        return value == null ? "https://api.minimax.io/v1" : value;
+    }
+
+    public String minimaxModel() {
+        return firstConfigured(
+                "wikiforge.model.minimax.model",
+                "WIKIFORGE_MINIMAX_MODEL"
+        );
+    }
+
     public String obsidianVaultPath() {
         return firstConfigured("wikiforge.obsidian-vault-path", "WIKIFORGE_OBSIDIAN_VAULT_PATH");
     }

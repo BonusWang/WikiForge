@@ -163,6 +163,12 @@ h1 {
   font-size: 13px;
 }
 
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
 .source-note-panel {
   display: grid;
   gap: 14px;
@@ -204,6 +210,16 @@ h1 {
 .markdown-editor textarea {
   font-family: "JetBrains Mono", Consolas, "Microsoft YaHei", monospace;
   line-height: 1.55;
+}
+
+.review-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.review-section {
+  display: grid;
+  gap: 10px;
 }
 
 @media (max-width: 920px) {

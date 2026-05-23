@@ -48,3 +48,7 @@ wikiforge:
   model:
     provider: ${WIKIFORGE_MODEL_PROVIDER:}
     api-key: ${WIKIFORGE_MODEL_API_KEY:}
+    minimax:
+      api-key: ${WIKIFORGE_MINIMAX_API_KEY:${WIKIFORGE_MODEL_API_KEY:}}
+      base-url: ${WIKIFORGE_MINIMAX_BASE_URL:https://api.minimax.io/v1}
+      model: ${WIKIFORGE_MINIMAX_MODEL:}

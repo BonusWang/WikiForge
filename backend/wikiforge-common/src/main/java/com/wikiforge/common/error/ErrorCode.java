@@ -5,6 +5,7 @@ public enum ErrorCode {
     SOURCE_PATH_NOT_FOUND("SOURCE_002", "input path not found"),
     SOURCE_UNSUPPORTED_INPUT_TYPE("SOURCE_003", "unsupported input type"),
     SOURCE_FILE_NOT_FOUND("SOURCE_004", "source file not found"),
+    AI_REVIEW_RUN_NOT_FOUND("AI_REVIEW_001", "ai review run not found"),
     IMPORT_JOB_NOT_FOUND("IMPORT_001", "import job not found"),
     IMPORT_INVALID_STATUS_TRANSITION("IMPORT_002", "invalid import job status transition"),
     OBSIDIAN_NOTE_NOT_FOUND("OBSIDIAN_001", "obsidian note not found"),

@@ -27,6 +27,7 @@ import {
   previewObsidianNote,
   writeSourceNote
 } from '../api/obsidian';
+import { createAiReviewRun, listReviewItems } from '../api/review';
 import { fetchBackendHealth, type BackendHealth } from '../services/http';
 import { useAppStore } from '../stores/app';
 import type {
@@ -42,6 +43,7 @@ import type {
   ObsidianVaultStatus,
   SourceNoteDraft
 } from '../types/obsidianNotes';
+import type { ReviewItem } from '../types/review';
 
 const appStore = useAppStore();
 const backendHealth = ref<BackendHealth | null>(null);
@@ -101,6 +103,14 @@ const noteMarkdown = ref('');
 const sourceNoteMode = ref<'draft' | 'existing'>('draft');
 const writeNoteLoading = ref(false);
 const previewNoteLoading = ref(false);
+const reviewItems = ref<ReviewItem[]>([]);
+const reviewPage = ref(1);
+const reviewPageSize = ref(20);
+const reviewTotal = ref(0);
+const reviewItemsLoading = ref(false);
+const aiReviewLoadingFileUid = ref('');
+const reviewDrawerVisible = ref(false);
+const selectedReviewItem = ref<ReviewItem | null>(null);
 
 const selectedJobStatus = computed(() => {
   return selectedJobDetail.value?.status
@@ -119,6 +129,10 @@ const vaultStatusLabel = computed(() => {
     return 'READ ONLY';
   }
   return 'MISSING';
+});
+
+const selectedReviewSuggested = computed(() => {
+  return prettyJson(selectedReviewItem.value?.suggestedChanges || '');
 });
 
 async function refreshHealth() {
@@ -240,6 +254,23 @@ async function refreshVaultStatus() {
   }
 }
 
+async function refreshReviewItems() {
+  reviewItemsLoading.value = true;
+  try {
+    const result = await listReviewItems({
+      status: 'pending',
+      page: reviewPage.value,
+      pageSize: reviewPageSize.value
+    });
+    reviewItems.value = result.items;
+    reviewTotal.value = result.total;
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '审核队列加载失败');
+  } finally {
+    reviewItemsLoading.value = false;
+  }
+}
+
 async function initializeVault() {
   vaultInitializing.value = true;
   try {
@@ -250,6 +281,23 @@ async function initializeVault() {
     ElMessage.error(error instanceof Error ? error.message : 'Obsidian Vault 初始化失败');
   } finally {
     vaultInitializing.value = false;
+  }
+}
+
+async function runAiReview(sourceFile: SourceFile) {
+  aiReviewLoadingFileUid.value = sourceFile.fileUid;
+  try {
+    const run = await createAiReviewRun(sourceFile.fileUid, {
+      providerName: 'minimax',
+      configSource: 'env'
+    });
+    ElMessage.success(`AI 整理已生成：${run.reviewItemUid}`);
+    reviewPage.value = 1;
+    await refreshReviewItems();
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : 'AI 整理生成失败');
+  } finally {
+    aiReviewLoadingFileUid.value = '';
   }
 }
 
@@ -356,9 +404,19 @@ function handleSourceFilePageChange(page: number) {
   void refreshSourceFiles();
 }
 
+function handleReviewPageChange(page: number) {
+  reviewPage.value = page;
+  void refreshReviewItems();
+}
+
 function handleStatusFilterChange() {
   jobPage.value = 1;
   void refreshJobs();
+}
+
+function openReviewItem(item: ReviewItem) {
+  selectedReviewItem.value = item;
+  reviewDrawerVisible.value = true;
 }
 
 function statusTagType(status: ImportJobStatus) {
@@ -394,10 +452,22 @@ function formatBytes(value: number) {
   return `${size.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
 }
 
+function prettyJson(value: string) {
+  if (!value.trim()) {
+    return '';
+  }
+  try {
+    return JSON.stringify(JSON.parse(value), null, 2);
+  } catch {
+    return value;
+  }
+}
+
 onMounted(() => {
   void refreshHealth();
   void refreshJobs();
   void refreshVaultStatus();
+  void refreshReviewItems();
 });
 </script>
 
@@ -685,17 +755,28 @@ onMounted(() => {
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column fixed="right" label="操作" width="160">
+          <el-table-column fixed="right" label="操作" width="220">
             <template #default="scope">
-              <el-button
-                link
-                type="primary"
-                :loading="sourceNoteLoadingFileUid === scope.row.fileUid"
-                @click="openSourceNote(scope.row)"
-              >
-                <el-icon><Document /></el-icon>
-                {{ scope.row.obsidianNoteUid ? '预览 Note' : '生成 Note' }}
-              </el-button>
+              <div class="row-actions">
+                <el-button
+                  link
+                  type="primary"
+                  :loading="sourceNoteLoadingFileUid === scope.row.fileUid"
+                  @click="openSourceNote(scope.row)"
+                >
+                  <el-icon><Document /></el-icon>
+                  {{ scope.row.obsidianNoteUid ? '预览 Note' : '生成 Note' }}
+                </el-button>
+                <el-button
+                  link
+                  type="success"
+                  :loading="aiReviewLoadingFileUid === scope.row.fileUid"
+                  @click="runAiReview(scope.row)"
+                >
+                  <el-icon><Cpu /></el-icon>
+                  AI 整理
+                </el-button>
+              </div>
             </template>
           </el-table-column>
         </el-table>
@@ -709,6 +790,61 @@ onMounted(() => {
             :page-size="sourceFilePageSize"
             :total="sourceFileTotal"
             @current-change="handleSourceFilePageChange"
+          />
+        </div>
+      </el-card>
+
+      <el-card shadow="never">
+        <template #header>
+          <div class="section-title">
+            <div class="card-title">
+              <el-icon><Cpu /></el-icon>
+              审核队列
+            </div>
+            <el-button :loading="reviewItemsLoading" @click="refreshReviewItems">
+              <el-icon><Refresh /></el-icon>
+              刷新审核
+            </el-button>
+          </div>
+        </template>
+
+        <el-table
+          v-loading="reviewItemsLoading"
+          :data="reviewItems"
+          border
+          empty-text="暂无待审核 AI 整理建议"
+        >
+          <el-table-column prop="reviewUid" label="reviewUid" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="sourceFileUid" label="sourceFileUid" min-width="160" show-overflow-tooltip />
+          <el-table-column prop="reviewType" label="reviewType" width="130" show-overflow-tooltip />
+          <el-table-column prop="status" label="status" width="120">
+            <template #default="scope">
+              <el-tag :type="scope.row.status === 'pending' ? 'warning' : 'info'">
+                {{ scope.row.status }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="reason" label="reason" min-width="220" show-overflow-tooltip />
+          <el-table-column prop="createdAt" label="createdAt" min-width="180" show-overflow-tooltip />
+          <el-table-column fixed="right" label="操作" width="120">
+            <template #default="scope">
+              <el-button link type="primary" @click="openReviewItem(scope.row)">
+                <el-icon><View /></el-icon>
+                查看草案
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <div class="pagination-row">
+          <el-pagination
+            v-if="reviewTotal > reviewPageSize"
+            background
+            layout="prev, pager, next"
+            :current-page="reviewPage"
+            :page-size="reviewPageSize"
+            :total="reviewTotal"
+            @current-change="handleReviewPageChange"
           />
         </div>
       </el-card>
@@ -784,6 +920,53 @@ onMounted(() => {
         <div v-if="notePreview" class="source-note-meta">
           <el-tag type="success" effect="plain">{{ notePreview.noteUid }}</el-tag>
           <span>{{ notePreview.obsidianUri }}</span>
+        </div>
+      </div>
+    </el-drawer>
+
+    <el-drawer
+      v-model="reviewDrawerVisible"
+      size="min(760px, 92vw)"
+      :title="selectedReviewItem?.reviewUid || 'AI 审核草案'"
+    >
+      <div v-if="selectedReviewItem" class="review-panel">
+        <div class="source-note-mode-row">
+          <el-tag type="warning" effect="plain">{{ selectedReviewItem.status }}</el-tag>
+          <span class="muted truncate">
+            {{ selectedReviewItem.sourceFileUid || selectedReviewItem.sourceUid }}
+          </span>
+        </div>
+
+        <el-alert
+          class="note-alert"
+          type="info"
+          show-icon
+          :closable="false"
+          :title="selectedReviewItem.reason || '等待人工审核后再写入知识层'"
+        />
+
+        <div class="review-section">
+          <div class="card-title">结构化建议</div>
+          <el-input
+            :model-value="selectedReviewSuggested"
+            class="markdown-editor"
+            type="textarea"
+            readonly
+            :rows="12"
+            resize="vertical"
+          />
+        </div>
+
+        <div class="review-section">
+          <div class="card-title">Markdown 草案</div>
+          <el-input
+            :model-value="selectedReviewItem.markdownDraft || ''"
+            class="markdown-editor"
+            type="textarea"
+            readonly
+            :rows="14"
+            resize="vertical"
+          />
         </div>
       </div>
     </el-drawer>

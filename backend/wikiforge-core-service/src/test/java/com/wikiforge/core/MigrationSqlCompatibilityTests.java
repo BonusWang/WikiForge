@@ -47,4 +47,21 @@ class MigrationSqlCompatibilityTests {
             assertThat(migrationSql).doesNotContain("ALTER TABLE sources ADD raw_text");
         }
     }
+
+    @Test
+    void agentReviewMigrationCreatesRunStepAndReviewTables() throws Exception {
+        try (var inputStream = getClass().getResourceAsStream(
+                "/db/migration/V20260523_005__create_agent_review_tables.sql"
+        )) {
+            assertThat(inputStream).isNotNull();
+            String migrationSql = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+            assertThat(migrationSql).contains("CREATE TABLE agent_runs");
+            assertThat(migrationSql).contains("CREATE TABLE agent_steps");
+            assertThat(migrationSql).contains("CREATE TABLE review_items");
+            assertThat(migrationSql).contains("run_uid VARCHAR(64) NOT NULL");
+            assertThat(migrationSql).contains("review_uid VARCHAR(64) NOT NULL");
+            assertThat(migrationSql).contains("suggested_changes_json JSON NULL");
+            assertThat(migrationSql).contains("KEY idx_review_items_status_created (status, created_at)");
+        }
+    }
 }
