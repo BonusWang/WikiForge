@@ -2,14 +2,14 @@
 
 | 字段 | 内容 |
 | --- | --- |
-| 任务ID | R4-5-4 |
+| 任务ID | R4-5-5 |
 | 状态 | Done |
 | 分支 | `codex/r4-5-mcp-dashboard-connectors` |
-| 当前目标 | OpenClaw / Hermes 本机接入 WikiForge MCP HTTP Preview 说明 |
-| 已完成 | 接入说明文档、docs README 入口、Roadmap / Developer Log / MCP Contract / Team Plan 状态更新 |
-| 待完成 | R4-5-5 集成验证、归档、提交推送、合入 main、标签和发布 |
-| 验证命令 | 待 R4-5-5 执行文档 T0、后端定向、前端构建、Compose config 和敏感信息扫描 |
-| 风险 | 当前 HTTP Preview 无登录鉴权，接入说明已强调仅限本机或可信内网使用 |
+| 当前目标 | R4-5 集成验证和发布候选收口 |
+| 已完成 | MCP 只读看板、calls 查询测试、OpenClaw / Hermes 接入说明、发布候选验证和 Release Notes |
+| 待完成 | 推送最终提交、合入 main、创建 tag 和 GitHub Release |
+| 验证命令 | 后端全量 Maven 测试、前端构建、Compose config、Git 卫生、敏感信息扫描和禁止路径扫描均通过 |
+| 风险 | 完整 MCP transport、MCP Client、多用户权限、办公室视图和向量库属于后续阶段 |
 
 ## 会话续接提示
 

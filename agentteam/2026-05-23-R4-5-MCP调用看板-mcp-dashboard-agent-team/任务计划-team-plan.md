@@ -10,7 +10,7 @@
 - ( ) 前端开发Agent：实现 MCP 工具与调用日志展示
 - ( ) 后端开发Agent：检查 MCP 后端缺口并补强必要测试
 - ( ) 主Agent：进入 OpenClaw / Hermes 本机接入说明
-- (x) 主Agent：集成验证、归档、提交推送和发布收口
+- (x) 主Agent：R4-5 发布收口完成
 
 ## 节点清单
 
@@ -19,7 +19,7 @@
 - [x] R4-5-2 前端 Dashboard 展示 MCP 工具、调用结果和日志
 - [x] R4-5-3 后端补 `GET /api/v1/mcp/calls` 查询端点集成测试
 - [x] R4-5-4 OpenClaw / Hermes 本机接入说明
-- [ ] R4-5-5 集成验证、文档归档、提交推送和发布
+- [x] R4-5-5 集成验证、文档归档、提交推送和发布
 
 ## 本轮前端侦察结论
 
@@ -95,3 +95,12 @@
 - 文档覆盖本机、Docker 外部容器、Compose 网络内三种 Base URL。
 - 文档提供 tools、calls、create_source、create_personal_record、search_sources、get_source、get_obsidian_note 的 PowerShell 示例。
 - 文档不包含真实 token、真实密钥或用户私密信息。
+
+## R4-5-5 发布候选验证记录
+
+- 后端全量：`mvn -s <temp-settings> "-Dmaven.repo.local=E:\repository" test` 通过，5 个模块合计 52 个测试。
+- 前端构建：`npm --prefix frontend run build` 通过。
+- Compose 配置：`deploy/docker-compose.yml` 和 `deploy/docker-compose.dev.yml` 均通过 `config --quiet`。
+- Git 卫生：`git diff --check` 通过。
+- 敏感信息扫描：未发现 MiniMax 密钥前缀、Bearer token 或常见 API key 模式。
+- 禁止路径扫描：未发现 `node_modules`、`dist`、`target`、真实 `.env`、`data`、Vault 或 Raw Sources 被 Git 跟踪。

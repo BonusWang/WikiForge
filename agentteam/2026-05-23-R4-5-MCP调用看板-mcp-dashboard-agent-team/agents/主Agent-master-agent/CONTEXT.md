@@ -94,11 +94,12 @@
 - R4-5-4 已完成：新增 OpenClaw / Hermes 本机接入说明。
 - 接入方式定位：HTTP Tool / Custom Action / Connector / Bridge Script 调用 MCP HTTP Preview。
 - 接入说明覆盖本机 `localhost:8080`、Docker 外部容器 `host.docker.internal:8080`、Compose 网络内 `wikiforge-core-service:8080`。
-- 当前执行指针：R4-5-5 集成验证、归档、提交推送、合入 main、标签和发布。
+- R4-5-5 发布候选验证已完成：后端 Maven 全量 52 测试通过、前端构建通过、Compose config 通过、Git / secret / forbidden path 扫描通过。
+- 当前执行指针：推送最终提交、合入 main、创建 `0.08-preview.3` 标签和 GitHub Release。
 
 ## 下一步建议
 
-1. R4-5-5 发布收口时执行 `git diff --check`、后端定向或全量测试、前端构建、Compose config、Git 卫生检查和敏感信息扫描。
-2. 更新 Roadmap、开发者日志、归档索引和 Release Notes。
-3. 提交并推送当前分支。
-4. 合入 `main` 并创建 tag / GitHub Release。
+1. 提交并推送当前分支的最终发布说明和归档快照。
+2. 合入 `main`。
+3. 创建并推送 `0.08-preview.3` 标签。
+4. 创建 GitHub Release。
