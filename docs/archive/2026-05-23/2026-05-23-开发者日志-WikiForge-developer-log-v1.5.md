@@ -2,8 +2,8 @@
 
 ## 版本索引 Version Index
 
-- 最新版本：v1.3
-- 最新小节：`2026-05-23 MVP1 契约冻结 Parallel Work Order`
+- 最新版本：v1.5
+- 最新小节：`2026-05-23 MVP1 本地端到端烟测与稳定性修复`
 - 推荐阅读：新 AI 开始工作时，先读本索引和最新小节，再按任务需要阅读历史小节。
 - 历史范围：v0.1-v0.9 记录需求发掘、架构评审、MVP0 骨架、微服务拆分和同日滚动归档规则；仅在追溯需求来源或架构决策时阅读。
 
@@ -1253,7 +1253,86 @@ QA 触发的契约补充：
 本次归档版本：
 
 ```text
-docs/archive/2026-05-23/2026-05-23-开发者日志-WikiForge-developer-log-v1.4.md
-docs/archive/2026-05-23/2026-05-23-归档索引-archive-index-v1.4.md
-docs/archive/2026-05-23/2026-05-23-MVP1契约冻结并行工作单-WikiForge-mvp1-contract-freeze-parallel-work-order-v0.2.md
+docs/archive/2026-05-23/2026-05-23-开发者日志-WikiForge-developer-log-v1.5.md
+docs/archive/2026-05-23/2026-05-23-归档索引-archive-index-v1.5.md
+docs/archive/2026-05-23/2026-05-23-MVP1契约冻结并行工作单-WikiForge-mvp1-contract-freeze-parallel-work-order-v0.3.md
+```
+
+## 2026-05-23 MVP1 本地端到端烟测与稳定性修复
+
+用户确认本地 Docker 已启动后，开始 MVP1 第一轮本地验收。完整 Docker Compose 镜像构建在拉取基础镜像阶段受 Docker Hub `auth.docker.io:443` 网络连接影响未完成，因此先采用本地 MySQL 容器 + 本地 Core / Worker Jar 的方式验证 MVP1 业务闭环。
+
+本次验收发现并修复：
+
+- MySQL 8 中 `recursive` 属于保留关键字，Flyway 执行 `V20260523_002__create_source_import_tables.sql` 失败；已改为数据库字段 `recursive_scan`，同时补充迁移 SQL 兼容性测试。
+- MyBatis Plus 自动映射曾生成 `recursive_scan AS recursive`，仍会触发 MySQL 保留字问题；已将持久化实体字段调整为 `recursiveScan`，避免生成保留字别名。
+- Worker 使用默认 HTTP request factory 时不支持 `PATCH` 回调；已改为 `JdkClientHttpRequestFactory`，并调整测试注入方式。
+- Core 的 `jobUid` 使用进程内自增序号，服务重启后会重新从 `job_yyyyMMdd_000001` 开始，和数据库已存在任务撞唯一索引；已改为 `job_yyyyMMdd_<12位uuid>`，降低重启、并发和未来多实例下的碰撞风险。
+- MVP1 契约示例中的 `jobUid` 样式已同步为随机后缀格式。
+
+本地端到端验收结果：
+
+```text
+Core health: UP
+Worker health: UP
+Flyway: 20260523.001 / 20260523.002 success
+JobUid: job_20260523_006ea8a44e17
+Status: completed
+TotalCount: 5
+SuccessCount: 4
+SkippedCount: 0
+FailedCount: 0
+SourceFileTotal: 5
+OrganizedFiles: 4
+Frontend dev server: http://localhost:3000
+Frontend proxy /api/v1/import-jobs: success
+```
+
+用户补充 Docker 已登录成功并可拉取 `hello-world` 后，继续补做容器级验收。
+
+本次 Docker 验收结果：
+
+```text
+docker pull maven:3.9.9-eclipse-temurin-21: success
+docker pull eclipse-temurin:21-jre-alpine: success
+docker pull node:22-alpine: success
+docker pull nginx:1.27-alpine: success
+docker compose build wikiforge-ui: success
+docker compose build wikiforge-worker-service: success
+docker compose build wikiforge-core-service: success
+docker compose up --no-build: success
+mysql: healthy
+wikiforge-core-service: healthy
+wikiforge-worker-service: healthy
+wikiforge-ui: healthy
+```
+
+容器级端到端导入验收：
+
+```text
+Entry: http://localhost:3000/api/v1/import-jobs/local
+InputPath: /data/wikiforge/imports/test-input
+RawSourcesRoot: /data/wikiforge/raw-sources
+JobUid: job_20260523_5c052ba13a89
+Status: completed
+TotalCount: 5
+SuccessCount: 4
+SkippedCount: 0
+FailedCount: 0
+SourceFileTotal: 5
+```
+
+本次额外修复：
+
+- `wikiforge-ui` 容器内 healthcheck 原先使用 `http://localhost/`，在 Nginx 仅监听 IPv4 时会被容器内 `wget` 解析到 IPv6 loopback 并出现 connection refused；已改为 `http://127.0.0.1/`。
+- 验证后 UI 容器健康状态恢复为 `healthy`。
+
+样例目录包含 5 个文件，其中 1 个 Markdown 与另一个文件内容重复。验收结果符合预期：5 条源文件记录入库，4 个文件复制到 Raw Sources，1 个文件标记为 `duplicate` 并复用已复制文件的 managed path。
+
+本次归档版本：
+
+```text
+docs/archive/2026-05-23/2026-05-23-开发者日志-WikiForge-developer-log-v1.5.md
+docs/archive/2026-05-23/2026-05-23-归档索引-archive-index-v1.5.md
+docs/archive/2026-05-23/2026-05-23-MVP1契约冻结并行工作单-WikiForge-mvp1-contract-freeze-parallel-work-order-v0.3.md
 ```

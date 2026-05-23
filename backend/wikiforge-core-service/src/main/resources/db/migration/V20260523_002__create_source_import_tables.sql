@@ -5,7 +5,7 @@ CREATE TABLE import_jobs (
     input_path TEXT NULL,
     input_url TEXT NULL,
     raw_sources_root TEXT NULL,
-    recursive TINYINT(1) NOT NULL DEFAULT 1,
+    recursive_scan TINYINT(1) NOT NULL DEFAULT 1,
     organize_mode VARCHAR(64) NOT NULL DEFAULT 'copy',
     max_copy_file_size_mb INT NOT NULL DEFAULT 100,
     source_platform VARCHAR(128) NULL,

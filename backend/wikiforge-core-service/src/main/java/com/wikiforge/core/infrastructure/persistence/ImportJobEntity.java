@@ -14,7 +14,7 @@ public class ImportJobEntity {
     private String importType;
     private String inputPath;
     private String rawSourcesRoot;
-    private Boolean recursive;
+    private Boolean recursiveScan;
     private String organizeMode;
     private Integer maxCopyFileSizeMb;
     private String status;
@@ -68,12 +68,12 @@ public class ImportJobEntity {
         this.rawSourcesRoot = rawSourcesRoot;
     }
 
-    public Boolean getRecursive() {
-        return recursive;
+    public Boolean getRecursiveScan() {
+        return recursiveScan;
     }
 
-    public void setRecursive(Boolean recursive) {
-        this.recursive = recursive;
+    public void setRecursiveScan(Boolean recursiveScan) {
+        this.recursiveScan = recursiveScan;
     }
 
     public String getOrganizeMode() {

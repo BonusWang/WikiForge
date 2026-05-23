@@ -73,7 +73,7 @@ class ImportJobApiIntegrationTests {
                     input_path CLOB NULL,
                     input_url CLOB NULL,
                     raw_sources_root CLOB NULL,
-                    recursive BOOLEAN NOT NULL DEFAULT TRUE,
+                    recursive_scan BOOLEAN NOT NULL DEFAULT TRUE,
                     organize_mode VARCHAR(64) NOT NULL DEFAULT 'copy',
                     max_copy_file_size_mb INT NOT NULL DEFAULT 100,
                     source_platform VARCHAR(128) NULL,
@@ -159,6 +159,7 @@ class ImportJobApiIntegrationTests {
         assertThat(body.path("message").asText()).isEqualTo("ok");
         JsonNode data = body.path("data");
         assertThat(data.path("jobUid").asText()).startsWith("job_");
+        assertThat(data.path("jobUid").asText()).matches("job_\\d{8}_[0-9a-f]{12}");
         assertThat(data.path("importType").asText()).isEqualTo("path_scan");
         assertThat(data.path("inputPath").asText()).isEqualTo(inputPath.toString());
         assertThat(data.path("rawSourcesRoot").asText()).isEqualTo(RAW_SOURCES_ROOT.toString());

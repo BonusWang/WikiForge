@@ -19,11 +19,8 @@ class HttpCoreImportJobClientTests {
     void callbacksSendInternalTokenHeader() {
         RestClient.Builder restClientBuilder = RestClient.builder();
         MockRestServiceServer server = MockRestServiceServer.bindTo(restClientBuilder).build();
-        HttpCoreImportJobClient client = new HttpCoreImportJobClient(
-                restClientBuilder,
-                "http://core.test",
-                "secret-token"
-        );
+        RestClient restClient = restClientBuilder.baseUrl("http://core.test").build();
+        HttpCoreImportJobClient client = new HttpCoreImportJobClient(restClient, "secret-token");
 
         server.expect(requestTo("http://core.test/api/v1/internal/import-jobs/job_1/status"))
                 .andExpect(method(HttpMethod.PATCH))

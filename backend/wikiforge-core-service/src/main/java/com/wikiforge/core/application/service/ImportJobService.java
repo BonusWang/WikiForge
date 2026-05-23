@@ -34,7 +34,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -42,8 +42,6 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 @Service
 public class ImportJobService {
-
-    private static final AtomicLong JOB_SEQUENCE = new AtomicLong();
 
     private final ImportJobRepository importJobRepository;
     private final SourceFileRepository sourceFileRepository;
@@ -269,8 +267,8 @@ public class ImportJobService {
 
     private String nextJobUid() {
         String date = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
-        long sequence = JOB_SEQUENCE.incrementAndGet();
-        return "job_" + date + "_" + String.format("%06d", sequence);
+        String randomSuffix = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+        return "job_" + date + "_" + randomSuffix;
     }
 
     private void dispatchWorkerAfterCommit(ImportJob importJob) {

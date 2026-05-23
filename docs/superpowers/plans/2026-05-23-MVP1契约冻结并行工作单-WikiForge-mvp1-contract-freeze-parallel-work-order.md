@@ -122,7 +122,7 @@ Success response:
 {
   "success": true,
   "data": {
-    "jobUid": "job_20260523_000001",
+    "jobUid": "job_20260523_ab12cd34ef56",
     "importType": "path_scan",
     "inputPath": "E:/example/messy-sources",
     "rawSourcesRoot": "E:/WikiForge_RawSources",
@@ -182,7 +182,7 @@ Response data uses the same fields as create response plus:
 ### 3.4 UI -> Core: list source files for job
 
 ```text
-GET /api/v1/source-files?jobUid=job_20260523_000001&page=1&pageSize=50
+GET /api/v1/source-files?jobUid=job_20260523_ab12cd34ef56&page=1&pageSize=50
 ```
 
 Source file item fields:
@@ -212,7 +212,7 @@ Request:
 
 ```json
 {
-  "jobUid": "job_20260523_000001",
+  "jobUid": "job_20260523_ab12cd34ef56",
   "inputPath": "E:/example/messy-sources",
   "rawSourcesRoot": "E:/WikiForge_RawSources",
   "recursive": true,
@@ -230,7 +230,7 @@ Response:
 {
   "success": true,
   "data": {
-    "jobUid": "job_20260523_000001",
+    "jobUid": "job_20260523_ab12cd34ef56",
     "accepted": true,
     "workerStatus": "accepted"
   },
@@ -463,7 +463,7 @@ CREATE TABLE import_jobs (
     input_path TEXT NULL,
     input_url TEXT NULL,
     raw_sources_root TEXT NULL,
-    recursive TINYINT(1) NOT NULL DEFAULT 1,
+    recursive_scan TINYINT(1) NOT NULL DEFAULT 1,
     organize_mode VARCHAR(64) NOT NULL DEFAULT 'copy',
     max_copy_file_size_mb INT NOT NULL DEFAULT 100,
     source_platform VARCHAR(128) NULL,
@@ -804,7 +804,7 @@ Use this template when sending one task to another AI tool:
 
 开始前必须阅读：
 1. AGENTS.md
-2. docs/archive/2026-05-23/2026-05-23-归档索引-archive-index-v1.3.md 的 Version Index 和当前阶段结论
+2. docs/archive/2026-05-23/2026-05-23-归档索引-archive-index-v1.5.md 的 Version Index 和当前阶段结论
 3. docs/ai-skills/wikiforge-development/SKILL.md
 4. docs/ai-skills/wikiforge-development/references/[对应 reference]
 5. docs/superpowers/plans/2026-05-23-MVP1契约冻结并行工作单-WikiForge-mvp1-contract-freeze-parallel-work-order.md 中分配给你的任务

@@ -1,8 +1,8 @@
-# 2026-05-23 WikiForge 文档归档索引 v1.3
+# 2026-05-23 WikiForge 文档归档索引 v1.5
 
 ## 版本索引 Version Index
 
-- 最新版本：v1.3
+- 最新版本：v1.5
 - 最新小节：`当前阶段结论`
 - 推荐阅读：新 AI 开始工作时，先读本索引、命名规则和当前阶段结论；再按任务读取对应最新文件。
 - 历史版本：v0.1-v0.9 仅在追溯需求演进、架构评审或归档规则变化时阅读。
@@ -53,7 +53,7 @@
 | `2026-05-23-归档索引-archive-index-v0.5.md` | v0.5 | 补充少服务微服务选择和 WikiForge AI 开发 Skill 后的归档索引 |
 | `2026-05-23-归档索引-archive-index-v0.6.md` | v0.6 | 补充多人协作角色 Prompt、Work Order 模板和 Skill v0.2 后的归档索引 |
 | `2026-05-23-归档索引-archive-index-v0.7.md` | v0.7 | 补充 Git 提交规则，明确 node_modules、dist、target 等编译产物不提交 |
-| `2026-05-23-归档索引-archive-index-v1.3.md` | v1.3 | 补充 MVP1 契约冻结 Parallel Work Order 后的归档索引 |
+| `2026-05-23-归档索引-archive-index-v1.5.md` | v1.5 | 补充 MVP1 本地与 Docker 端到端烟测、MySQL 兼容性、Worker PATCH、jobUid 重启碰撞和 UI healthcheck 修复后的归档索引 |
 | `2026-05-23-MVP实施计划-WikiForge-mvp-implementation-plan-v0.1.md` | v0.1 | MVP 实施计划 |
 | `2026-05-23-MVP实施计划-WikiForge-mvp-implementation-plan-v0.2.md` | v0.2 | 架构评审后补充 MVP 0、CI/CD、Docker 和分阶段执行规则的实施计划 |
 | `2026-05-23-MVP实施计划-WikiForge-mvp-implementation-plan-v0.3.md` | v0.3 | 补充 MVP 0 少服务微服务骨架、Core/Worker 拆分和新开发顺序 |
@@ -71,9 +71,9 @@
 | `2026-05-23-开发者日志-WikiForge-developer-log-v0.5.md` | v0.5 | 补充少服务微服务架构选择、CDP AI 范式学习和 WikiForge AI 开发 Skill |
 | `2026-05-23-开发者日志-WikiForge-developer-log-v0.6.md` | v0.6 | 补充多人协作角色 Prompt 和 Work Order 模板 |
 | `2026-05-23-开发者日志-WikiForge-developer-log-v0.7.md` | v0.7 | 补充 Git 提交规则，禁止提交 node_modules、dist、target、本地配置和运行数据 |
-| `2026-05-23-开发者日志-WikiForge-developer-log-v1.4.md` | v1.4 | 补充 MVP1 契约冻结、并行派工、QA 契约收口和 Core-Worker 导入闭环 |
+| `2026-05-23-开发者日志-WikiForge-developer-log-v1.5.md` | v1.5 | 补充 MVP1 契约冻结、并行派工、QA 契约收口、Core-Worker 导入闭环、本地与 Docker 端到端烟测修复 |
 | `2026-05-23-版本更新记录-WikiForge-release-notes-v0.1.md` | v0.1 | 版本 0.02 的更新内容、验证结果和版本边界 |
-| `2026-05-23-MVP1契约冻结并行工作单-WikiForge-mvp1-contract-freeze-parallel-work-order-v0.2.md` | v0.2 | MVP1 API、DTO、完整 DDL、状态枚举、路径安全、内部 API token、Core-Worker 派发闭环、去重归属和并行任务边界 |
+| `2026-05-23-MVP1契约冻结并行工作单-WikiForge-mvp1-contract-freeze-parallel-work-order-v0.3.md` | v0.3 | MVP1 API、DTO、完整 DDL、状态枚举、路径安全、内部 API token、Core-Worker 派发闭环、去重归属、MySQL 兼容字段和随机 jobUid 样式 |
 | `2026-05-23-架构决策-DECISIONS-v0.1.md` | v0.1 | 架构决策记录 |
 | `2026-05-23-架构决策-DECISIONS-v0.2.md` | v0.2 | 架构评审后的最终决策记录 |
 | `2026-05-23-架构决策-DECISIONS-v0.3.md` | v0.3 | 补充少服务微服务选择和 AI 开发 Skill 决策 |
@@ -97,7 +97,7 @@
 
 ## 当前阶段结论
 
-当前已从 MVP 方向冻结进入 MVP 0 工程骨架阶段：
+当前已进入 MVP1 本地源文件归集整理闭环验证阶段：
 
 - MVP 先做本地源文件归集整理。
 - MVP 打通最小 Obsidian Source Note 归档闭环。
@@ -129,6 +129,10 @@
 - QA 已提前发现并推动收口 P1 契约缺口：去重归属、完整 DDL、路径安全、内部 API token、环境变量对齐和大文件策略。
 - MVP1 并行成果已进入主编排集成：Core 创建任务后会派发 Worker，Worker 回调 Core 写入状态和 Source Files。
 - Compose 已补齐 Worker -> Core 的 `WIKIFORGE_CORE_SERVICE_BASE_URL`，Core / Worker 配置已与冻结契约对齐。
+- 本地 MySQL 容器 + Core / Worker Jar 已跑通 MVP1 端到端烟测：创建导入任务、Worker 扫描样例目录、复制 Raw Sources、识别重复文件、回写任务状态和 Source Files。
+- 本轮烟测已修复 MySQL 8 保留字 `recursive`、MyBatis 别名、Worker `PATCH` 回调和服务重启后 `jobUid` 碰撞问题。
+- Docker Hub 连接恢复后，已完成基础镜像拉取、Core / Worker / UI 镜像构建、Compose 启动和容器级端到端导入验收。
+- Docker Compose 当前运行状态：`mysql`、`wikiforge-core-service`、`wikiforge-worker-service`、`wikiforge-ui` 全部 healthy，访问入口为 `http://localhost:3000`。
 
 ## 后续归档建议
 

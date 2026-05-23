@@ -61,7 +61,7 @@ public class MyBatisImportJobRepository implements ImportJobRepository {
         entity.setImportType(importJob.getImportType());
         entity.setInputPath(importJob.getInputPath());
         entity.setRawSourcesRoot(importJob.getRawSourcesRoot());
-        entity.setRecursive(importJob.getRecursive());
+        entity.setRecursiveScan(importJob.getRecursive());
         entity.setOrganizeMode(importJob.getOrganizeMode());
         entity.setMaxCopyFileSizeMb(importJob.getMaxCopyFileSizeMb());
         entity.setStatus(importJob.getStatus());
@@ -84,7 +84,7 @@ public class MyBatisImportJobRepository implements ImportJobRepository {
         importJob.setImportType(entity.getImportType());
         importJob.setInputPath(entity.getInputPath());
         importJob.setRawSourcesRoot(entity.getRawSourcesRoot());
-        importJob.setRecursive(entity.getRecursive());
+        importJob.setRecursive(entity.getRecursiveScan());
         importJob.setOrganizeMode(entity.getOrganizeMode());
         importJob.setMaxCopyFileSizeMb(entity.getMaxCopyFileSizeMb());
         importJob.setStatus(entity.getStatus());
