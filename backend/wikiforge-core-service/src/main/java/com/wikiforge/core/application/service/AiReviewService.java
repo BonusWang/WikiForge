@@ -7,10 +7,14 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.wikiforge.common.error.BusinessException;
 import com.wikiforge.common.error.ErrorCode;
+import com.wikiforge.core.application.dto.ApproveReviewItemRequest;
+import com.wikiforge.core.application.dto.ApproveReviewItemResponse;
 import com.wikiforge.core.application.dto.AiReviewRunResponse;
 import com.wikiforge.core.application.dto.CreateAiReviewRunRequest;
+import com.wikiforge.core.application.dto.ObsidianNoteResponse;
 import com.wikiforge.core.application.dto.ReviewItemPageResponse;
 import com.wikiforge.core.application.dto.ReviewItemResponse;
+import com.wikiforge.core.application.dto.SourceNoteDraftResponse;
 import com.wikiforge.core.domain.model.AgentRun;
 import com.wikiforge.core.domain.model.AgentStep;
 import com.wikiforge.core.domain.model.ReviewItem;
@@ -46,6 +50,7 @@ public class AiReviewService {
     private final SourceFileRepository sourceFileRepository;
     private final SourceContentRepository sourceContentRepository;
     private final AgentReviewRepository agentReviewRepository;
+    private final ObsidianVaultService obsidianVaultService;
     private final CoreRuntimeProperties runtimeProperties;
     private final RestClient.Builder restClientBuilder;
     private final ObjectMapper objectMapper;
@@ -54,6 +59,7 @@ public class AiReviewService {
             SourceFileRepository sourceFileRepository,
             SourceContentRepository sourceContentRepository,
             AgentReviewRepository agentReviewRepository,
+            ObsidianVaultService obsidianVaultService,
             CoreRuntimeProperties runtimeProperties,
             RestClient.Builder restClientBuilder,
             ObjectMapper objectMapper
@@ -61,6 +67,7 @@ public class AiReviewService {
         this.sourceFileRepository = sourceFileRepository;
         this.sourceContentRepository = sourceContentRepository;
         this.agentReviewRepository = agentReviewRepository;
+        this.obsidianVaultService = obsidianVaultService;
         this.runtimeProperties = runtimeProperties;
         this.restClientBuilder = restClientBuilder;
         this.objectMapper = objectMapper;
@@ -151,6 +158,54 @@ public class AiReviewService {
                 reviewItemPage.page(),
                 reviewItemPage.pageSize(),
                 reviewItemPage.total()
+        );
+    }
+
+    @Transactional
+    public ApproveReviewItemResponse approveReviewItem(String reviewUid, ApproveReviewItemRequest request) {
+        ReviewItem reviewItem = agentReviewRepository.findReviewItemByReviewUid(reviewUid)
+                .orElseThrow(() -> new BusinessException(ErrorCode.AI_REVIEW_ITEM_NOT_FOUND));
+        if (!"pending".equals(reviewItem.status())) {
+            throw new BusinessException(ErrorCode.VALIDATION_FAILED, "review item is not pending");
+        }
+        if (!hasText(reviewItem.sourceFileUid())) {
+            throw new BusinessException(ErrorCode.SOURCE_FILE_NOT_FOUND);
+        }
+
+        SourceNoteDraftResponse baseDraft = obsidianVaultService.generateDraft(reviewItem.sourceFileUid());
+        ObsidianNoteResponse obsidianNote = obsidianVaultService.writeSourceNote(
+                reviewItem.sourceFileUid(),
+                approvedMarkdown(baseDraft.markdown(), reviewItem.markdownDraft())
+        );
+
+        LocalDateTime now = LocalDateTime.now();
+        String userDecision = userDecisionJson(request, obsidianNote.noteUid());
+        ReviewItem approved = agentReviewRepository.updateReviewItem(new ReviewItem(
+                reviewItem.id(),
+                reviewItem.reviewUid(),
+                reviewItem.sourceId(),
+                reviewItem.sourceFileId(),
+                reviewItem.runId(),
+                reviewItem.reviewType(),
+                "approved",
+                reviewItem.reason(),
+                reviewItem.suggestedChangesJson(),
+                reviewItem.markdownDraft(),
+                userDecision,
+                now,
+                reviewItem.createdAt(),
+                now,
+                reviewItem.sourceUid(),
+                reviewItem.sourceFileUid(),
+                reviewItem.runUid()
+        ));
+
+        return new ApproveReviewItemResponse(
+                approved.reviewUid(),
+                approved.status(),
+                approved.userDecision(),
+                toOffset(approved.reviewedAt()),
+                obsidianNote
         );
     }
 
@@ -425,6 +480,23 @@ public class AiReviewService {
                 suggested.path("summary").asText("待人工补充摘要。"),
                 suggested.path("category").asText("01_Inbox/待整理")
         );
+    }
+
+    private String approvedMarkdown(String baseMarkdown, String reviewMarkdown) {
+        String base = nullToEmpty(baseMarkdown).trim();
+        String review = nullToEmpty(reviewMarkdown).trim();
+        if (!hasText(review)) {
+            return base;
+        }
+        return base + "\n\n## AI 审核通过内容 Approved AI Draft\n\n" + review + "\n";
+    }
+
+    private String userDecisionJson(ApproveReviewItemRequest request, String noteUid) {
+        ObjectNode decision = objectMapper.createObjectNode();
+        decision.put("decision", "approved");
+        decision.put("decisionNote", request == null ? null : request.decisionNote());
+        decision.put("obsidianNoteUid", noteUid);
+        return toJson(decision);
     }
 
     private String stepInputJson(SourceFileRecord sourceFile, AiProviderConfig modelSelection) {

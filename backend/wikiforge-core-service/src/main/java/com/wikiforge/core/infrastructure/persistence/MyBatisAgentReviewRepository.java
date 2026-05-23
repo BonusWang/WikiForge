@@ -73,6 +73,15 @@ public class MyBatisAgentReviewRepository implements AgentReviewRepository {
     }
 
     @Override
+    public Optional<ReviewItem> findReviewItemByReviewUid(String reviewUid) {
+        ReviewItemEntity entity = reviewItemMapper.selectOne(
+                new LambdaQueryWrapper<ReviewItemEntity>()
+                        .eq(ReviewItemEntity::getReviewUid, reviewUid)
+        );
+        return Optional.ofNullable(entity).map(this::toModel);
+    }
+
+    @Override
     public ReviewItemPage findReviewItems(String status, int page, int pageSize) {
         LambdaQueryWrapper<ReviewItemEntity> wrapper = new LambdaQueryWrapper<ReviewItemEntity>()
                 .orderByDesc(ReviewItemEntity::getCreatedAt)
@@ -87,6 +96,13 @@ public class MyBatisAgentReviewRepository implements AgentReviewRepository {
                 pageSize,
                 result.getTotal()
         );
+    }
+
+    @Override
+    public ReviewItem updateReviewItem(ReviewItem reviewItem) {
+        ReviewItemEntity entity = toEntity(reviewItem);
+        reviewItemMapper.updateById(entity);
+        return findReviewItemByReviewUid(reviewItem.reviewUid()).orElse(reviewItem);
     }
 
     private AgentRun toModel(AgentRunEntity entity) {

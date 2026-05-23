@@ -29,6 +29,7 @@ class AiReviewApiIntegrationTests {
             "wikiforge-ai-review-test-" + UUID.randomUUID()
     ).toAbsolutePath().normalize();
     private static final Path RAW_SOURCES_ROOT = TEST_ROOT.resolve("raw-sources").normalize();
+    private static final Path OBSIDIAN_VAULT = TEST_ROOT.resolve("obsidian-vault").normalize();
 
     @Autowired
     private TestRestTemplate restTemplate;
@@ -42,12 +43,15 @@ class AiReviewApiIntegrationTests {
     @DynamicPropertySource
     static void coreProperties(DynamicPropertyRegistry registry) {
         registry.add("wikiforge.storage.raw-sources-root", RAW_SOURCES_ROOT::toString);
+        registry.add("wikiforge.obsidian-vault-path", OBSIDIAN_VAULT::toString);
+        registry.add("wikiforge.obsidian-vault-name", () -> "WikiForgeVault");
         registry.add("wikiforge.worker.base-url", () -> "http://test-worker:8081");
         registry.add("wikiforge.security.internal-api-token", () -> "test-token");
     }
 
     @BeforeEach
     void prepareSchema() {
+        jdbcTemplate.execute("DROP TABLE IF EXISTS obsidian_notes");
         jdbcTemplate.execute("DROP TABLE IF EXISTS review_items");
         jdbcTemplate.execute("DROP TABLE IF EXISTS agent_steps");
         jdbcTemplate.execute("DROP TABLE IF EXISTS agent_runs");
@@ -207,6 +211,27 @@ class AiReviewApiIntegrationTests {
                     UNIQUE KEY uk_review_items_review_uid (review_uid)
                 )
                 """);
+        jdbcTemplate.execute("""
+                CREATE TABLE obsidian_notes (
+                    id BIGINT NOT NULL AUTO_INCREMENT,
+                    note_uid VARCHAR(64) NOT NULL,
+                    source_id BIGINT NOT NULL,
+                    source_file_id BIGINT NULL,
+                    note_type VARCHAR(64) NOT NULL,
+                    vault_name VARCHAR(128) NOT NULL,
+                    vault_path CLOB NOT NULL,
+                    absolute_path CLOB NOT NULL,
+                    obsidian_uri CLOB NOT NULL,
+                    title VARCHAR(512) NOT NULL,
+                    frontmatter_json CLOB NULL,
+                    content_hash VARCHAR(128) NULL,
+                    status VARCHAR(64) NOT NULL DEFAULT 'draft',
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY uk_obsidian_notes_note_uid (note_uid)
+                )
+                """);
         seedSourceContent();
     }
 
@@ -307,6 +332,50 @@ class AiReviewApiIntegrationTests {
         assertThat(suggestedChanges)
                 .contains("WikiForge 是一个本地优先知识系统")
                 .contains("deepseek 未配置密钥");
+    }
+
+    @Test
+    void approveReviewItemWritesMarkdownDraftToObsidianAndClosesReview() {
+        ResponseEntity<JsonNode> runResponse = restTemplate.postForEntity(
+                "/api/v1/source-files/file_test/ai-review-runs",
+                Map.of("providerName", "rule-based", "modelName", "wikiforge-local-rules"),
+                JsonNode.class
+        );
+        String reviewUid = runResponse.getBody().path("data").path("reviewItemUid").asText();
+
+        ResponseEntity<JsonNode> approveResponse = restTemplate.postForEntity(
+                "/api/v1/review-items/{reviewUid}/approve",
+                Map.of("decisionNote", "人工确认 AI 草案可写入 Source Note"),
+                JsonNode.class,
+                reviewUid
+        );
+
+        assertThat(approveResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode data = approveResponse.getBody().path("data");
+        assertThat(data.path("reviewUid").asText()).isEqualTo(reviewUid);
+        assertThat(data.path("status").asText()).isEqualTo("approved");
+        assertThat(data.path("obsidianNote").path("noteUid").asText()).startsWith("note_");
+        assertThat(data.path("obsidianNote").path("vaultPath").asText()).contains("Sources_来源");
+
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT status FROM review_items WHERE review_uid = ?",
+                String.class,
+                reviewUid
+        )).isEqualTo("approved");
+        assertThat(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM obsidian_notes WHERE source_file_id = 200",
+                Integer.class
+        )).isEqualTo(1);
+        String noteUid = data.path("obsidianNote").path("noteUid").asText();
+        ResponseEntity<JsonNode> previewResponse = restTemplate.getForEntity(
+                "/api/v1/obsidian/notes/{noteUid}/preview",
+                JsonNode.class,
+                noteUid
+        );
+        assertThat(previewResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(previewResponse.getBody().path("data").path("markdown").asText())
+                .contains("## AI 整理建议")
+                .contains("WikiForge 是一个本地优先知识系统");
     }
 
     private void seedSourceContent() {

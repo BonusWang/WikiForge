@@ -1,3 +1,5 @@
+import type { ObsidianNote } from './obsidianNotes';
+
 export type ReviewItemStatus = 'pending' | 'approved' | 'rejected' | string;
 
 export interface CreateAiReviewRunRequest {
@@ -45,4 +47,16 @@ export interface ReviewItemListParams {
   status?: ReviewItemStatus;
   page?: number;
   pageSize?: number;
+}
+
+export interface ApproveReviewItemRequest {
+  decisionNote?: string;
+}
+
+export interface ApproveReviewItemResponse {
+  reviewUid: string;
+  status: ReviewItemStatus;
+  userDecision?: string | null;
+  reviewedAt?: string | null;
+  obsidianNote: ObsidianNote;
 }

@@ -18,5 +18,9 @@ public interface AgentReviewRepository {
 
     Optional<ReviewItem> findLatestReviewItemByRunId(Long runId);
 
+    Optional<ReviewItem> findReviewItemByReviewUid(String reviewUid);
+
     ReviewItemPage findReviewItems(String status, int page, int pageSize);
+
+    ReviewItem updateReviewItem(ReviewItem reviewItem);
 }

@@ -27,7 +27,7 @@ import {
   previewObsidianNote,
   writeSourceNote
 } from '../api/obsidian';
-import { createAiReviewRun, listReviewItems } from '../api/review';
+import { approveReviewItem, createAiReviewRun, listReviewItems } from '../api/review';
 import { fetchBackendHealth, type BackendHealth } from '../services/http';
 import { useAppStore } from '../stores/app';
 import type {
@@ -119,6 +119,7 @@ const reviewItemsLoading = ref(false);
 const aiReviewLoadingFileUid = ref('');
 const reviewDrawerVisible = ref(false);
 const selectedReviewItem = ref<ReviewItem | null>(null);
+const approvingReviewUid = ref('');
 
 const selectedJobStatus = computed(() => {
   return selectedJobDetail.value?.status
@@ -432,6 +433,41 @@ function handleStatusFilterChange() {
 function openReviewItem(item: ReviewItem) {
   selectedReviewItem.value = item;
   reviewDrawerVisible.value = true;
+}
+
+async function approveSelectedReviewItem() {
+  const reviewItem = selectedReviewItem.value;
+  if (!reviewItem || reviewItem.status !== 'pending') {
+    return;
+  }
+
+  approvingReviewUid.value = reviewItem.reviewUid;
+  try {
+    const result = await approveReviewItem(reviewItem.reviewUid);
+    ElMessage.success('审核已通过，并已写入 Obsidian');
+    selectedReviewItem.value = {
+      ...reviewItem,
+      status: result.status
+    };
+    reviewDrawerVisible.value = false;
+    openApprovedObsidianNote(result.obsidianNote);
+    await Promise.all([refreshReviewItems(), refreshVaultStatus(), refreshSourceFiles()]);
+    await loadNotePreview(result.obsidianNote.noteUid);
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '审核通过失败');
+  } finally {
+    approvingReviewUid.value = '';
+  }
+}
+
+function openApprovedObsidianNote(note: ObsidianNote) {
+  selectedSourceFile.value = null;
+  sourceNoteDrawerVisible.value = true;
+  sourceNoteMode.value = 'existing';
+  sourceNoteDraft.value = null;
+  writtenNote.value = note;
+  notePreview.value = null;
+  noteMarkdown.value = '';
 }
 
 function statusTagType(status: ImportJobStatus) {
@@ -978,6 +1014,17 @@ onMounted(() => {
           <span class="muted truncate">
             {{ selectedReviewItem.sourceFileUid || selectedReviewItem.sourceUid }}
           </span>
+        </div>
+
+        <div v-if="selectedReviewItem.status === 'pending'" class="review-actions">
+          <el-button
+            type="success"
+            :loading="approvingReviewUid === selectedReviewItem.reviewUid"
+            @click="approveSelectedReviewItem"
+          >
+            <el-icon><EditPen /></el-icon>
+            通过并写入 Obsidian
+          </el-button>
         </div>
 
         <el-alert

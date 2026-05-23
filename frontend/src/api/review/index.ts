@@ -1,6 +1,8 @@
 import { http, type ApiResponse } from '../../services/http';
 import type {
   AiReviewRun,
+  ApproveReviewItemRequest,
+  ApproveReviewItemResponse,
   CreateAiReviewRunRequest,
   ReviewItemListParams,
   ReviewItemPage
@@ -37,5 +39,16 @@ export async function listReviewItems(
   const response = await http.get<ApiResponse<ReviewItemPage | null>>('/v1/review-items', {
     params
   });
+  return unwrapResponse(response.data);
+}
+
+export async function approveReviewItem(
+  reviewUid: string,
+  payload: ApproveReviewItemRequest = {}
+): Promise<ApproveReviewItemResponse> {
+  const response = await http.post<ApiResponse<ApproveReviewItemResponse | null>>(
+    `/v1/review-items/${encodeURIComponent(reviewUid)}/approve`,
+    payload
+  );
   return unwrapResponse(response.data);
 }

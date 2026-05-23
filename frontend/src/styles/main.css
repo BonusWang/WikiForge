@@ -225,6 +225,11 @@ h1 {
   gap: 16px;
 }
 
+.review-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .review-section {
   display: grid;
   gap: 10px;
