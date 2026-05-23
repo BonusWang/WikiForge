@@ -4,6 +4,7 @@ COPY backend/pom.xml backend/pom.xml
 COPY backend/wikiforge-common/pom.xml backend/wikiforge-common/pom.xml
 COPY backend/wikiforge-core-service/pom.xml backend/wikiforge-core-service/pom.xml
 COPY backend/wikiforge-worker-service/pom.xml backend/wikiforge-worker-service/pom.xml
+COPY backend/wikiforge-orchestration-service/pom.xml backend/wikiforge-orchestration-service/pom.xml
 RUN mvn -B -f backend/pom.xml -pl wikiforge-core-service -am dependency:go-offline
 COPY backend backend
 RUN mvn -B -f backend/pom.xml -pl wikiforge-core-service -am package -DskipTests

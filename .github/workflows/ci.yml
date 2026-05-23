@@ -51,9 +51,31 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+  orchestration-ui:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: orchestration-ui
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: orchestration-ui/package-lock.json
+
+      - name: Install orchestration UI dependencies
+        run: npm ci
+
+      - name: Build orchestration UI
+        run: npm run build
+
   docker:
     runs-on: ubuntu-latest
-    needs: [backend, frontend]
+    needs: [backend, frontend, orchestration-ui]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -64,8 +86,14 @@ jobs:
       - name: Build worker service image
         run: docker build -f deploy/docker/worker-service.Dockerfile -t wikiforge-worker-service:ci .
 
+      - name: Build orchestration service image
+        run: docker build -f deploy/docker/orchestration-service.Dockerfile -t wikiforge-orchestration-service:ci .
+
       - name: Build UI image
         run: docker build -f deploy/docker/frontend.Dockerfile -t wikiforge-ui:ci .
+
+      - name: Build orchestration UI image
+        run: docker build -f deploy/docker/orchestration-ui.Dockerfile -t wikiforge-orchestration-ui:ci .
 
       - name: Validate compose file
         run: docker compose -f deploy/docker-compose.yml config

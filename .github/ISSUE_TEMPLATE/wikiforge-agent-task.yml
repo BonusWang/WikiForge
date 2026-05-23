@@ -1,0 +1,99 @@
+name: WikiForge Agent Task
+description: WikiForge agent-ready task card for Codex, OpenClaw, Hermes, or human developers
+title: "[Task] "
+labels:
+  - agent-task
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请先阅读 `AGENTS.md`、`WORKFLOW.md`、最新归档索引和对应 Work Order，再开始执行。
+  - type: input
+    id: task_id
+    attributes:
+      label: 任务ID Task ID
+      placeholder: R4-2
+    validations:
+      required: true
+  - type: input
+    id: parent_task
+    attributes:
+      label: 父任务 Parent Task
+      placeholder: S7 / R4 MVP5 轻量 MCP
+    validations:
+      required: true
+  - type: dropdown
+    id: status
+    attributes:
+      label: 当前状态 Status
+      options:
+        - Ready
+        - Doing
+        - Review
+        - Blocked
+        - Done
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: 目标 Goal
+      description: 描述本任务要完成的可验证结果。
+    validations:
+      required: true
+  - type: textarea
+    id: allowed_files
+    attributes:
+      label: 允许修改文件 Allowed Files
+      description: 列出可以修改的目录或文件。
+      placeholder: |
+        - backend/wikiforge-core-service/
+        - docs/superpowers/plans/...
+    validations:
+      required: true
+  - type: textarea
+    id: forbidden_files
+    attributes:
+      label: 禁止修改文件 Forbidden Files
+      description: 列出禁止修改或需要主编排 Agent 串行修改的文件。
+    validations:
+      required: true
+  - type: textarea
+    id: contracts
+    attributes:
+      label: 输入/输出契约 Contracts
+      description: API、DTO、表、状态枚举、环境变量或文档契约。
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: 验收命令 Verification
+      placeholder: |
+        mvn -B test
+        npm run build
+        git diff --check
+    validations:
+      required: true
+  - type: textarea
+    id: docs
+    attributes:
+      label: 文档更新 Documentation
+      description: 需要同步更新的 current / process / archive / Skill 文档。
+    validations:
+      required: true
+  - type: textarea
+    id: handoff
+    attributes:
+      label: Handoff 要求
+      description: 完成后必须返回的交接信息。
+      value: |
+        任务ID：
+        状态：DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED
+        完成内容：
+        实际修改文件：
+        契约变更：
+        验证命令和结果：
+        未验证原因：
+        风险：
+        需要主编排 Agent 集成的事项：

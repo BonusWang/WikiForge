@@ -1,0 +1,111 @@
+# WikiForge 工作流 Workflow
+
+本文件是 WikiForge 的 Agent 任务控制入口。它吸收 OpenAI Symphony 的“任务控制平面”思想，并在 WikiForge 内落地为独立辅助工程：`wikiforge-orchestration-service` + `wikiforge-orchestration-ui`。
+
+## 1. 核心原则
+
+- GitHub Issue / Issue 风格任务卡是任务控制平面，文档计划是产品和架构事实来源，代码分支是实现隔离层。
+- `wikiforge-orchestration-service` 是长期开发编排状态服务，优先管理任务、Agent、工作区、运行状态和 Handoff，不承载知识库业务能力。
+- `wikiforge-orchestration-ui` 是长期开发编排控制台，优先展示任务看板、Agent 状态、验证命令和下一步动作。
+- 每个可执行任务都必须能映射到一个 Issue 风格任务卡，即使暂时没有真实创建 GitHub Issue。
+- 一个任务未关闭前，必须能从任务卡看出当前 owner、状态、允许修改文件、验证命令和下一步动作。
+- 多 Agent 并行时，每个 Agent 只处理自己的任务卡和文件边界，不抢同一批文件。
+- 主编排 Agent 负责拆解、派发、集成、验证、文档归档和提交推送。
+
+## 2. 启动顺序
+
+新 Agent 或外部工具接入时，按顺序读取：
+
+1. `AGENTS.md`
+2. `WORKFLOW.md`
+3. 最新 `docs/archive/YYYY-MM-DD/*归档索引-archive-index-vX.Y.md`
+4. `docs/current/2026-05-23-项目整体计划-WikiForge-project-roadmap.md`
+5. 当前任务对应的 `docs/superpowers/plans/*.md`
+6. `docs/ai-skills/wikiforge-development/SKILL.md`
+7. 角色相关 reference，例如 `development-workflow.md`、`multi-agent-collaboration.md`
+
+## 3. 任务状态
+
+WikiForge 任务使用以下状态：
+
+| 状态 | 含义 |
+| --- | --- |
+| Backlog | 已记录，未进入当前迭代 |
+| Ready | 契约清楚，可被 Agent 接手 |
+| Doing | 正在执行 |
+| Review | 等待集成评审或人工复核 |
+| Blocked | 被外部依赖、权限、环境或需求冲突阻塞 |
+| Done | 已验证、已更新文档、可进入下一节点 |
+
+## 4. Issue 风格任务卡
+
+每个任务至少包含：
+
+```text
+任务ID：
+父任务：
+当前状态：
+Owner：
+目标：
+范围：
+允许修改文件：
+禁止修改文件：
+输入契约：
+输出契约：
+验收命令：
+文档更新：
+风险：
+下一步：
+```
+
+## 5. 分支和隔离
+
+- 日常开发分支使用 `codex/{stage-or-task}`。
+- 并行开发优先使用独立分支或 worktree。
+- 高冲突串行区必须由主编排 Agent 修改，包括 Flyway migration、共享 DTO、错误码、CI、Compose 和归档索引。
+- 子 Agent 完成后输出 Handoff Packet，主编排 Agent 再集成。
+
+## 6. GitHub Issue 使用规则
+
+当网络、权限和上下文允许时，按 `.github/ISSUE_TEMPLATE/wikiforge-agent-task.yml` 创建任务。
+
+Issue 标题建议：
+
+```text
+[R4-2] 实现 MCP search_sources / get_source
+[R4-4] 记录 MCP 调用日志
+```
+
+Label 建议：
+
+```text
+agent-task
+mvp5
+backend
+frontend
+docs
+blocked
+review
+```
+
+## 7. 完成定义
+
+任务完成必须同时满足：
+
+- 代码或文档已按任务范围完成。
+- 对应验证命令已执行，或明确说明未执行原因。
+- 项目整体计划的复选框/单选指针已更新。
+- 开发者日志已追加。
+- 需要归档时，`docs/archive/YYYY-MM-DD/` 最新索引已更新。
+- 日常开发提交已推送当前分支；版本标签和 GitHub Release 仍等待用户确认。
+
+## 8. 当前适用结论
+
+WikiForge 当前采用 WikiForge Orchestration 辅助工程模式：
+
+- 不照搬 Symphony Elixir 服务端，但吸收其 Issue/工作区/Agent 控制平面思想。
+- 新增独立后端服务 `wikiforge-orchestration-service`，默认端口 `8090`。
+- 新增独立前端服务 `wikiforge-orchestration-ui`，默认端口 `3001`。
+- 保留现有 `AGENTS.md + docs/current + docs/archive + Skill + Work Order` 体系。
+- 第一版先做只读任务状态和任务详情，不自动执行 Codex、OpenClaw 或外部命令。
+- 后续再逐步增加 GitHub Issue 同步、worktree 管理、Agent runner、重试和可观察性。

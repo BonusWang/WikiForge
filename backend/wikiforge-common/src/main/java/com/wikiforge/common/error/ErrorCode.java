@@ -11,6 +11,7 @@ public enum ErrorCode {
     IMPORT_INVALID_STATUS_TRANSITION("IMPORT_002", "invalid import job status transition"),
     OBSIDIAN_NOTE_NOT_FOUND("OBSIDIAN_001", "obsidian note not found"),
     OBSIDIAN_INVALID_VAULT("OBSIDIAN_002", "invalid obsidian vault"),
+    ORCHESTRATION_TASK_NOT_FOUND("ORCHESTRATION_001", "orchestration task not found"),
     WORKER_REJECTED_IMPORT_TASK("WORKER_001", "worker rejected import task"),
     VALIDATION_FAILED("COMMON_001", "validation failed");
 

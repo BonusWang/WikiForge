@@ -94,6 +94,26 @@ services:
       timeout: 5s
       retries: 12
 
+  wikiforge-orchestration-service:
+    build:
+      context: ..
+      dockerfile: deploy/docker/orchestration-service.Dockerfile
+    container_name: wikiforge-orchestration-service
+    environment:
+      ORCHESTRATION_SERVER_PORT: 8090
+      WIKIFORGE_WORKFLOW_ENTRY: ${WIKIFORGE_WORKFLOW_ENTRY:-WORKFLOW.md}
+      WIKIFORGE_PROJECT_ROADMAP: ${WIKIFORGE_PROJECT_ROADMAP:-docs/current/2026-05-23-项目整体计划-WikiForge-project-roadmap.md}
+      WIKIFORGE_ACTIVE_BRANCH: ${WIKIFORGE_ACTIVE_BRANCH:-codex/mvp5-mcp-preview}
+    ports:
+      - "8090:8090"
+    volumes:
+      - ../data/logs/orchestration-service:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8090/actuator/health | grep UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
   wikiforge-ui:
     build:
       context: ..
@@ -103,6 +123,22 @@ services:
       - "3000:80"
     depends_on:
       wikiforge-core-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ | grep WikiForge"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  wikiforge-orchestration-ui:
+    build:
+      context: ..
+      dockerfile: deploy/docker/orchestration-ui.Dockerfile
+    container_name: wikiforge-orchestration-ui
+    ports:
+      - "3001:80"
+    depends_on:
+      wikiforge-orchestration-service:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ | grep WikiForge"]

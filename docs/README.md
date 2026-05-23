@@ -5,10 +5,16 @@
 新参与 WikiForge 的 AI Agent 或开发者，建议按以下顺序阅读：
 
 1. `../AGENTS.md`：项目协作、归档和 Git 规则。
-2. `archive/` 最新日期目录下的最高版本归档索引。
-3. `current/` 当前主文档。
-4. `ai-skills/wikiforge-development/` 项目专用开发 Skill。
-5. `superpowers/plans/` 当前开发切片或并行工作单。
+2. `../WORKFLOW.md`：任务控制平面、Issue 风格任务卡和完成定义。
+3. `archive/` 最新日期目录下的最高版本归档索引。
+4. `current/` 当前主文档。
+5. `ai-skills/wikiforge-development/` 项目专用开发 Skill。
+6. `superpowers/plans/` 当前开发切片或并行工作单。
+
+当前 R4 / MVP5 执行计划：
+
+- [MVP5 编排辅助工程 Orchestration Console](superpowers/plans/2026-05-23-MVP5编排辅助工程-WikiForge-orchestration-console.md)
+- [MVP5 轻量 MCP 预览 MCP Preview](superpowers/plans/2026-05-23-MVP5轻量MCP-WikiForge-mvp5-mcp-preview.md)
 
 ## 目录结构
 
@@ -42,6 +48,7 @@ docs/
 - [架构评审材料 Architecture Review](process/2026-05-23-架构评审材料-WikiForge-architecture-review.md)
 - [架构评审结论 Architecture Review Conclusion](process/2026-05-23-架构评审结论-WikiForge-architecture-review-conclusion.md)
 - [文档一致性自检 Docs Consistency Check](process/2026-05-23-文档一致性自检-WikiForge-docs-consistency-check.md)
+- [Symphony 工作模式评估 Symphony Workflow Review](process/2026-05-23-Symphony工作模式评估-WikiForge-symphony-workflow-review.md)
 
 ## 当前本机实施信息
 

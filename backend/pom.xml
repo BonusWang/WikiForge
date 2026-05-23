@@ -22,6 +22,7 @@
         <module>wikiforge-common</module>
         <module>wikiforge-core-service</module>
         <module>wikiforge-worker-service</module>
+        <module>wikiforge-orchestration-service</module>
     </modules>
 
     <properties>
