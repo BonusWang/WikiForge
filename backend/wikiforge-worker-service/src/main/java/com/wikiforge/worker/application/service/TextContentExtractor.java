@@ -10,6 +10,11 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -19,36 +24,75 @@ public class TextContentExtractor {
 
     public Optional<ParsedTextContent> extract(Path managedPath, String fileExt) {
         String extension = fileExt == null ? "" : fileExt.toLowerCase(Locale.ROOT);
-        if (!List.of("md", "txt").contains(extension)) {
+        if (!List.of("md", "txt", "pdf", "docx").contains(extension)) {
             return Optional.empty();
         }
         try {
-            String rawText = Files.readString(managedPath, StandardCharsets.UTF_8);
-            String parsedText = "md".equals(extension) ? stripFrontmatter(rawText) : rawText;
-            boolean partial = parsedText.length() > MAX_TEXT_CHARS;
-            parsedText = truncate(parsedText);
-            return Optional.of(new ParsedTextContent(
-                    "md".equals(extension) ? "markdown-text" : "plain-text",
-                    "plain_text",
-                    parsedText,
-                    sha256(parsedText),
-                    parsedText.length(),
-                    true,
-                    partial ? "partial" : "success",
-                    null
-            ));
-        } catch (IOException exception) {
-            return Optional.of(new ParsedTextContent(
-                    "md".equals(extension) ? "markdown-text" : "plain-text",
-                    "plain_text",
-                    null,
-                    null,
-                    0,
-                    false,
-                    "failed",
-                    exception.getMessage()
-            ));
+            String parsedText = switch (extension) {
+                case "md" -> stripFrontmatter(Files.readString(managedPath, StandardCharsets.UTF_8));
+                case "txt" -> Files.readString(managedPath, StandardCharsets.UTF_8);
+                case "pdf" -> extractPdfText(managedPath);
+                case "docx" -> extractDocxText(managedPath);
+                default -> throw new IllegalArgumentException("unsupported extension");
+            };
+            return Optional.of(success(parserName(extension), parsedText));
+        } catch (IOException | RuntimeException exception) {
+            return Optional.of(failure(parserName(extension), exception));
         }
+    }
+
+    private String extractPdfText(Path managedPath) throws IOException {
+        try (PDDocument document = Loader.loadPDF(managedPath.toFile())) {
+            return new PDFTextStripper().getText(document);
+        }
+    }
+
+    private String extractDocxText(Path managedPath) throws IOException {
+        try (XWPFDocument document = new XWPFDocument(Files.newInputStream(managedPath))) {
+            return document.getParagraphs().stream()
+                    .map(paragraph -> paragraph.getText())
+                    .filter(text -> text != null && !text.isBlank())
+                    .collect(Collectors.joining("\n"));
+        }
+    }
+
+    private ParsedTextContent success(String parserName, String rawText) {
+        String parsedText = rawText == null ? "" : rawText;
+        boolean partial = parsedText.length() > MAX_TEXT_CHARS;
+        parsedText = truncate(parsedText);
+        return new ParsedTextContent(
+                parserName,
+                "plain_text",
+                parsedText,
+                sha256(parsedText),
+                parsedText.length(),
+                true,
+                partial ? "partial" : "success",
+                null
+        );
+    }
+
+    private ParsedTextContent failure(String parserName, Exception exception) {
+        return new ParsedTextContent(
+                parserName,
+                "plain_text",
+                null,
+                null,
+                0,
+                false,
+                "failed",
+                exception.getMessage()
+        );
+    }
+
+    private String parserName(String extension) {
+        return switch (extension) {
+            case "md" -> "markdown-text";
+            case "txt" -> "plain-text";
+            case "pdf" -> "pdfbox-text";
+            case "docx" -> "poi-docx-text";
+            default -> "unsupported-text";
+        };
     }
 
     private String stripFrontmatter(String text) {
