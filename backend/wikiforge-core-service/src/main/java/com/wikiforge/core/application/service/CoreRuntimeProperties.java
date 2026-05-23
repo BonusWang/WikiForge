@@ -1,5 +1,6 @@
 package com.wikiforge.core.application.service;
 
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import org.springframework.core.env.Environment;
@@ -31,6 +32,23 @@ public class CoreRuntimeProperties {
 
     public String internalApiToken() {
         return firstConfigured("wikiforge.security.internal-api-token", "WIKIFORGE_INTERNAL_API_TOKEN");
+    }
+
+    public String obsidianVaultPath() {
+        return firstConfigured("wikiforge.obsidian-vault-path", "WIKIFORGE_OBSIDIAN_VAULT_PATH");
+    }
+
+    public String obsidianVaultName() {
+        String configured = firstConfigured("wikiforge.obsidian-vault-name", "WIKIFORGE_OBSIDIAN_VAULT_NAME");
+        if (configured != null) {
+            return configured;
+        }
+        String vaultPath = obsidianVaultPath();
+        if (vaultPath == null || vaultPath.isBlank()) {
+            return "WikiForgeVault";
+        }
+        Path fileName = Path.of(vaultPath).normalize().getFileName();
+        return fileName == null ? "WikiForgeVault" : fileName.toString();
     }
 
     public List<String> allowedScanRoots() {

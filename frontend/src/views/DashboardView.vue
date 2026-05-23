@@ -2,10 +2,14 @@
 import {
   Connection,
   Cpu,
+  Document,
+  EditPen,
   Files,
   FolderAdd,
+  Link,
   Refresh,
-  SetUp
+  SetUp,
+  View
 } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { computed, onMounted, reactive, ref } from 'vue';
@@ -15,6 +19,12 @@ import {
   listImportJobs,
   listSourceFiles
 } from '../api/import-jobs';
+import {
+  generateSourceNoteDraft,
+  initializeObsidianVault,
+  previewObsidianNote,
+  writeSourceNote
+} from '../api/obsidian';
 import { fetchBackendHealth, type BackendHealth } from '../services/http';
 import { useAppStore } from '../stores/app';
 import type {
@@ -24,6 +34,7 @@ import type {
   ImportJobStatus,
   SourceFile
 } from '../types/importJobs';
+import type { ObsidianNote, ObsidianNotePreview, SourceNoteDraft } from '../types/obsidianNotes';
 
 const appStore = useAppStore();
 const backendHealth = ref<BackendHealth | null>(null);
@@ -70,6 +81,16 @@ const sourceFilePage = ref(1);
 const sourceFilePageSize = ref(50);
 const sourceFileTotal = ref(0);
 const sourceFilesLoading = ref(false);
+const vaultInitializing = ref(false);
+const selectedSourceFile = ref<SourceFile | null>(null);
+const sourceNoteDrawerVisible = ref(false);
+const sourceNoteLoadingFileUid = ref('');
+const sourceNoteDraft = ref<SourceNoteDraft | null>(null);
+const writtenNote = ref<ObsidianNote | null>(null);
+const notePreview = ref<ObsidianNotePreview | null>(null);
+const noteMarkdown = ref('');
+const writeNoteLoading = ref(false);
+const previewNoteLoading = ref(false);
 
 const selectedJobStatus = computed(() => {
   return selectedJobDetail.value?.status
@@ -185,6 +206,76 @@ async function refreshSelectedJob() {
   await Promise.all([refreshJobDetail(), refreshSourceFiles()]);
 }
 
+async function initializeVault() {
+  vaultInitializing.value = true;
+  try {
+    const result = await initializeObsidianVault();
+    ElMessage.success(`Vault 已初始化：${result.vaultName}`);
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : 'Obsidian Vault 初始化失败');
+  } finally {
+    vaultInitializing.value = false;
+  }
+}
+
+async function openSourceNoteDraft(sourceFile: SourceFile) {
+  selectedSourceFile.value = sourceFile;
+  sourceNoteDrawerVisible.value = true;
+  sourceNoteDraft.value = null;
+  writtenNote.value = null;
+  notePreview.value = null;
+  noteMarkdown.value = '';
+  sourceNoteLoadingFileUid.value = sourceFile.fileUid;
+
+  try {
+    const draft = await generateSourceNoteDraft(sourceFile.fileUid);
+    sourceNoteDraft.value = draft;
+    noteMarkdown.value = draft.markdown;
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : 'Source Note 草案生成失败');
+  } finally {
+    sourceNoteLoadingFileUid.value = '';
+  }
+}
+
+async function persistSourceNote() {
+  if (!selectedSourceFile.value) {
+    return;
+  }
+
+  writeNoteLoading.value = true;
+  try {
+    const note = await writeSourceNote(selectedSourceFile.value.fileUid, {
+      markdown: noteMarkdown.value
+    });
+    writtenNote.value = note;
+    ElMessage.success('Source Note 已写入 Obsidian Vault');
+    await loadNotePreview(note.noteUid);
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : 'Source Note 写入失败');
+  } finally {
+    writeNoteLoading.value = false;
+  }
+}
+
+async function loadNotePreview(noteUid?: string) {
+  const targetNoteUid = noteUid || writtenNote.value?.noteUid;
+  if (!targetNoteUid) {
+    return;
+  }
+
+  previewNoteLoading.value = true;
+  try {
+    const preview = await previewObsidianNote(targetNoteUid);
+    notePreview.value = preview;
+    noteMarkdown.value = preview.markdown;
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : 'Obsidian 文件预览失败');
+  } finally {
+    previewNoteLoading.value = false;
+  }
+}
+
 function handleJobPageChange(page: number) {
   jobPage.value = page;
   void refreshJobs();
@@ -246,10 +337,16 @@ onMounted(() => {
         <p class="eyebrow">{{ appStore.stage }}</p>
         <h1>{{ appStore.appName }}</h1>
       </div>
-      <el-button :loading="healthLoading" type="primary" @click="refreshHealth">
-        <el-icon><Refresh /></el-icon>
-        刷新状态
-      </el-button>
+      <div class="topbar-actions">
+        <el-button :loading="vaultInitializing" @click="initializeVault">
+          <el-icon><FolderAdd /></el-icon>
+          初始化 Vault
+        </el-button>
+        <el-button :loading="healthLoading" type="primary" @click="refreshHealth">
+          <el-icon><Refresh /></el-icon>
+          刷新状态
+        </el-button>
+      </div>
     </header>
 
     <section class="status-grid">
@@ -273,8 +370,8 @@ onMounted(() => {
             工程阶段
           </div>
         </template>
-        <p class="metric">MVP 1</p>
-        <p class="muted">Source ingestion</p>
+        <p class="metric">MVP 2</p>
+        <p class="muted">Obsidian Source Note</p>
       </el-card>
 
       <el-card shadow="never">
@@ -479,6 +576,19 @@ onMounted(() => {
           </el-table-column>
           <el-table-column prop="contentHash" label="contentHash" min-width="220" show-overflow-tooltip />
           <el-table-column prop="organizeStatus" label="organizeStatus" width="150" show-overflow-tooltip />
+          <el-table-column fixed="right" label="操作" width="150">
+            <template #default="scope">
+              <el-button
+                link
+                type="primary"
+                :loading="sourceNoteLoadingFileUid === scope.row.fileUid"
+                @click="openSourceNoteDraft(scope.row)"
+              >
+                <el-icon><Document /></el-icon>
+                Source Note
+              </el-button>
+            </template>
+          </el-table-column>
         </el-table>
 
         <div class="pagination-row">
@@ -494,5 +604,68 @@ onMounted(() => {
         </div>
       </el-card>
     </section>
+
+    <el-drawer
+      v-model="sourceNoteDrawerVisible"
+      size="min(760px, 92vw)"
+      :title="selectedSourceFile?.fileName || 'Source Note'"
+    >
+      <div class="source-note-panel">
+        <div v-if="sourceNoteDraft" class="source-note-meta">
+          <el-tag effect="plain">{{ sourceNoteDraft.vaultName }}</el-tag>
+          <span>{{ sourceNoteDraft.vaultPath }}</span>
+        </div>
+
+        <el-alert
+          v-if="writtenNote"
+          class="note-alert"
+          type="success"
+          show-icon
+          :closable="false"
+          :title="`已写入：${writtenNote.vaultPath}`"
+        />
+
+        <div class="note-toolbar">
+          <el-button
+            type="primary"
+            :disabled="!sourceNoteDraft"
+            :loading="writeNoteLoading"
+            @click="persistSourceNote"
+          >
+            <el-icon><EditPen /></el-icon>
+            写入 Vault
+          </el-button>
+          <el-button
+            :disabled="!writtenNote"
+            :loading="previewNoteLoading"
+            @click="loadNotePreview()"
+          >
+            <el-icon><View /></el-icon>
+            读取预览
+          </el-button>
+          <el-button
+            v-if="writtenNote"
+            tag="a"
+            :href="writtenNote.obsidianUri"
+          >
+            <el-icon><Link /></el-icon>
+            打开 Obsidian
+          </el-button>
+        </div>
+
+        <el-input
+          v-model="noteMarkdown"
+          class="markdown-editor"
+          type="textarea"
+          :rows="22"
+          resize="vertical"
+        />
+
+        <div v-if="notePreview" class="source-note-meta">
+          <el-tag type="success" effect="plain">{{ notePreview.noteUid }}</el-tag>
+          <span>{{ notePreview.obsidianUri }}</span>
+        </div>
+      </div>
+    </el-drawer>
   </main>
 </template>

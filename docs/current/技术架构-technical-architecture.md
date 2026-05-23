@@ -908,8 +908,11 @@ Docker 运行时配置：
 - `SPRING_DATASOURCE_PASSWORD`
 - `CORE_SERVER_PORT`
 - `WORKER_SERVER_PORT`
+- `WIKIFORGE_HOST_RAW_SOURCES_ROOT`
+- `WIKIFORGE_HOST_OBSIDIAN_VAULT_PATH`
 - `WIKIFORGE_RAW_SOURCES_PATH`
 - `WIKIFORGE_OBSIDIAN_VAULT_PATH`
+- `WIKIFORGE_OBSIDIAN_VAULT_NAME`
 - `WIKIFORGE_ALLOWED_SCAN_ROOTS`
 - `WIKIFORGE_MODEL_PROVIDER`
 - `WIKIFORGE_MODEL_API_KEY`
@@ -918,11 +921,19 @@ Docker 运行时配置：
 
 ```text
 ./data/mysql:/var/lib/mysql
-./data/raw-sources:/data/wikiforge/raw-sources
-./data/obsidian-vault:/data/wikiforge/obsidian-vault
+${WIKIFORGE_HOST_RAW_SOURCES_ROOT:-./data/raw-sources}:/data/wikiforge/raw-sources
+${WIKIFORGE_HOST_OBSIDIAN_VAULT_PATH:-./data/obsidian-vault}:/data/wikiforge/obsidian-vault
 ./data/logs:/app/logs
 ./config:/app/config
 ```
+
+当前用户确认的本机 Obsidian Vault 宿主机路径为：
+
+```text
+E:\WikiForgeVault
+```
+
+本路径只作为本机部署和后续 MVP2 验收使用，不写入镜像；Docker 模式通过 `WIKIFORGE_HOST_OBSIDIAN_VAULT_PATH` 映射到容器内 `/data/wikiforge/obsidian-vault`。
 
 数据库迁移策略：
 
@@ -1034,13 +1045,15 @@ MVP 暂不引入：
 
 ### MVP 2：Obsidian Source Note
 
-- Obsidian Writer。
-- Vault 目录初始化。
-- Source Note 模板。
-- frontmatter 生成。
-- index / log 文件。
-- Markdown 预览。
-- `obsidian://open` 打开链接。
+- 已实现 Obsidian Vault 初始化 API：`POST /api/v1/obsidian/init`。
+- 已实现 Source Note 草案 API：`POST /api/v1/source-files/{fileUid}/obsidian-note/draft`。
+- 已实现 Source Note 写入 API：`POST /api/v1/source-files/{fileUid}/obsidian-note/write`。
+- 已实现 Markdown 预览 API：`GET /api/v1/obsidian/notes/{noteUid}/preview`。
+- 已实现 `obsidian_notes` 运行账本，Core Service 负责 Source / SourceFile 与 Vault Markdown 文件映射。
+- 已实现服务端路径校验、Vault 内相对路径解析、临时文件写入和原子 rename。
+- 已实现 `obsidian://open` 链接生成，Vault 名称和 Vault 内路径均进行 URL encode。
+- 已实现 Web UI Source Note 抽屉，支持编辑草案、写入 Vault、读取预览和打开 Obsidian。
+- `index / log` 系统文件暂未进入 MVP2 实现，后续随 Wiki 编译和维护 Agent 增补。
 
 ### MVP 3：AI 辅助整理
 

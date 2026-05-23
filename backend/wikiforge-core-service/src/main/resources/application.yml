@@ -38,6 +38,7 @@ wikiforge:
     raw-sources-root: ${WIKIFORGE_RAW_SOURCES_ROOT:${WIKIFORGE_RAW_SOURCES_PATH:./data/raw-sources}}
   raw-sources-path: ${WIKIFORGE_RAW_SOURCES_PATH:${WIKIFORGE_RAW_SOURCES_ROOT:./data/raw-sources}}
   obsidian-vault-path: ${WIKIFORGE_OBSIDIAN_VAULT_PATH:./data/obsidian-vault}
+  obsidian-vault-name: ${WIKIFORGE_OBSIDIAN_VAULT_NAME:WikiForgeVault}
   allowed-scan-roots: ${WIKIFORGE_ALLOWED_SCAN_ROOTS:}
   worker:
     base-url: ${WIKIFORGE_WORKER_BASE_URL:http://wikiforge-worker-service:8081}

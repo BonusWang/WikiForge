@@ -1,4 +1,4 @@
-# 2026-05-22 知识熔炉 WikiForge MVP 实施计划 v0.3
+# 2026-05-22 知识熔炉 WikiForge MVP 实施计划 v0.4
 
 ## 0. 架构评审后的执行调整
 
@@ -81,6 +81,7 @@ MVP 核心闭环：
 - Vector Export 数据模型。
 - 办公室视图状态模型。
 - 在线文档连接器接口。
+- 代码仓库 Source Parser / 代码知识图谱能力，仅作为 V2+ 后续规划预留，不进入 MVP1/MVP2。
 
 ## 3. 实施阶段
 
@@ -371,6 +372,29 @@ AI 输出要求：
 
 - 外部 MCP Client 能调用基础工具。
 - 调用记录写入 `mcp_tool_calls`。
+
+### MVP 5+：代码知识图谱与代码类资料治理
+
+目标：在基础资料整理、Obsidian Source Note、AI 辅助整理和轻量 MCP 跑通后，再把代码仓库作为一种 Source 纳入 WikiForge。
+
+参考项目：
+
+- colbymchenry/codegraph：https://github.com/colbymchenry/codegraph
+
+后续能力：
+
+- 指定本地代码仓库路径并建立代码类 Source。
+- 使用 tree-sitter 或 Java 生态可维护方案解析文件、类、函数、调用、导入、继承等结构。
+- 将代码实体和关系写入 MySQL 关系层，后续可同步到图谱或向量库。
+- 生成代码仓库 Source Note、项目结构摘要和关键模块说明。
+- 通过 WikiForge MCP 暴露 `search_code_sources`、`get_code_symbol`、`get_code_relationships`、`get_project_structure` 等工具。
+- 为 Codex / Claude / Cursor / Hermes 等开发 Agent 提供可查询的项目上下文。
+
+阶段边界：
+
+- 不替代 MVP1 的源文件归集。
+- 不阻塞 MVP2 的 Obsidian Source Note。
+- 不把 codegraph 直接作为核心依赖；优先参考其 MCP 工具设计、tree-sitter 解析思路和 nodes / relationships 建模方式。
 
 ## 4. MVP 页面清单
 

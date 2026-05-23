@@ -1,5 +1,66 @@
 # 2026-05-23 WikiForge 版本更新记录
 
+## 0.04 - MVP2 Obsidian Source Note 闭环
+
+发布日期：待发布
+
+本版本目标是把 MVP1 已整理出的 Source File 沉淀为可读、可编辑、可打开的 Obsidian Source Note，完成“整理后归档”的第一条可用链路。
+
+### 更新内容
+
+- 新增 Core Service Obsidian API：
+  - `POST /api/v1/obsidian/init`
+  - `POST /api/v1/source-files/{fileUid}/obsidian-note/draft`
+  - `POST /api/v1/source-files/{fileUid}/obsidian-note/write`
+  - `GET /api/v1/obsidian/notes/{noteUid}/preview`
+- 新增 `obsidian_notes` 表，用于记录 Source / Source File 与 Obsidian Markdown 文件之间的映射。
+- 新增 Source Note Markdown 模板，包含 frontmatter、Source UID、Source File UID、原始路径、归档路径、hash 和后续处理占位。
+- 写入 Vault 时采用服务端路径校验、Vault 内相对路径解析、临时文件写入和原子 rename。
+- 生成 `obsidian://open` URI，并对 Vault 名和 Vault 内路径进行 URL encode。
+- Web UI Dashboard 新增：
+  - `初始化 Vault`
+  - Source Files 表格 `Source Note` 操作
+  - Source Note Markdown 编辑抽屉
+  - 写入 Vault、读取预览、打开 Obsidian
+- Docker Compose 支持通过 `WIKIFORGE_HOST_OBSIDIAN_VAULT_PATH` 将宿主机 Vault 挂载到容器内 `/data/wikiforge/obsidian-vault`。
+
+### 验证结果
+
+- 后端 Maven 多模块测试：通过。
+- 前端 `npm run build`：通过，有 Vite / Rollup 非阻塞 warning。
+- `docker compose -f deploy/docker-compose.yml config`：通过。
+- Docker 镜像构建与 Compose 启动：通过。
+- 容器健康检查：`mysql`、`wikiforge-core-service`、`wikiforge-worker-service`、`wikiforge-ui` 全部 healthy。
+- `POST /api/v1/obsidian/init`：通过。
+- Docker 端到端 Source Note 烟测：通过。
+- 浏览器检查 `http://localhost:3000`：MVP2、初始化 Vault、Source Note 可见，console error 为空。
+
+端到端烟测结果：
+
+```text
+JobUid: job_20260523_0ae896c3e383
+JobStatus: completed
+SourceFileUid: file_e6a481e4083449579246366252a410a5
+NoteUid: note_20260523_1cf541982149
+Host note path: E:\WikiForgeVault\00_Inbox_收集箱\Sources_来源\roadmap-source-note.md-src_f916b6b2d202461a8d49bfa721532290.md
+Preview contains title: true
+```
+
+### 版本边界
+
+本版本完成的是 MVP2 的“Source Note 归档”闭环。
+
+尚未实现：
+
+- 文档正文解析。
+- AI 摘要、分类、标签生成。
+- 已写 Note 的列表化管理和重复写入策略 UI。
+- MCP 服务。
+- 向量库导入。
+- 飞书 / 腾讯文档 / 邮件 / 账单 / 人际关系等连接器。
+
+下一阶段建议进入 MVP2.1：补齐已写 Note 状态、重复写入策略、Vault 状态面板和一条命令式端到端验收脚本。
+
 ## 0.03 - MVP1 本地源文件归集整理闭环
 
 发布日期：2026-05-23

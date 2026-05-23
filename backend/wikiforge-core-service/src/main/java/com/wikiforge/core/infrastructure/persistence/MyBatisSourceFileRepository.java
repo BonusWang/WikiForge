@@ -12,6 +12,7 @@ import com.wikiforge.core.domain.repository.SourceFileRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
 
@@ -20,10 +21,16 @@ public class MyBatisSourceFileRepository implements SourceFileRepository {
 
     private final SourceMapper sourceMapper;
     private final SourceFileMapper sourceFileMapper;
+    private final ImportJobMapper importJobMapper;
 
-    public MyBatisSourceFileRepository(SourceMapper sourceMapper, SourceFileMapper sourceFileMapper) {
+    public MyBatisSourceFileRepository(
+            SourceMapper sourceMapper,
+            SourceFileMapper sourceFileMapper,
+            ImportJobMapper importJobMapper
+    ) {
         this.sourceMapper = sourceMapper;
         this.sourceFileMapper = sourceFileMapper;
+        this.importJobMapper = importJobMapper;
     }
 
     @Override
@@ -90,12 +97,35 @@ public class MyBatisSourceFileRepository implements SourceFileRepository {
         );
     }
 
+    @Override
+    public Optional<SourceFileRecord> findByFileUid(String fileUid) {
+        SourceFileEntity sourceFile = sourceFileMapper.selectOne(
+                new LambdaQueryWrapper<SourceFileEntity>()
+                        .eq(SourceFileEntity::getFileUid, fileUid)
+        );
+        if (sourceFile == null) {
+            return Optional.empty();
+        }
+        SourceEntity source = sourceMapper.selectById(sourceFile.getSourceId());
+        ImportJobEntity importJob = importJobMapper.selectById(sourceFile.getImportJobId());
+        if (source == null || importJob == null) {
+            return Optional.empty();
+        }
+        return Optional.of(toRecord(importJob.getJobUid(), source, sourceFile));
+    }
+
     private SourceFileRecord toRecord(ImportJob importJob, SourceFileEntity sourceFile) {
         SourceEntity source = sourceMapper.selectById(sourceFile.getSourceId());
+        return toRecord(importJob.getJobUid(), source, sourceFile);
+    }
+
+    private SourceFileRecord toRecord(String jobUid, SourceEntity source, SourceFileEntity sourceFile) {
         return new SourceFileRecord(
+                sourceFile.getId(),
+                source.getId(),
                 sourceFile.getFileUid(),
                 source.getSourceUid(),
-                importJob.getJobUid(),
+                jobUid,
                 sourceFile.getFileName(),
                 sourceFile.getFileExt(),
                 sourceFile.getOriginalPath(),

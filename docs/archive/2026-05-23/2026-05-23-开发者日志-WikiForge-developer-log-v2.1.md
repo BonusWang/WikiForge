@@ -2,8 +2,8 @@
 
 ## 版本索引 Version Index
 
-- 最新版本：v1.3
-- 最新小节：`2026-05-23 MVP1 契约冻结 Parallel Work Order`
+- 最新版本：v2.1
+- 最新小节：`2026-05-23 R0-4 MVP2 发布前自检`
 - 推荐阅读：新 AI 开始工作时，先读本索引和最新小节，再按任务需要阅读历史小节。
 - 历史范围：v0.1-v0.9 记录需求发掘、架构评审、MVP0 骨架、微服务拆分和同日滚动归档规则；仅在追溯需求来源或架构决策时阅读。
 
@@ -1253,7 +1253,413 @@ QA 触发的契约补充：
 本次归档版本：
 
 ```text
-docs/archive/2026-05-23/2026-05-23-开发者日志-WikiForge-developer-log-v1.4.md
-docs/archive/2026-05-23/2026-05-23-归档索引-archive-index-v1.4.md
-docs/archive/2026-05-23/2026-05-23-MVP1契约冻结并行工作单-WikiForge-mvp1-contract-freeze-parallel-work-order-v0.2.md
+docs/archive/2026-05-23/2026-05-23-开发者日志-WikiForge-developer-log-v1.5.md
+docs/archive/2026-05-23/2026-05-23-归档索引-archive-index-v1.5.md
+docs/archive/2026-05-23/2026-05-23-MVP1契约冻结并行工作单-WikiForge-mvp1-contract-freeze-parallel-work-order-v0.3.md
 ```
+
+## 2026-05-23 MVP1 本地端到端烟测与稳定性修复
+
+用户确认本地 Docker 已启动后，开始 MVP1 第一轮本地验收。完整 Docker Compose 镜像构建在拉取基础镜像阶段受 Docker Hub `auth.docker.io:443` 网络连接影响未完成，因此先采用本地 MySQL 容器 + 本地 Core / Worker Jar 的方式验证 MVP1 业务闭环。
+
+本次验收发现并修复：
+
+- MySQL 8 中 `recursive` 属于保留关键字，Flyway 执行 `V20260523_002__create_source_import_tables.sql` 失败；已改为数据库字段 `recursive_scan`，同时补充迁移 SQL 兼容性测试。
+- MyBatis Plus 自动映射曾生成 `recursive_scan AS recursive`，仍会触发 MySQL 保留字问题；已将持久化实体字段调整为 `recursiveScan`，避免生成保留字别名。
+- Worker 使用默认 HTTP request factory 时不支持 `PATCH` 回调；已改为 `JdkClientHttpRequestFactory`，并调整测试注入方式。
+- Core 的 `jobUid` 使用进程内自增序号，服务重启后会重新从 `job_yyyyMMdd_000001` 开始，和数据库已存在任务撞唯一索引；已改为 `job_yyyyMMdd_<12位uuid>`，降低重启、并发和未来多实例下的碰撞风险。
+- MVP1 契约示例中的 `jobUid` 样式已同步为随机后缀格式。
+
+本地端到端验收结果：
+
+```text
+Core health: UP
+Worker health: UP
+Flyway: 20260523.001 / 20260523.002 success
+JobUid: job_20260523_006ea8a44e17
+Status: completed
+TotalCount: 5
+SuccessCount: 4
+SkippedCount: 0
+FailedCount: 0
+SourceFileTotal: 5
+OrganizedFiles: 4
+Frontend dev server: http://localhost:3000
+Frontend proxy /api/v1/import-jobs: success
+```
+
+用户补充 Docker 已登录成功并可拉取 `hello-world` 后，继续补做容器级验收。
+
+本次 Docker 验收结果：
+
+```text
+docker pull maven:3.9.9-eclipse-temurin-21: success
+docker pull eclipse-temurin:21-jre-alpine: success
+docker pull node:22-alpine: success
+docker pull nginx:1.27-alpine: success
+docker compose build wikiforge-ui: success
+docker compose build wikiforge-worker-service: success
+docker compose build wikiforge-core-service: success
+docker compose up --no-build: success
+mysql: healthy
+wikiforge-core-service: healthy
+wikiforge-worker-service: healthy
+wikiforge-ui: healthy
+```
+
+容器级端到端导入验收：
+
+```text
+Entry: http://localhost:3000/api/v1/import-jobs/local
+InputPath: /data/wikiforge/imports/test-input
+RawSourcesRoot: /data/wikiforge/raw-sources
+JobUid: job_20260523_5c052ba13a89
+Status: completed
+TotalCount: 5
+SuccessCount: 4
+SkippedCount: 0
+FailedCount: 0
+SourceFileTotal: 5
+```
+
+本次额外修复：
+
+- `wikiforge-ui` 容器内 healthcheck 原先使用 `http://localhost/`，在 Nginx 仅监听 IPv4 时会被容器内 `wget` 解析到 IPv6 loopback 并出现 connection refused；已改为 `http://127.0.0.1/`。
+- 验证后 UI 容器健康状态恢复为 `healthy`。
+
+## 2026-05-23 版本 0.03 发布说明与 main 合并准备
+
+用户要求将当前 MVP1 分支通过合并到 `main`，并新建版本标签、补充版本说明。
+
+本次版本判断：
+
+- 现有标签：`0.01`、`0.02`。
+- `0.02` 是 MVP0 工程骨架与 Agent 协作基线。
+- 当前分支已完成 MVP1 本地源文件归集整理闭环，并通过本地 Jar 与 Docker Compose 两轮端到端验收。
+- 因此本次发布标签规划为 `0.03`。
+
+本次补充文档：
+
+```text
+README.md
+docs/2026-05-23-版本更新记录-WikiForge-release-notes.md
+docs/archive/2026-05-23/2026-05-23-README-v0.6.md
+docs/archive/2026-05-23/2026-05-23-版本更新记录-WikiForge-release-notes-v0.2.md
+docs/archive/2026-05-23/2026-05-23-开发者日志-WikiForge-developer-log-v1.6.md
+docs/archive/2026-05-23/2026-05-23-归档索引-archive-index-v1.6.md
+```
+
+版本 `0.03` 说明：
+
+- 完成 Core / Worker / UI 的本地源文件导入链路。
+- 新增 `import_jobs`、`sources`、`source_files`。
+- 支持路径安全校验、Raw Sources 归集、基础目录分类和重复文件识别。
+- 修复 MySQL 8 保留字、Worker PATCH、jobUid 重启碰撞和 UI healthcheck 问题。
+- Docker Compose 下 `mysql`、`wikiforge-core-service`、`wikiforge-worker-service`、`wikiforge-ui` 全部 healthy。
+
+版本边界：
+
+- `0.03` 是 MVP1 源文件收集整理闭环。
+- 尚未包含文档正文解析、Source Note 生成、Obsidian 写入、MCP、向量库和多 Agent 知识提炼。
+
+样例目录包含 5 个文件，其中 1 个 Markdown 与另一个文件内容重复。验收结果符合预期：5 条源文件记录入库，4 个文件复制到 Raw Sources，1 个文件标记为 `duplicate` 并复用已复制文件的 managed path。
+
+本次归档版本：
+
+```text
+docs/archive/2026-05-23/2026-05-23-开发者日志-WikiForge-developer-log-v1.5.md
+docs/archive/2026-05-23/2026-05-23-归档索引-archive-index-v1.5.md
+docs/archive/2026-05-23/2026-05-23-MVP1契约冻结并行工作单-WikiForge-mvp1-contract-freeze-parallel-work-order-v0.3.md
+```
+
+## 2026-05-23 CodeGraph 技术参考纳入后续路线
+
+用户补充参考项目 `colbymchenry/codegraph`，要求分析是否对 WikiForge 有帮助，并将结论放入后续路线和技术参考清单。
+
+本次判断：
+
+- codegraph 是本地代码知识图谱项目，使用 tree-sitter 解析代码仓库，并通过 MCP 为 AI 编程助手提供 search、get_node、get_relationships、get_callers、get_callees、get_project_structure 等查询能力。
+- 它不解决 WikiForge 当前 MVP 的核心问题：PDF、Word、图片、飞书、腾讯文档、微信收藏、B 站收藏等多源资料归集与整理。
+- 它对 WikiForge 后续“代码仓库 Source Parser”“代码知识图谱”“MCP Agent 按需查询项目上下文”有参考价值。
+- 结论：收录为 V2+ 技术参考，不进入 MVP1/MVP2 核心范围，不作为 Java + Spring Boot + MySQL 主架构的直接运行时依赖。
+
+同步更新：
+
+```text
+docs/2026-05-22-参考项目清单-WikiForge-reference-projects.md
+docs/2026-05-22-MVP实施计划-WikiForge-mvp-implementation-plan.md
+docs/archive/2026-05-23/2026-05-23-参考项目清单-WikiForge-reference-projects-v0.3.md
+docs/archive/2026-05-23/2026-05-23-MVP实施计划-WikiForge-mvp-implementation-plan-v0.4.md
+docs/archive/2026-05-23/2026-05-23-开发者日志-WikiForge-developer-log-v1.7.md
+docs/archive/2026-05-23/2026-05-23-归档索引-archive-index-v1.7.md
+```
+
+## 2026-05-23 init 自检、docs 目录整理与 MVP2 计划启动
+
+用户要求先重新 init、自检项目相关文件，整理 `E:\github\WikiForge\docs\` 目录，补充本机 Obsidian Vault 地址，并开始下一阶段开发任务计划。
+
+本次 init 结论：
+
+- 当前分支：`main`，远程跟踪 `origin/main`。
+- 当前阶段：版本 `0.03`，MVP1 本地源文件归集整理闭环已完成。
+- 下一阶段收敛为 MVP2：Obsidian Source Note。
+- 当前已有未提交文档变更：CodeGraph 参考、MVP 计划、开发者日志和归档快照。
+- 后端结构：`wikiforge-common`、`wikiforge-core-service`、`wikiforge-worker-service`。
+- 前端结构：Vue 3 + Vite + TypeScript，当前主页面为 `DashboardView.vue`。
+
+docs 目录整理：
+
+```text
+docs/
+  README.md
+  current/
+  process/
+  superpowers/plans/
+  ai-skills/wikiforge-development/
+  archive/
+```
+
+整理原则：
+
+- 当前主线文档移动到 `docs/current/`。
+- 过程性评审、自检和阶段设计移动到 `docs/process/`。
+- 归档、AI Skill 和 Superpowers 计划保持原有目录。
+- `README.md`、`AGENTS.md`、`docs/archive/README.md` 已更新为读取 `docs/current/` 主文档。
+
+Obsidian Vault 信息：
+
+```text
+用户本机 Obsidian Vault：E:\WikiForgeVault
+Docker 容器内 Vault：/data/wikiforge/obsidian-vault
+Docker 宿主机映射变量：WIKIFORGE_HOST_OBSIDIAN_VAULT_PATH
+Vault 名称变量：WIKIFORGE_OBSIDIAN_VAULT_NAME
+```
+
+配置调整：
+
+- `.env.example` 新增 `WIKIFORGE_HOST_OBSIDIAN_VAULT_PATH` 和 `WIKIFORGE_OBSIDIAN_VAULT_NAME`。
+- `deploy/docker-compose.yml` 的 Vault volume 改为可配置宿主机路径。
+- Core Service `application.yml` 增加 `wikiforge.obsidian-vault-name`。
+- 不把真实 Vault 内容、Raw Sources、运行数据或本地 `.env` 提交到 Git。
+
+下一阶段计划：
+
+```text
+docs/superpowers/plans/2026-05-23-MVP2-Obsidian-Source-Note-WikiForge-mvp2-obsidian-source-note.md
+```
+
+MVP2 目标：
+
+- 初始化 Obsidian Vault 目录。
+- 为已归集 Source File 生成 Source Note Markdown 草案。
+- 写入 `obsidian_notes`。
+- 安全写入 Vault Markdown 文件。
+- Web UI 可预览 Markdown。
+- 返回并打开安全编码后的 `obsidian://open` URI。
+
+MVP2 边界：
+
+- 不做 AI 摘要。
+- 不做向量库。
+- 不做完整 MCP。
+- 不做飞书 / 腾讯文档连接器。
+- 不做办公室等距 Agent 视图。
+
+本次自检验证：
+
+```text
+git status --short --branch: main 跟踪 origin/main，存在本次文档整理和配置变更
+git diff --check: pass
+docker compose -f deploy/docker-compose.yml config: pass
+npm run build: pass
+mvn test: pass
+```
+
+Maven 验证说明：
+
+- 直接使用默认 Maven 配置会访问不可达的 `nexus.minshenglife.com`。
+- 使用临时 settings 指向 Maven Central 后可继续。
+- 当前默认 `java` 为 Java 8，需临时设置 `JAVA_HOME` 为 Trae 自带 JDK 25，才能编译项目配置的 Java 21 release。
+
+## 2026-05-23 MVP2 Obsidian Source Note 全面开发
+
+用户要求根据当前最新开发计划进行全面开发，并按上阶段并行开发模式推进。
+
+本次开发分支：
+
+```text
+codex/mvp2-obsidian-source-note
+```
+
+本次 MVP2 范围：
+
+- Core Service 新增 Obsidian Vault 初始化、Source Note 草案生成、写入和预览 API。
+- 新增 `obsidian_notes` Flyway migration，记录 Source Note 与 Source / Source File 的映射。
+- Web UI 在 Dashboard 中新增 Vault 初始化、Source Note 草案抽屉、写入 Vault、读取预览和打开 Obsidian。
+- Docker Compose 使用 `WIKIFORGE_HOST_OBSIDIAN_VAULT_PATH=E:/WikiForgeVault` 验证宿主机 Vault 挂载。
+- 不引入 AI 摘要、向量库、完整 MCP、飞书/腾讯文档连接器和办公室视图。
+
+本次后端实现：
+
+- 新增 `V20260523_003__create_obsidian_notes.sql`。
+- 新增 `ObsidianNote` 领域模型和 `ObsidianNoteRepository`。
+- 新增 MyBatis `ObsidianNoteEntity`、`ObsidianNoteMapper`、`MyBatisObsidianNoteRepository`。
+- `SourceFileRecord` 增加内部 `sourceFileId/sourceId`，仅供 Core 持久化使用，不暴露给 UI。
+- `SourceFileRepository` 和 `MyBatisSourceFileRepository` 增加 `findByFileUid`。
+- 新增 `ObsidianVaultService`，负责路径校验、Source Note Markdown 模板、临时文件写入、原子 rename、content hash、frontmatter JSON 和 `obsidian://open` URI。
+- 新增 `ObsidianController`，提供：
+  - `POST /api/v1/obsidian/init`
+  - `POST /api/v1/source-files/{fileUid}/obsidian-note/draft`
+  - `POST /api/v1/source-files/{fileUid}/obsidian-note/write`
+  - `GET /api/v1/obsidian/notes/{noteUid}/preview`
+
+本次数据模型调整：
+
+- `obsidian_notes.vault_path` 保持 `VARCHAR(1024)`。
+- `idx_obsidian_notes_vault_path` 改为 `vault_path(255)` 前缀索引，避免 MySQL `utf8mb4` 下完整索引超过长度限制。
+- `frontmatter_json` 使用 MySQL `JSON`，应用层写入合法 JSON 字符串。
+
+本次前端实现：
+
+- 新增 `frontend/src/types/obsidianNotes.ts`。
+- 新增 `frontend/src/api/obsidian/index.ts`。
+- `DashboardView.vue` 新增：
+  - 顶部 `初始化 Vault` 按钮。
+  - 阶段显示更新为 MVP2。
+  - Source Files 表格 `Source Note` 操作。
+  - Source Note 抽屉，支持编辑 Markdown、写入 Vault、读取预览和打开 Obsidian。
+- `main.css` 新增顶部按钮组和 Source Note 抽屉样式。
+
+本次验证：
+
+```text
+git diff --check: pass
+docker compose -f deploy/docker-compose.yml config: pass
+npm run build: pass
+mvn -B -s <temp-settings> -gs <temp-settings> test: pass
+docker compose -f deploy/docker-compose.yml up -d --build: pass
+GET http://localhost:8080/actuator/health: UP
+GET http://localhost:8081/actuator/health: UP
+POST http://localhost:8080/api/v1/obsidian/init: success
+GET http://localhost:3000/: 200
+Browser check http://localhost:3000/: title WikiForge, MVP2/Vault/Source Note 可见，console error 为空
+```
+
+本机 Vault 验证：
+
+```text
+E:\WikiForgeVault\00_Inbox_收集箱
+E:\WikiForgeVault\00_Inbox_收集箱\Sources_来源
+E:\WikiForgeVault\10_Wiki_主题库
+E:\WikiForgeVault\20_Projects_项目
+E:\WikiForgeVault\30_Resources_资源
+E:\WikiForgeVault\90_System_系统
+```
+
+已知边界：
+
+- MVP2 的 Source Note 内容以 metadata 和占位段落为主，尚未进行正文解析和 AI 摘要。
+- `obsidian://open` 链接由服务端生成并 URL encode；浏览器点击后是否能唤起 Obsidian 取决于用户本机协议注册。
+- Docker 容器内绝对路径为 `/data/wikiforge/obsidian-vault`，宿主机真实路径通过 volume 映射到 `E:\WikiForgeVault`。
+
+## 2026-05-23 项目整体计划与 R0 执行启动
+
+用户要求梳理项目整体计划，输出按阶段、按节点要处理的事项 Markdown，并开始逐任务节点执行。
+
+本次新增文档：
+
+```text
+docs/current/2026-05-23-项目整体计划-WikiForge-project-roadmap.md
+docs/archive/2026-05-23/2026-05-23-项目整体计划-WikiForge-project-roadmap-v0.1.md
+```
+
+路线图将项目拆为：
+
+- S0 需求与架构基线
+- S1 MVP0 工程骨架
+- S2 MVP1 源文件归集
+- S3 MVP2 Obsidian Source Note
+- S4 MVP2.1 可用性加固
+- S5 MVP3 文档解析
+- S6 MVP4 AI 辅助整理与审核
+- S7 MVP5 轻量 MCP
+- S8 V1 在线资料与个人记录
+- S9 V2 知识运行层
+
+当前执行主线为 R0：MVP2 收束与发布准备。
+
+已开始执行：
+
+- R0-1：项目整体路线图已落地，并加入 `docs/README.md` 入口。
+- R0-2：版本更新记录已补充 `0.04 - MVP2 Obsidian Source Note 闭环` 发布说明草案。
+- R0-3：Docker 栈真实端到端烟测已通过。
+
+R0-3 烟测结果：
+
+```text
+JobUid: job_20260523_0ae896c3e383
+JobStatus: completed
+SourceFileUid: file_e6a481e4083449579246366252a410a5
+SourceUid: src_f916b6b2d202461a8d49bfa721532290
+NoteUid: note_20260523_1cf541982149
+Host note path: E:\WikiForgeVault\00_Inbox_收集箱\Sources_来源\roadmap-source-note.md-src_f916b6b2d202461a8d49bfa721532290.md
+Preview contains title: true
+```
+
+当前下一节点：
+
+- R0-4：输出发布前自检清单，确认没有 `node_modules`、`dist`、`target`、`.env`、`data`、Vault 内容进入 Git。
+- R0-5：提交、标签 `0.04` 和推送，需要用户明确授权。
+
+## 2026-05-23 R0-4 MVP2 发布前自检
+
+本次按项目整体路线图继续执行 R0-4，新增发布前自检清单：
+
+```text
+docs/current/2026-05-23-MVP2发布前自检-WikiForge-mvp2-release-checklist.md
+docs/archive/2026-05-23/2026-05-23-MVP2发布前自检-WikiForge-mvp2-release-checklist-v0.1.md
+```
+
+自检结果：
+
+- `git diff --check` 通过。
+- Docker Compose 当前运行健康：`mysql`、`wikiforge-core-service`、`wikiforge-worker-service`、`wikiforge-ui` 均 healthy。
+- R0-3 烟测写入文件存在于 `E:\WikiForgeVault\00_Inbox_收集箱\Sources_来源`。
+- 当前 `git status --short` 未发现 `node_modules`、`dist`、`.vite`、`target`、真实 `.env`、`data`、Vault 或 Raw Sources 内容。
+- 广义 `.env` 检查会命中 `.env.example`，但 `.env.example` 是允许提交的配置模板。
+- `git check-ignore -v` 确认本地存在的 `frontend/node_modules`、`frontend/dist`、`backend/**/target`、`data` 和 `.env` 已被 `.gitignore` 忽略。
+- `git ls-files --error-unmatch` 确认上述禁止路径没有被 Git 跟踪。
+
+同步更新：
+
+- 项目整体计划 R0-4 状态改为 Done。
+- 项目整体计划和发布前自检清单的当前节点单选指针已移动到 R0-5。
+- 当前测试层级单选指针已移动到 T4，等待阶段级发布验收和用户授权。
+- `docs/README.md` 增加发布前自检入口。
+- 版本更新记录补充发布前自检通过。
+- 归档索引补充本次清单与当前阶段结论。
+
+用户补充新的执行规则：
+
+- 项目整体计划需要增加复选框和单选框，便于 Agent 识别当前进展和下一步动作。
+- 完成任一阶段或节点后，必须更新对应勾选状态、当前执行指针、开发者日志和归档索引。
+- 测试流程按节点递进，不按每个小功能单独重复跑完整验收。
+
+已同步到项目整体计划和发布前自检清单：
+
+- 复选框 `- [x]` 表示节点完成。
+- 复选框 `- [ ]` 表示节点未完成。
+- 单选框 `(x)` 表示当前唯一执行位置。
+- 测试门禁按 T0 到 T4 递进：文档/Git 卫生、契约与单元测试、构建验证、Docker 节点烟测、阶段级端到端验收。
+- `AGENTS.md` 已同步该规则，后续 AI 完成阶段或节点时必须更新路线图、自检清单、开发者日志和归档索引。
+
+Review Agent 补充建议已吸收：
+
+- 最新归档索引以 v2.1 为准，v2.0 作为历史快照保留，不再主动修改旧版本。
+- R0-4 清单补充 ignored artifacts 检查和 tracked forbidden paths 检查。
+- R0-4 清单补充 GitHub Actions CI 边界、Flyway 0.03 -> 0.04 升级风险和 Obsidian URI 真实唤起边界。
+
+当前结论：
+
+- R0-1、R0-2、R0-3、R0-4 已完成。
+- R0-5 提交、创建标签 `0.04` 和推送远程仍需用户明确授权。

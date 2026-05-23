@@ -180,6 +180,30 @@
   - MVP 不应一次性实现 80+ MCP tools、反思系统、LifeOS、视频生成、飞书全能力等。
   - WikiForge 第一阶段仍优先源文件整理和 Obsidian 最小归档闭环。
 
+### colbymchenry / codegraph
+
+- 链接：https://github.com/colbymchenry/codegraph
+- 类型：本地代码知识图谱 / MCP Agent 查询参考
+- 定位：使用 tree-sitter 解析本地代码仓库，生成文件、类、函数、调用、导入、继承等代码关系图，并通过 MCP 暴露给 AI 编程助手查询。
+- 参考方向：
+  - 本地优先的代码仓库索引。
+  - tree-sitter AST 解析。
+  - `nodes` + `relationships` 的图谱建模。
+  - FTS / vector / graph 组合查询。
+  - MCP 工具设计，如 search、get_node、get_relationships、get_callers、get_callees、get_project_structure。
+  - Agent 按需查询上下文，而不是一次性塞入整个仓库。
+- 对 WikiForge 的启发：
+  - 可作为后续“代码仓库 Source Parser”的技术参考，把代码仓库也纳入 WikiForge 的资料源。
+  - 可参考其 MCP 工具形态，设计 WikiForge 的 `search_sources`、`get_source`、`get_related_sources`、`get_project_structure` 等工具。
+  - 可参考 `nodes` + `relationships` 思路，为后续 Entity、Topic、Project、Source、KnowledgeCard 建立关系层。
+  - 对 AI 开发协作有辅助价值：WikiForge 代码规模变大后，可独立运行代码图谱工具帮助 Codex / Claude / Cursor / Hermes 理解项目结构。
+  - 适合进入 V2+ 的代码类资料治理和 MCP Agent 记忆能力，不进入 MVP1/MVP2 核心范围。
+- 不适合照搬的地方：
+  - codegraph 面向代码结构理解，不解决 PDF、Word、图片、飞书、腾讯文档、微信收藏、B 站收藏等 WikiForge 核心数据源整理问题。
+  - WikiForge 后端主栈是 Java + Spring Boot + MySQL，不应直接把它作为核心运行时依赖。
+  - 它使用 SQLite 作为本地索引实现，WikiForge 已确定 MySQL 作为控制面，后续向量库作为检索层。
+  - 后续若需要直接集成或复用代码，需先确认 license、维护状态和安全边界。
+
 ## 讨论中补充的参考方向
 
 ### Cognitive Forge / 认知锻造炉
@@ -375,7 +399,8 @@
 11. 文档 ingestion / 分块 / 向量化：参考 LlamaIndex Workflows。
 12. 个人知识库体验：参考 Khoj。
 13. 多来源连接和团队化：参考 Onyx。
-14. Codex / 外部 AI 开发实施方法：参考 aruis/codex-cookbook。
+14. 代码仓库知识图谱、代码类 Source Parser 和 MCP Agent 代码上下文查询：参考 colbymchenry/codegraph。
+15. Codex / 外部 AI 开发实施方法：参考 aruis/codex-cookbook。
 
 ## 注意事项
 

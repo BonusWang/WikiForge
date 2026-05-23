@@ -33,12 +33,13 @@ services:
       WIKIFORGE_RAW_SOURCES_ROOT: ${WIKIFORGE_RAW_SOURCES_ROOT:-/data/wikiforge/raw-sources}
       WIKIFORGE_RAW_SOURCES_PATH: ${WIKIFORGE_RAW_SOURCES_ROOT:-/data/wikiforge/raw-sources}
       WIKIFORGE_OBSIDIAN_VAULT_PATH: ${WIKIFORGE_OBSIDIAN_VAULT_PATH:-/data/wikiforge/obsidian-vault}
+      WIKIFORGE_OBSIDIAN_VAULT_NAME: ${WIKIFORGE_OBSIDIAN_VAULT_NAME:-WikiForgeVault}
       WIKIFORGE_ALLOWED_SCAN_ROOTS: ${WIKIFORGE_ALLOWED_SCAN_ROOTS:-/data/wikiforge/imports}
     ports:
       - "8080:8080"
     volumes:
       - ${WIKIFORGE_HOST_RAW_SOURCES_ROOT:-../data/raw-sources}:${WIKIFORGE_RAW_SOURCES_ROOT:-/data/wikiforge/raw-sources}
-      - ../data/obsidian-vault:/data/wikiforge/obsidian-vault
+      - ${WIKIFORGE_HOST_OBSIDIAN_VAULT_PATH:-../data/obsidian-vault}:/data/wikiforge/obsidian-vault
       - ../data/imports:/data/wikiforge/imports
       - ../data/logs/core-service:/app/logs
     depends_on:
@@ -62,12 +63,13 @@ services:
       WIKIFORGE_RAW_SOURCES_ROOT: ${WIKIFORGE_RAW_SOURCES_ROOT:-/data/wikiforge/raw-sources}
       WIKIFORGE_RAW_SOURCES_PATH: ${WIKIFORGE_RAW_SOURCES_ROOT:-/data/wikiforge/raw-sources}
       WIKIFORGE_OBSIDIAN_VAULT_PATH: ${WIKIFORGE_OBSIDIAN_VAULT_PATH:-/data/wikiforge/obsidian-vault}
+      WIKIFORGE_OBSIDIAN_VAULT_NAME: ${WIKIFORGE_OBSIDIAN_VAULT_NAME:-WikiForgeVault}
       WIKIFORGE_ALLOWED_SCAN_ROOTS: ${WIKIFORGE_ALLOWED_SCAN_ROOTS:-/data/wikiforge/imports}
     ports:
       - "8081:8081"
     volumes:
       - ${WIKIFORGE_HOST_RAW_SOURCES_ROOT:-../data/raw-sources}:${WIKIFORGE_RAW_SOURCES_ROOT:-/data/wikiforge/raw-sources}
-      - ../data/obsidian-vault:/data/wikiforge/obsidian-vault
+      - ${WIKIFORGE_HOST_OBSIDIAN_VAULT_PATH:-../data/obsidian-vault}:/data/wikiforge/obsidian-vault
       - ../data/imports:/data/wikiforge/imports
       - ../data/logs/worker-service:/app/logs
     depends_on:

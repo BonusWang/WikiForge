@@ -455,17 +455,17 @@ agent_office_status
 | --- | --- | --- |
 | id | bigint pk | 主键 |
 | note_uid | varchar(64) unique | Note ID |
-| note_type | varchar(64) | source、project、topic、entity、action、log、index |
-| related_type | varchar(64) | source、project、topic、entity、action |
-| related_id | bigint | 关联对象 ID |
+| source_id | bigint fk | Source 主键 |
+| source_file_id | bigint fk null | Source File 主键 |
+| note_type | varchar(64) | MVP2 固定为 source_note，后续扩展 project、topic、entity、action、log、index |
+| vault_name | varchar(128) | Obsidian Vault 名称 |
+| vault_path | varchar(1024) | Vault 内相对路径，索引使用 `vault_path(255)` 前缀 |
+| absolute_path | varchar(2048) | 服务运行环境下的绝对路径 |
+| obsidian_uri | varchar(2048) | `obsidian://open` 打开链接 |
 | title | varchar(512) | 标题 |
-| vault_path | text | Vault 内相对路径 |
-| absolute_path | text | 绝对路径 |
-| obsidian_uri | text | `obsidian://open` 打开链接 |
-| preview_enabled | boolean | 是否允许 Web UI 预览 |
 | frontmatter_json | json | frontmatter |
 | content_hash | varchar(128) | 文件内容哈希 |
-| last_written_at | datetime | 最近写入时间 |
+| status | varchar(64) | written |
 | created_at | datetime | 创建时间 |
 | updated_at | datetime | 更新时间 |
 

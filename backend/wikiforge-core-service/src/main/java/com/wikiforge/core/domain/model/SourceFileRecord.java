@@ -3,6 +3,8 @@ package com.wikiforge.core.domain.model;
 import java.time.LocalDateTime;
 
 public record SourceFileRecord(
+        Long sourceFileId,
+        Long sourceId,
         String fileUid,
         String sourceUid,
         String jobUid,
