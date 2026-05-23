@@ -9,7 +9,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-wikiforge_root}
       TZ: Asia/Shanghai
     ports:
-      - "3306:3306"
+      - "${WIKIFORGE_PORT_BIND:-127.0.0.1}:3306:3306"
     volumes:
       - ../data/mysql:/var/lib/mysql
     healthcheck:
@@ -27,9 +27,9 @@ services:
       ORCHESTRATION_SERVER_PORT: 8090
       WIKIFORGE_WORKFLOW_ENTRY: ${WIKIFORGE_WORKFLOW_ENTRY:-WORKFLOW.md}
       WIKIFORGE_PROJECT_ROADMAP: ${WIKIFORGE_PROJECT_ROADMAP:-docs/current/2026-05-23-项目整体计划-WikiForge-project-roadmap.md}
-      WIKIFORGE_ACTIVE_BRANCH: ${WIKIFORGE_ACTIVE_BRANCH:-codex/mvp5-mcp-preview}
+      WIKIFORGE_ACTIVE_BRANCH: ${WIKIFORGE_ACTIVE_BRANCH:-main}
     ports:
-      - "8090:8090"
+      - "${WIKIFORGE_PORT_BIND:-127.0.0.1}:8090:8090"
     volumes:
       - ../data/logs/orchestration-service:/app/logs
     healthcheck:
@@ -44,7 +44,7 @@ services:
       dockerfile: deploy/docker/orchestration-ui.Dockerfile
     container_name: wikiforge-dev-orchestration-ui
     ports:
-      - "3001:80"
+      - "${WIKIFORGE_PORT_BIND:-127.0.0.1}:3001:80"
     depends_on:
       wikiforge-orchestration-service:
         condition: service_healthy
