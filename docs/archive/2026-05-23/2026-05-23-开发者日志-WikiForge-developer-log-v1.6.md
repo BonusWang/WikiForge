@@ -2,8 +2,8 @@
 
 ## 版本索引 Version Index
 
-- 最新版本：v1.5
-- 最新小节：`2026-05-23 MVP1 本地端到端烟测与稳定性修复`
+- 最新版本：v1.6
+- 最新小节：`2026-05-23 版本 0.03 发布说明与 main 合并准备`
 - 推荐阅读：新 AI 开始工作时，先读本索引和最新小节，再按任务需要阅读历史小节。
 - 历史范围：v0.1-v0.9 记录需求发掘、架构评审、MVP0 骨架、微服务拆分和同日滚动归档规则；仅在追溯需求来源或架构决策时阅读。
 
@@ -1326,6 +1326,41 @@ SourceFileTotal: 5
 
 - `wikiforge-ui` 容器内 healthcheck 原先使用 `http://localhost/`，在 Nginx 仅监听 IPv4 时会被容器内 `wget` 解析到 IPv6 loopback 并出现 connection refused；已改为 `http://127.0.0.1/`。
 - 验证后 UI 容器健康状态恢复为 `healthy`。
+
+## 2026-05-23 版本 0.03 发布说明与 main 合并准备
+
+用户要求将当前 MVP1 分支通过合并到 `main`，并新建版本标签、补充版本说明。
+
+本次版本判断：
+
+- 现有标签：`0.01`、`0.02`。
+- `0.02` 是 MVP0 工程骨架与 Agent 协作基线。
+- 当前分支已完成 MVP1 本地源文件归集整理闭环，并通过本地 Jar 与 Docker Compose 两轮端到端验收。
+- 因此本次发布标签规划为 `0.03`。
+
+本次补充文档：
+
+```text
+README.md
+docs/2026-05-23-版本更新记录-WikiForge-release-notes.md
+docs/archive/2026-05-23/2026-05-23-README-v0.6.md
+docs/archive/2026-05-23/2026-05-23-版本更新记录-WikiForge-release-notes-v0.2.md
+docs/archive/2026-05-23/2026-05-23-开发者日志-WikiForge-developer-log-v1.6.md
+docs/archive/2026-05-23/2026-05-23-归档索引-archive-index-v1.6.md
+```
+
+版本 `0.03` 说明：
+
+- 完成 Core / Worker / UI 的本地源文件导入链路。
+- 新增 `import_jobs`、`sources`、`source_files`。
+- 支持路径安全校验、Raw Sources 归集、基础目录分类和重复文件识别。
+- 修复 MySQL 8 保留字、Worker PATCH、jobUid 重启碰撞和 UI healthcheck 问题。
+- Docker Compose 下 `mysql`、`wikiforge-core-service`、`wikiforge-worker-service`、`wikiforge-ui` 全部 healthy。
+
+版本边界：
+
+- `0.03` 是 MVP1 源文件收集整理闭环。
+- 尚未包含文档正文解析、Source Note 生成、Obsidian 写入、MCP、向量库和多 Agent 知识提炼。
 
 样例目录包含 5 个文件，其中 1 个 Markdown 与另一个文件内容重复。验收结果符合预期：5 条源文件记录入库，4 个文件复制到 Raw Sources，1 个文件标记为 `duplicate` 并复用已复制文件的 managed path。
 

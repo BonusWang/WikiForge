@@ -1,5 +1,83 @@
 # 2026-05-23 WikiForge 版本更新记录
 
+## 0.03 - MVP1 本地源文件归集整理闭环
+
+发布日期：2026-05-23
+
+本版本是 WikiForge 从工程骨架进入 MVP1 业务闭环的第一个版本，核心目标是把“指定本地路径 -> 扫描文件 -> 归集到 Raw Sources -> 写入 MySQL 索引 -> Web UI 查看状态”跑通。
+
+### 更新内容
+
+- 完成 Core / Worker / UI 的本地源文件导入链路：
+  - UI 创建本地导入任务。
+  - Core 校验路径、创建 `import_jobs` 并派发 Worker。
+  - Worker 扫描本地目录、按类型复制到 Raw Sources。
+  - Worker 回调 Core 更新任务状态并提交 `source_files` 明细。
+- 新增 MVP1 数据表：
+  - `import_jobs`
+  - `sources`
+  - `source_files`
+- 支持本地路径安全规则：
+  - 限制扫描根目录。
+  - 校验 Raw Sources 根目录必须与配置一致。
+  - 禁止输入目录与 Raw Sources 目录重叠。
+  - MVP1 默认不跟随 symlink / junction。
+- 支持基础文件归类：
+  - `01_Documents_文档`
+  - `02_Images_图片`
+  - `03_PDFs_PDF`
+  - `90_Unknown_待确认`
+- 支持按内容 hash 识别单次导入中的重复文件，重复文件不重复复制，记录为 `duplicate`。
+- 修复本地与 Docker 烟测中发现的问题：
+  - MySQL 8 `recursive` 保留字导致 Flyway migration 失败，数据库字段改为 `recursive_scan`。
+  - MyBatis Plus 自动别名触发 MySQL 保留字问题，持久化实体改为 `recursiveScan`。
+  - Worker 默认 HTTP request factory 不支持 `PATCH` 回调，改为 `JdkClientHttpRequestFactory`。
+  - Core 服务重启后 `jobUid` 自增序号碰撞，改为 `job_yyyyMMdd_<12位uuid>`。
+  - UI 容器 healthcheck 使用 `127.0.0.1`，避免容器内 `localhost` IPv6 解析导致误判 unhealthy。
+- 补充 MVP1 契约文档、开发者日志和归档索引。
+
+### 验证结果
+
+- 后端 Maven 多模块测试：通过。
+- 后端 Maven 打包：通过。
+- 前端 `npm run build`：通过，有 Vite / Rollup 非阻塞 warning。
+- `docker compose -f deploy/docker-compose.yml config`：通过。
+- `docker compose -f deploy/docker-compose.dev.yml config`：通过。
+- Docker 镜像构建：通过。
+- Docker Compose 启动：通过。
+- 容器健康检查：`mysql`、`wikiforge-core-service`、`wikiforge-worker-service`、`wikiforge-ui` 全部 healthy。
+- 容器级端到端导入：通过。
+
+容器级端到端验收结果：
+
+```text
+Entry: http://localhost:3000/api/v1/import-jobs/local
+InputPath: /data/wikiforge/imports/test-input
+RawSourcesRoot: /data/wikiforge/raw-sources
+Status: completed
+TotalCount: 5
+SuccessCount: 4
+SkippedCount: 0
+FailedCount: 0
+SourceFileTotal: 5
+```
+
+### 版本边界
+
+本版本完成的是 MVP1 的“源文件收集整理”闭环，不代表完整知识库已经完成。
+
+尚未实现：
+
+- 文档正文解析和内容抽取。
+- Source Note Markdown 草案生成。
+- Obsidian Vault 自动写入。
+- 在线文档连接器。
+- MCP 服务。
+- 向量库导入。
+- 多 Agent 知识提炼流水线。
+
+下一阶段建议进入 MVP1.1：在已归集的 `source_files` 基础上，选择少量 Markdown / Word / PDF 样例，生成可人工审核的 Obsidian Source Note 草案。
+
 ## 0.02 - MVP0 工程骨架与 Agent 协作基线
 
 发布日期：2026-05-23
