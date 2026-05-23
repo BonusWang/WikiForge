@@ -49,6 +49,7 @@ public class ObsidianVaultService {
     private static final List<String> VAULT_DIRECTORIES = List.of(
             "00_Inbox_收集箱",
             SOURCE_NOTE_DIRECTORY,
+            "00_Inbox_收集箱/Personal_个人记录",
             "10_Wiki_主题库",
             "20_Projects_项目",
             "30_Resources_资源",

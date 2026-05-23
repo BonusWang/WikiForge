@@ -42,7 +42,7 @@ MVP 主链路已经具备继续演进的基础：本地文件归集、Obsidian S
   - 补充默认本机绑定、外部容器访问限制、同一 Compose 网络优先和对外开放安全条件。
 - `docs/current/MCP接口契约-mcp-api-contract.md`
   - 补充 R4-6 审核加固记录。
-- `docs/current/2026-05-23-项目整体计划-WikiForge-project-roadmap.md`
+- `docs/current/2026-05-24-项目整体计划-WikiForge-project-roadmap.md`
   - 增加 R4-6 审核加固节点和最新归档索引指针。
 
 ## 保留边界 Residual Risk

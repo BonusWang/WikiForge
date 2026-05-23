@@ -1,4 +1,31 @@
-# 2026-05-23 WikiForge 版本更新记录 Release Notes
+# 2026-05-24 WikiForge 版本更新记录 Release Notes
+
+## 1.0-v1-preview.1 - V1 在线资料与个人记录
+
+发布日期：2026-05-24
+
+本版本目标是把 WikiForge 从本地文件整理扩展到个人 LifeOS 收集入口，支持链接资料、个人记录和 Obsidian 归档的最小可用闭环。
+
+### 更新内容
+
+- 新增链接类 Source 创建入口：`POST /api/v1/link-sources`。
+- 新增个人记录 REST API：创建、列表、详情、汇总、写入 Obsidian。
+- `personal_records` 增加 `obsidian_vault_path`、`obsidian_uri`、`archived_at`。
+- 新增个人记录写入 Obsidian Vault 的 Markdown 模板，路径为 `00_Inbox_收集箱/Personal_个人记录`。
+- Web UI 新增 LifeOS 操作区，支持链接资料和个人记录录入、汇总、归档。
+- V1 文档、开发者日志和归档索引更新到 2026-05-24。
+
+### 验证结果
+
+- 后端全量 Maven 测试通过：5 个模块合计 55 个测试，0 失败。
+- 前端构建通过。
+- Docker Compose 生产与开发配置通过。
+- `git diff --check`：通过。
+- 密钥和禁止路径扫描：通过，未发现真实 token、`node_modules`、`dist`、`target`、Vault 或 Raw Sources 被跟踪。
+
+### 版本边界
+
+本版本完成 V1 首版收集和归档闭环。真实飞书 / 腾讯文档授权读取、个人记录周期总结、向量库导出和 Agent 定时维护进入 V1.x / V2。
 
 ## 0.08-preview.4 - MVP 审核加固
 

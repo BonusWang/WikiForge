@@ -19,6 +19,13 @@ import {
   listImportJobs,
   listSourceFiles
 } from '../api/import-jobs';
+import {
+  createLinkSource,
+  createPersonalRecord,
+  getPersonalRecordSummary,
+  listPersonalRecords,
+  writePersonalRecordObsidianNote
+} from '../api/lifeos';
 import { listMcpCalls, listMcpTools } from '../api/mcp';
 import {
   generateSourceNoteDraft,
@@ -38,6 +45,13 @@ import type {
   ImportJobStatus,
   SourceFile
 } from '../types/importJobs';
+import type {
+  LinkSourceResponse,
+  PersonalRecord,
+  PersonalRecordSummaryResponse,
+  PersonalRecordType,
+  SensitivityLevel
+} from '../types/lifeos';
 import type {
   ObsidianNote,
   ObsidianNotePreview,
@@ -60,6 +74,26 @@ const importForm = reactive<CreateLocalImportJobRequest>({
   maxCopyFileSizeMb: 100
 });
 
+const linkSourceForm = reactive({
+  title: '',
+  sourceUrl: '',
+  sourcePlatform: '',
+  rawContent: '',
+  sourceType: 'link',
+  processingIntent: 'organize_only'
+});
+
+const personalRecordForm = reactive({
+  recordType: 'note' as PersonalRecordType,
+  title: '',
+  occurredAt: '',
+  rawContent: '',
+  sourceChannel: 'manual',
+  sourceRef: '',
+  structuredText: '',
+  sensitivityLevel: 'medium' as SensitivityLevel
+});
+
 const statusOptions: ImportJobStatus[] = [
   'pending',
   'running',
@@ -75,6 +109,17 @@ const statusLabels: Record<ImportJobStatus, string> = {
   failed: 'Failed',
   cancelled: 'Cancelled'
 };
+
+const personalRecordTypeOptions = [
+  { label: '消费 expense', value: 'expense' },
+  { label: '账单 bill', value: 'bill' },
+  { label: '邮件 email', value: 'email' },
+  { label: '人际 relationship', value: 'relationship' },
+  { label: '事件 event', value: 'event' },
+  { label: '笔记 note', value: 'note' }
+];
+
+const sensitivityOptions: SensitivityLevel[] = ['low', 'medium', 'high'];
 
 const aiProviderForm = reactive<CreateAiReviewRunRequest>({
   providerName: import.meta.env.VITE_WIKIFORGE_AI_PROVIDER || 'minimax',
@@ -132,6 +177,20 @@ const mcpCallTotal = ref(0);
 const mcpCallToolFilter = ref('');
 const mcpCallStatusFilter = ref<McpCallStatus | ''>('');
 const mcpCallCallerTypeFilter = ref('');
+const createdLinkSource = ref<LinkSourceResponse | null>(null);
+const linkSourceCreating = ref(false);
+const personalRecords = ref<PersonalRecord[]>([]);
+const personalSummary = ref<PersonalRecordSummaryResponse | null>(null);
+const personalRecordCreating = ref(false);
+const personalRecordsLoading = ref(false);
+const personalSummaryLoading = ref(false);
+const personalRecordPage = ref(1);
+const personalRecordPageSize = ref(20);
+const personalRecordTotal = ref(0);
+const personalRecordTypeFilter = ref<PersonalRecordType | ''>('');
+const personalRecordStatusFilter = ref('');
+const personalRecordSourceFilter = ref('');
+const archivingRecordUid = ref('');
 
 const selectedJobStatus = computed(() => {
   return selectedJobDetail.value?.status
@@ -327,6 +386,123 @@ async function refreshMcpPreview() {
   await Promise.all([refreshMcpTools(), refreshMcpCalls()]);
 }
 
+async function createLifeLinkSource() {
+  const title = linkSourceForm.title.trim();
+  const sourceUrl = linkSourceForm.sourceUrl.trim();
+  if (!title || !sourceUrl) {
+    ElMessage.warning('链接标题和 URL 必填');
+    return;
+  }
+
+  linkSourceCreating.value = true;
+  try {
+    const result = await createLinkSource({
+      title,
+      sourceUrl,
+      sourcePlatform: optionalText(linkSourceForm.sourcePlatform),
+      rawContent: optionalText(linkSourceForm.rawContent),
+      sourceType: linkSourceForm.sourceType,
+      processingIntent: linkSourceForm.processingIntent
+    });
+    createdLinkSource.value = result;
+    linkSourceForm.title = '';
+    linkSourceForm.sourceUrl = '';
+    linkSourceForm.rawContent = '';
+    ElMessage.success(`链接资料已收集：${result.sourceUid}`);
+    await refreshJobs();
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '链接资料收集失败');
+  } finally {
+    linkSourceCreating.value = false;
+  }
+}
+
+async function refreshPersonalRecords() {
+  personalRecordsLoading.value = true;
+  try {
+    const result = await listPersonalRecords({
+      recordType: optionalText(personalRecordTypeFilter.value),
+      status: optionalText(personalRecordStatusFilter.value),
+      sourceChannel: optionalText(personalRecordSourceFilter.value),
+      page: personalRecordPage.value,
+      pageSize: personalRecordPageSize.value
+    });
+    personalRecords.value = result.items;
+    personalRecordTotal.value = result.total;
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '个人记录加载失败');
+  } finally {
+    personalRecordsLoading.value = false;
+  }
+}
+
+async function refreshPersonalSummary() {
+  personalSummaryLoading.value = true;
+  try {
+    personalSummary.value = await getPersonalRecordSummary('all');
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '个人记录汇总加载失败');
+  } finally {
+    personalSummaryLoading.value = false;
+  }
+}
+
+async function refreshLifeOs() {
+  await Promise.all([refreshPersonalRecords(), refreshPersonalSummary()]);
+}
+
+async function createLifePersonalRecord() {
+  const title = personalRecordForm.title.trim();
+  const rawContent = personalRecordForm.rawContent.trim();
+  if (!title || !rawContent) {
+    ElMessage.warning('记录标题和原始内容必填');
+    return;
+  }
+  const structured = parseStructuredText();
+  if (structured === null) {
+    return;
+  }
+
+  personalRecordCreating.value = true;
+  try {
+    const result = await createPersonalRecord({
+      recordType: personalRecordForm.recordType,
+      title,
+      occurredAt: optionalText(personalRecordForm.occurredAt),
+      rawContent,
+      sourceChannel: optionalText(personalRecordForm.sourceChannel),
+      sourceRef: optionalText(personalRecordForm.sourceRef),
+      structured,
+      sensitivityLevel: personalRecordForm.sensitivityLevel,
+      createdBy: 'web-ui'
+    });
+    ElMessage.success(`个人记录已创建：${result.recordUid}`);
+    personalRecordForm.title = '';
+    personalRecordForm.rawContent = '';
+    personalRecordForm.sourceRef = '';
+    personalRecordForm.structuredText = '';
+    personalRecordPage.value = 1;
+    await refreshLifeOs();
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '个人记录创建失败');
+  } finally {
+    personalRecordCreating.value = false;
+  }
+}
+
+async function archivePersonalRecord(record: PersonalRecord) {
+  archivingRecordUid.value = record.recordUid;
+  try {
+    const result = await writePersonalRecordObsidianNote(record.recordUid);
+    ElMessage.success(`已写入 Obsidian：${result.vaultPath}`);
+    await Promise.all([refreshPersonalRecords(), refreshPersonalSummary(), refreshVaultStatus()]);
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '个人记录写入 Obsidian 失败');
+  } finally {
+    archivingRecordUid.value = '';
+  }
+}
+
 async function initializeVault() {
   vaultInitializing.value = true;
   try {
@@ -482,6 +658,16 @@ function handleMcpFilterChange() {
   void refreshMcpCalls();
 }
 
+function handlePersonalRecordPageChange(page: number) {
+  personalRecordPage.value = page;
+  void refreshPersonalRecords();
+}
+
+function handlePersonalRecordFilterChange() {
+  personalRecordPage.value = 1;
+  void refreshPersonalRecords();
+}
+
 function handleStatusFilterChange() {
   jobPage.value = 1;
   void refreshJobs();
@@ -553,6 +739,27 @@ function mcpStatusTagType(status: McpCallStatus) {
   return 'info';
 }
 
+function personalRecordTagType(status: string) {
+  if (status === 'archived') {
+    return 'success';
+  }
+  if (status === 'pending') {
+    return 'warning';
+  }
+  if (status === 'failed') {
+    return 'danger';
+  }
+  return 'info';
+}
+
+function recordTypeLabel(recordType: string) {
+  return personalRecordTypeOptions.find((item) => item.value === recordType)?.label || recordType;
+}
+
+function summaryCount(key: string) {
+  return personalSummary.value?.byType?.[key] || 0;
+}
+
 function formatBytes(value: number) {
   if (!Number.isFinite(value)) {
     return '-';
@@ -581,6 +788,19 @@ function prettyJson(value: string) {
   }
 }
 
+function parseStructuredText(): Record<string, unknown> | undefined | null {
+  const text = personalRecordForm.structuredText.trim();
+  if (!text) {
+    return undefined;
+  }
+  try {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    ElMessage.warning('结构化 JSON 格式不正确');
+    return null;
+  }
+}
+
 function optionalText(value?: string) {
   const normalized = value?.trim();
   return normalized ? normalized : undefined;
@@ -592,6 +812,7 @@ onMounted(() => {
   void refreshVaultStatus();
   void refreshReviewItems();
   void refreshMcpPreview();
+  void refreshLifeOs();
 });
 </script>
 
@@ -635,8 +856,8 @@ onMounted(() => {
             工程阶段
           </div>
         </template>
-        <p class="metric">MVP 2.1</p>
-        <p class="muted">可用性加固</p>
+        <p class="metric">V1</p>
+        <p class="muted">在线资料与个人记录</p>
       </el-card>
 
       <el-card shadow="never">
@@ -751,6 +972,250 @@ onMounted(() => {
             </el-button>
           </div>
         </el-form>
+      </el-card>
+
+      <el-card shadow="never">
+        <template #header>
+          <div class="section-title">
+            <div class="card-title">
+              <el-icon><Link /></el-icon>
+              LifeOS 收集
+            </div>
+            <el-button
+              :loading="personalRecordsLoading || personalSummaryLoading"
+              @click="refreshLifeOs"
+            >
+              <el-icon><Refresh /></el-icon>
+              刷新 LifeOS
+            </el-button>
+          </div>
+        </template>
+
+        <div class="lifeos-grid">
+          <div class="lifeos-form-pane">
+            <div class="card-title">链接资料</div>
+            <el-form class="lifeos-form" label-position="top">
+              <el-form-item label="标题" required>
+                <el-input v-model="linkSourceForm.title" clearable placeholder="飞书项目文档 / B站课程 / 知乎文章" />
+              </el-form-item>
+              <el-form-item label="URL" required>
+                <el-input v-model="linkSourceForm.sourceUrl" clearable placeholder="https://..." />
+              </el-form-item>
+              <el-form-item label="平台">
+                <el-select v-model="linkSourceForm.sourcePlatform" clearable placeholder="自动识别">
+                  <el-option label="飞书 feishu" value="feishu" />
+                  <el-option label="腾讯文档 tencent_doc" value="tencent_doc" />
+                  <el-option label="微信 wechat" value="wechat" />
+                  <el-option label="B站 bilibili" value="bilibili" />
+                  <el-option label="知乎 zhihu" value="zhihu" />
+                  <el-option label="网页 web" value="web" />
+                </el-select>
+              </el-form-item>
+              <el-form-item label="正文 / 备注">
+                <el-input
+                  v-model="linkSourceForm.rawContent"
+                  type="textarea"
+                  :rows="4"
+                  resize="vertical"
+                  placeholder="可先贴正文或备注；留空则只收集链接，后续连接器读取"
+                />
+              </el-form-item>
+              <div class="form-actions">
+                <el-tag effect="plain">processing: {{ linkSourceForm.processingIntent }}</el-tag>
+                <el-button :loading="linkSourceCreating" type="primary" @click="createLifeLinkSource">
+                  收集链接
+                </el-button>
+              </div>
+            </el-form>
+
+            <el-alert
+              v-if="createdLinkSource"
+              class="note-alert"
+              type="success"
+              show-icon
+              :closable="false"
+              :title="`最近创建：${createdLinkSource.sourceUid} / ${createdLinkSource.fileUid}`"
+            />
+          </div>
+
+          <div class="lifeos-form-pane">
+            <div class="card-title">个人记录</div>
+            <el-form class="lifeos-form" label-position="top">
+              <div class="record-form-row">
+                <el-form-item label="类型" required>
+                  <el-select v-model="personalRecordForm.recordType">
+                    <el-option
+                      v-for="item in personalRecordTypeOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="敏感级别">
+                  <el-select v-model="personalRecordForm.sensitivityLevel">
+                    <el-option
+                      v-for="level in sensitivityOptions"
+                      :key="level"
+                      :label="level"
+                      :value="level"
+                    />
+                  </el-select>
+                </el-form-item>
+              </div>
+              <el-form-item label="标题" required>
+                <el-input v-model="personalRecordForm.title" clearable placeholder="咖啡消费 / 客户邮件 / 朋友近况" />
+              </el-form-item>
+              <div class="record-form-row">
+                <el-form-item label="发生时间">
+                  <el-date-picker
+                    v-model="personalRecordForm.occurredAt"
+                    type="datetime"
+                    value-format="YYYY-MM-DDTHH:mm:ss"
+                    placeholder="选择时间"
+                  />
+                </el-form-item>
+                <el-form-item label="来源">
+                  <el-input v-model="personalRecordForm.sourceChannel" clearable placeholder="manual / hermes / openclaw" />
+                </el-form-item>
+              </div>
+              <el-form-item label="来源引用">
+                <el-input v-model="personalRecordForm.sourceRef" clearable placeholder="邮件ID、聊天ID、账单编号或链接" />
+              </el-form-item>
+              <el-form-item label="原始内容" required>
+                <el-input
+                  v-model="personalRecordForm.rawContent"
+                  type="textarea"
+                  :rows="4"
+                  resize="vertical"
+                  placeholder="把账单、邮件摘要、人际关系备注或事件原文先记录下来"
+                />
+              </el-form-item>
+              <el-form-item label="结构化 JSON">
+                <el-input
+                  v-model="personalRecordForm.structuredText"
+                  type="textarea"
+                  :rows="3"
+                  resize="vertical"
+                  placeholder='{"amount":18,"currency":"CNY"}'
+                />
+              </el-form-item>
+              <div class="form-actions">
+                <el-button :loading="personalRecordCreating" type="primary" @click="createLifePersonalRecord">
+                  记录
+                </el-button>
+              </div>
+            </el-form>
+          </div>
+        </div>
+
+        <div class="lifeos-summary" v-loading="personalSummaryLoading">
+          <div class="summary-pill">
+            <span>总记录</span>
+            <strong>{{ personalSummary?.total ?? 0 }}</strong>
+          </div>
+          <div
+            v-for="item in personalRecordTypeOptions"
+            :key="item.value"
+            class="summary-pill"
+          >
+            <span>{{ item.value }}</span>
+            <strong>{{ summaryCount(item.value) }}</strong>
+          </div>
+        </div>
+
+        <div class="lifeos-record-toolbar">
+          <el-select
+            v-model="personalRecordTypeFilter"
+            clearable
+            placeholder="recordType"
+            @change="handlePersonalRecordFilterChange"
+          >
+            <el-option
+              v-for="item in personalRecordTypeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+          <el-select
+            v-model="personalRecordStatusFilter"
+            clearable
+            placeholder="status"
+            @change="handlePersonalRecordFilterChange"
+          >
+            <el-option label="pending" value="pending" />
+            <el-option label="archived" value="archived" />
+          </el-select>
+          <el-input
+            v-model="personalRecordSourceFilter"
+            clearable
+            placeholder="sourceChannel"
+            @change="handlePersonalRecordFilterChange"
+            @clear="handlePersonalRecordFilterChange"
+          />
+        </div>
+
+        <el-table
+          v-loading="personalRecordsLoading"
+          :data="personalRecords"
+          border
+          empty-text="暂无个人记录"
+        >
+          <el-table-column prop="createdAt" label="createdAt" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="recordType" label="type" min-width="150" show-overflow-tooltip>
+            <template #default="scope">
+              {{ recordTypeLabel(scope.row.recordType) }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="title" label="title" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="sourceChannel" label="source" min-width="130" show-overflow-tooltip />
+          <el-table-column prop="status" label="status" width="120">
+            <template #default="scope">
+              <el-tag :type="personalRecordTagType(scope.row.status)">
+                {{ scope.row.status }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="rawContent" label="rawContent" min-width="220" show-overflow-tooltip />
+          <el-table-column prop="obsidianVaultPath" label="Obsidian" min-width="220" show-overflow-tooltip />
+          <el-table-column fixed="right" label="操作" width="210">
+            <template #default="scope">
+              <div class="row-actions">
+                <el-button
+                  link
+                  type="primary"
+                  :disabled="scope.row.status === 'archived'"
+                  :loading="archivingRecordUid === scope.row.recordUid"
+                  @click="archivePersonalRecord(scope.row)"
+                >
+                  写入 Obsidian
+                </el-button>
+                <el-button
+                  v-if="scope.row.obsidianUri"
+                  tag="a"
+                  link
+                  type="success"
+                  :href="scope.row.obsidianUri"
+                >
+                  打开
+                </el-button>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <div class="pagination-row">
+          <el-pagination
+            v-if="personalRecordTotal > personalRecordPageSize"
+            background
+            layout="prev, pager, next"
+            :current-page="personalRecordPage"
+            :page-size="personalRecordPageSize"
+            :total="personalRecordTotal"
+            @current-change="handlePersonalRecordPageChange"
+          />
+        </div>
       </el-card>
 
       <el-card shadow="never">

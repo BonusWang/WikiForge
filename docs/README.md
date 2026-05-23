@@ -11,10 +11,9 @@
 5. `ai-skills/wikiforge-development/` 项目专用开发 Skill。
 6. `superpowers/plans/` 当前开发切片或并行工作单。
 
-当前 R4 / MVP5 执行计划：
+当前 R5 / V1 执行计划：
 
-- [MVP5 编排辅助工程 Orchestration Console](superpowers/plans/2026-05-23-MVP5编排辅助工程-WikiForge-orchestration-console.md)
-- [MVP5 轻量 MCP 预览 MCP Preview](superpowers/plans/2026-05-23-MVP5轻量MCP-WikiForge-mvp5-mcp-preview.md)
+- [V1 在线资料与个人记录 LifeOS Work Order](superpowers/plans/2026-05-24-V1在线资料与个人记录-WikiForge-v1-lifeos-work-order.md)
 
 ## 目录结构
 
@@ -38,11 +37,11 @@ docs/
 - [OpenClaw / Hermes 接入说明 OpenClaw Hermes MCP Integration](current/2026-05-23-OpenClaw-Hermes接入说明-WikiForge-openclaw-hermes-mcp-integration.md)
 - [MVP 审核报告 MVP Audit Report](current/2026-05-23-MVP审核报告-WikiForge-mvp-audit-report.md)
 - [MVP 实施计划 Implementation Plan](current/2026-05-23-MVP实施计划-WikiForge-mvp-implementation-plan.md)
-- [项目整体计划 Project Roadmap](current/2026-05-23-项目整体计划-WikiForge-project-roadmap.md)
+- [项目整体计划 Project Roadmap](current/2026-05-24-项目整体计划-WikiForge-project-roadmap.md)
 - [MVP2 发布前自检 MVP2 Release Checklist](current/2026-05-23-MVP2发布前自检-WikiForge-mvp2-release-checklist.md)
 - [参考项目清单 Reference Projects](current/2026-05-23-参考项目清单-WikiForge-reference-projects.md)
-- [开发者日志 Developer Log](current/2026-05-23-开发者日志-WikiForge-developer-log.md)
-- [版本更新记录 Release Notes](current/2026-05-23-版本更新记录-WikiForge-release-notes.md)
+- [开发者日志 Developer Log](current/2026-05-24-开发者日志-WikiForge-developer-log.md)
+- [版本更新记录 Release Notes](current/2026-05-24-版本更新记录-WikiForge-release-notes.md)
 
 ## 过程材料
 

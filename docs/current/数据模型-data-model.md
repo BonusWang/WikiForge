@@ -20,7 +20,8 @@ Flyway 不在第一个 migration 中创建全部长期规划表。
 | MVP 3 | `source_contents` | Core Service 管理，Worker Service 解析并回写 | Markdown / TXT / PDF / Word 正文抽取、hash、解析状态和 Source Note 摘录 |
 | MVP 4 | `agent_runs`、`agent_steps`、`review_items` | Core Service，后续可拆 Agent Service | AI 辅助整理和审核队列 |
 | MVP 5 | `mcp_tool_calls`、`personal_records` | Core Service，后续可拆 MCP / Record Service | 轻量 MCP HTTP Preview、调用日志、个人记录最小写入 |
-| V1/V2 | `mcp_servers`、`content_chunks`、`embedding_jobs`、办公室视图相关表 | MCP / Vector / Agent Service | 完整 MCP 配置、向量库和运行层 |
+| V1 | `personal_records` 扩展归档字段，复用 `sources/source_files/source_contents` | Core Service，后续可拆 Link / Record Service | 链接资料收集、个人记录 REST API、个人记录 Obsidian 归档 |
+| V2 | `mcp_servers`、`content_chunks`、`embedding_jobs`、办公室视图相关表 | MCP / Vector / Agent Service | 完整 MCP 配置、向量库和运行层 |
 
 ### 0.1.1 服务归属原则
 
@@ -684,7 +685,7 @@ V20260523_006__create_mcp_preview_tables.sql
 
 ## 24. personal_records
 
-保存非文档型个人记录，例如消费、账单、邮件、人际关系、个人事件和普通笔记。MVP5 R4-4 已通过 `create_personal_record` 做最小结构化写入，不做 AI 总结，不自动写 Obsidian。
+保存非文档型个人记录，例如消费、账单、邮件、人际关系、个人事件和普通笔记。MVP5 R4-4 已通过 `create_personal_record` 做最小结构化写入。V1 扩展为 REST API + Web UI + Obsidian 归档闭环，仍不做 AI 总结和定时重组。
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
@@ -700,6 +701,9 @@ V20260523_006__create_mcp_preview_tables.sql
 | status | varchar(64) | pending、classified、summarized、archived、failed |
 | sensitivity_level | varchar(32) | low、medium、high |
 | created_by | varchar(128) | user、agent、openclaw、hermes |
+| obsidian_vault_path | varchar(1024) null | V1 归档后的 Vault 相对路径，不存放给外部返回的本机绝对路径 |
+| obsidian_uri | varchar(2048) null | `obsidian://open` 打开链接 |
+| archived_at | datetime null | 写入 Obsidian 的时间 |
 | created_at | datetime | 创建时间 |
 | updated_at | datetime | 更新时间 |
 

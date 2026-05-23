@@ -1,18 +1,18 @@
-# 2026-05-23 WikiForge 项目整体计划 Project Roadmap
+# 2026-05-24 WikiForge 项目整体计划 Project Roadmap
 
 ## 版本信息
 
-- 文档版本：v2.5
-- 当前分支：`codex/mvp-audit-fixes`
-- 当前工程阶段：R4-6 MVP 审核加固验证完成；`0.08-preview.3` 已发布，发布后文档提交在 `main` 上追加，当前以 `0.08-preview.4` 收口加固结果
-- 当前产品主线：先把杂乱资料收集、整理、归档，再逐步进入 AI 提炼、MCP、个人记录和向量库
+- 文档版本：v3.1
+- 当前分支：`codex/v1-lifeos-connectors`
+- 当前工程阶段：R5 / V1 在线资料与个人记录首版闭环验证完成，进入提交推送和版本发布收口
+- 当前产品主线：先把杂乱资料收集、整理、归档，再把个人 LifeOS 记录纳入统一系统，后续进入 AI 提炼、向量库和知识运行层
 
 ## 阅读规则
 
 新参与的 AI 或开发者先读：
 
 1. `AGENTS.md`
-2. `docs/archive/2026-05-23/2026-05-23-归档索引-archive-index-v4.3.md`
+2. `docs/archive/2026-05-24/2026-05-24-归档索引-archive-index-v0.1.md`
 3. 本文档
 4. 当前执行节点对应的计划文档或 Work Order
 5. 分支相关操作先读 `docs/current/分支管理策略-branch-strategy.md`
@@ -36,9 +36,9 @@
 - ( ) S4 / R1 MVP2.1 可用性加固
 - ( ) S5 / R2 MVP3 文档解析
 - ( ) S6 / R3 MVP4 AI 辅助整理与审核
-- (x) S7 / R4 MVP5 Orchestration + MCP
+- ( ) S7 / R4 MVP5 Orchestration + MCP
 - ( ) S8 / R5 V1 在线资料与个人记录
-- ( ) S9 / R6 V2 知识运行层
+- (x) S9 / R6 V2 知识运行层
 
 ## 状态标记 Status
 
@@ -80,8 +80,8 @@ WikiForge 采用“先整理，再提炼，再运行”的节奏。
 | [x] | S5 MVP3 文档解析 | Done | 从文件元数据走向正文内容抽取 | 0.06 | Markdown / TXT / PDF / Word 基础解析完成 |
 | [x] | S6 MVP4 AI 辅助整理 | Done | 接入国内模型，生成摘要、标签、分类建议和审核队列 | 0.07 | 人工审核后写入 Obsidian |
 | [x] | S7 MVP5 Orchestration + MCP | Done | 先建立长期开发编排控制台，再让外部 Agent 调用 WikiForge | 0.08 | Orchestration UI 可看任务，MCP 工具可创建记录、查询 Source、读取 Note |
-| [ ] | S8 V1 在线资料与个人记录 | Later | 飞书/腾讯文档、邮件、账单、消费、人际关系等记录接入 | 1.0 | 多源记录进入统一整理系统 |
-| [ ] | S9 V2 知识运行层 | Later | 向量库、混合检索、维护 Agent、办公室视图 | 2.0 | 知识可被 Agent 长期调用和维护 |
+| [x] | S8 V1 在线资料与个人记录 | Done | 链接资料、邮件、账单、消费、人际关系等记录接入 | 1.0 | 多源记录进入统一整理系统 |
+| [ ] | S9 V2 知识运行层 | Next | 向量库、混合检索、维护 Agent、办公室视图 | 2.0 | 知识可被 Agent 长期调用和维护 |
 
 ## 递进测试门禁 Progressive Test Gates
 
@@ -89,9 +89,9 @@ WikiForge 采用“先整理，再提炼，再运行”的节奏。
 
 当前测试层级单选：
 
-- (x) T0 文档与 Git 卫生：只改文档、规则、计划时使用。
+- ( ) T0 文档与 Git 卫生：只改文档、规则、计划时使用。
 - ( ) T1 契约与单元测试：改 DTO、Service、Mapper、基础逻辑时使用。
-- ( ) T2 构建验证：完成一个可构建代码切片时使用。
+- (x) T2 构建验证：完成一个可构建代码切片时使用。
 - ( ) T3 Docker 节点烟测：完成跨服务节点或发布候选时使用。
 - ( ) T4 阶段级端到端验收：完成一个 MVP 阶段时使用。
 
@@ -178,7 +178,7 @@ agentteam/2026-05-23-R4-5-MCP调用看板-mcp-dashboard-agent-team/
 | 节点 | 状态 | 事项 | 输出 | 验证 |
 | --- | --- | --- | --- | --- |
 | R0-1 | Done | 输出项目整体路线图，并加入 docs 入口和归档 | 本文档、归档快照、docs README 链接 | `git diff --check` |
-| R0-2 | Done | 补充版本更新记录 0.04 草案 | `docs/current/2026-05-23-版本更新记录-WikiForge-release-notes.md` | 人工可读，边界清晰 |
+| R0-2 | Done | 补充版本更新记录 0.04 草案 | `docs/current/2026-05-24-版本更新记录-WikiForge-release-notes.md` | 人工可读，边界清晰 |
 | R0-3 | Done | 用 Docker 栈跑一次真实 MVP2 Source Note 端到端烟测 | 创建导入任务、写入 Source Note、预览 Markdown | Core / Worker / UI healthy，API 成功 |
 | R0-4 | Done | 输出发布前自检清单 | `docs/current/2026-05-23-MVP2发布前自检-WikiForge-mvp2-release-checklist.md` | `git status --short` 未发现编译产物和本地运行数据 |
 | R0-5 | Done | 提交并推送当前分支 | commit `a987780`，push `origin/codex/mvp2-obsidian-source-note` | 提交前 Git 卫生检查通过，远程分支已创建 |
@@ -305,13 +305,38 @@ R4-6 本轮审核加固记录：
 
 目标：把 WikiForge 从“文件知识库”扩展为个人 LifeOS 底座。
 
+R5 当前执行指针：
+
+- [x] R5-0 契约冻结与计划优化。
+- [x] R5-1 链接类 Source REST API：输入 URL、平台、标题、正文或备注后可创建 Source。
+- [x] R5-2 个人记录 REST API：消费、账单、邮件、人际关系、事件和普通笔记可入库。
+- [x] R5-3 个人记录 Obsidian 归档模板：记录可写入 `00_Inbox_收集箱/Personal_个人记录`。
+- [x] R5-4 Web UI LifeOS 操作区：能录入链接资料、个人记录、查看汇总和触发归档。
+- [x] R5-5 集成测试、构建验证、文档归档、提交推送。
+
 | 节点 | 状态 | 事项 | 验收 |
 | --- | --- | --- | --- |
-| R5-1 | Later | 飞书文档链接读取 PoC | 输入飞书 URL 后可创建 Source |
-| R5-2 | Later | 腾讯文档 / 网页收藏连接器设计 | 链接类 Source 有统一契约 |
-| R5-3 | Later | 个人记录服务：消费、账单、邮件、人际关系、事件 | 结构化记录可入库 |
-| R5-4 | Later | 个人记录 Obsidian 页面模板 | 可按日期、人物、主题沉淀 |
-| R5-5 | Later | 周报、月报、关系复盘、消费总结 | 系统能持续总结自己 |
+| R5-0 | Done | V1 可执行范围和 Work Order | `docs/superpowers/plans/2026-05-24-V1在线资料与个人记录-WikiForge-v1-lifeos-work-order.md` |
+| R5-1 | Done | 链接类 Source REST API | 输入飞书/腾讯/网页 URL 后可创建 Source 草案 |
+| R5-2 | Done | 个人记录服务：消费、账单、邮件、人际关系、事件 | 结构化记录可入库、可筛选、可汇总 |
+| R5-3 | Done | 个人记录 Obsidian 页面模板 | 可按类型和月份写入 Vault |
+| R5-4 | Done | Web UI LifeOS 操作区 | 独立 UI 看板可录入和查看 |
+| R5-5 | Done | V1 集成验证与文档归档 | 后端测试、前端构建、归档索引通过 |
+
+V1 边界说明：
+
+- 飞书、腾讯文档、网页收藏第一版先做“链接资料收集入口”和统一 Source 契约；真实授权抓取和连接器 Fetcher 进入 V1.x。
+- 个人记录第一版先做私有化入库、可筛选、可归档到 Obsidian；周期总结和 Agent 定时迭代进入后续节点。
+- MCP Preview 仍保留外部机器人写入能力，REST API 和 Web UI 使用同一张 `personal_records` 表。
+
+R5 首版完成记录：
+
+- Core Service 新增 `POST /api/v1/link-sources`，链接资料可进入 `sources/source_files/source_contents`。
+- Core Service 新增 `POST /api/v1/personal-records`、列表、详情、汇总和写入 Obsidian API。
+- `personal_records` 增加 `obsidian_vault_path`、`obsidian_uri`、`archived_at` 字段。
+- Obsidian Vault 初始化目录增加 `00_Inbox_收集箱/Personal_个人记录`。
+- Dashboard 新增 LifeOS 收集区：链接资料、个人记录、汇总、归档操作。
+- 后端全量测试、前端构建、Docker Compose config、`git diff --check`、密钥和禁止路径扫描已通过。
 
 ### R6：V2 知识运行层
 

@@ -567,6 +567,14 @@ MVP / V1 MCP 范围控制：
 - MCP 工具不返回本地绝对路径，不读取未登记文件，不支持删除、移动或任意路径扫描。
 - Orchestration Service 管开发编排；MCP Preview 管外部 Agent 调用知识能力，两个边界不能混用。
 
+V1 首版 REST 与 UI 闭环：
+
+- `POST /api/v1/link-sources`：创建链接类 Source 草案，复用 `sources`、`source_files`、`source_contents`。
+- `POST /api/v1/personal-records`：创建消费、账单、邮件、人际关系、事件和普通笔记。
+- `GET /api/v1/personal-records`、`GET /api/v1/personal-records/{recordUid}`、`GET /api/v1/personal-records/summary`：查询、详情和汇总。
+- `POST /api/v1/personal-records/{recordUid}/obsidian-note`：写入 `00_Inbox_收集箱/Personal_个人记录`，只返回 Vault 相对路径和 Obsidian URI。
+- Web UI Dashboard 新增 LifeOS 收集区，首版可手工录入链接资料和个人记录。
+
 ### 3.12 Personal Record Service
 
 职责：
@@ -575,8 +583,8 @@ MVP / V1 MCP 范围控制：
 - 接收 Web UI 手动录入。
 - 接收 OpenClaw / Hermes 机器人通过 MCP 写入的记录。
 - 将消费、账单、邮件、人际关系和个人事件标准化为统一 Record。
-- 触发 Agent 对记录进行分类、归纳、总结和行动项提取。
-- 将重要记录输出为 Obsidian 日记、关系页、账单总结、邮件摘要或项目记录。
+- V1 首版支持 REST / Web UI 查询、筛选、汇总和写入 Obsidian 个人记录页。
+- 后续再触发 Agent 对记录进行分类、归纳、总结和行动项提取。
 
 支持记录类型：
 
@@ -1178,11 +1186,11 @@ MVP 暂不引入：
 
 ### V1：在线资料与个人记录
 
-- Link Ingestion Service。
-- Connector Gateway。
-- 飞书 / 腾讯文档读取。
-- OpenClaw / Hermes 写入。
-- Personal Record Service 完整化。
+- Link Source REST API：已完成首版手工 URL 收集，不做真实远程抓取。
+- Personal Record REST API：已完成消费、账单、邮件、人际关系、事件和普通笔记入库、筛选、汇总。
+- Personal Record Obsidian Archive：已完成按类型和月份写入 `00_Inbox_收集箱/Personal_个人记录`。
+- Web UI LifeOS Dashboard：已完成链接资料和个人记录录入、查看、归档操作。
+- Connector Gateway、飞书 / 腾讯文档真实读取、定时总结和复杂 Agent 维护进入 V1.x / V2。
 
 ### V2：知识运行层
 
