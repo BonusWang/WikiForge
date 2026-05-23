@@ -60,6 +60,7 @@
 - chunk 账本写入 `content_chunks`，`embedding_status` 初始为 `pending`，为后续真实向量库导入预留。
 - 导出文件写入 `WIKIFORGE_VECTOR_EXPORT_ROOT`，API 只返回相对路径，避免暴露宿主机绝对路径。
 - Dashboard 新增 `Vector Export 向量导出` 操作区，支持创建导出任务和查看历史任务。
+- 根 `README.md` 和 `docs/README.md` 已同步到 R6-1 / V2 阶段，避免后续 Agent 从旧 MVP2.1 / R5 入口跑偏。
 
 挂起事项：
 

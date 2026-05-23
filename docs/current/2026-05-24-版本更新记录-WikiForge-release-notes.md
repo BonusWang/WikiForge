@@ -16,6 +16,7 @@
 - 导出文件写入 `WIKIFORGE_VECTOR_EXPORT_ROOT`，API 只返回相对路径。
 - Dashboard 新增 `Vector Export 向量导出` 区块，可创建导出任务并查看历史。
 - `.env.example` 和 Docker Compose 增加向量导出目录配置。
+- 根 `README.md` 和 `docs/README.md` 更新到 R6-1 / V2 项目状态。
 
 ### 验证结果
 

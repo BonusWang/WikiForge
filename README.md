@@ -1,23 +1,28 @@
 # 知识熔炉 WikiForge
 
-知识熔炉 WikiForge 是一个本地优先的个人知识与资料整理系统。
+知识熔炉 WikiForge 是一个本地优先的个人知识与资料整理系统。它先把散落的文件、在线资料和个人记录收集整理起来，再逐步沉淀到 Obsidian、MySQL 运行账本和后续向量库。
 
-MVP 的第一目标不是做完整 RAG，也不是做复杂多 Agent 平台，而是先解决一个现实问题：
+项目当前原则不是一上来做完整 RAG，也不是直接搭复杂多 Agent 平台，而是先解决一个现实问题：
 
-> 本地资料太乱，需要先把散落源文件归集整理起来，并打通最小 Obsidian 归档闭环。
+> 资料太乱，需要先统一收集、整理、归档，再把稳定结果交给 AI、MCP 和向量库复用。
 
-## MVP 闭环
+## 当前阶段
+
+- 当前版本：`2.0-v2-preview.1`
+- 当前阶段：R6-1 / V2 向量导出契约
+- 已完成：本地源文件归集、Obsidian Source Note、正文解析、AI 审核、MCP Preview、LifeOS 个人记录、JSONL chunk 导出
+- 未完成：真实向量库接入、Hybrid Search、Lint / Maintain Agent、办公室视图、定时总结和长期记忆
+
+## 产品闭环
 
 ```text
-指定本地路径
-  -> 扫描文件
-  -> 复制归集到 WikiForge_RawSources
-  -> 建立 MySQL 索引
-  -> 选择少量文件进入处理
-  -> 生成 Source Note Markdown 草案
-  -> 人工审核
-  -> 写入 Obsidian Vault
-  -> Web UI 可查看状态并打开 Obsidian 文件
+本地文件 / 在线链接 / 个人记录
+  -> Raw Sources 和 MySQL 运行账本
+  -> 正文解析和 Source Note
+  -> AI 辅助整理与人工审核
+  -> Obsidian Vault 归档
+  -> MCP / UI / JSONL chunks 复用
+  -> 后续导入真实向量库
 ```
 
 ## 技术方向
@@ -27,7 +32,8 @@ MVP 的第一目标不是做完整 RAG，也不是做复杂多 Agent 平台，�
 - 数据库：MySQL 8.x
 - 知识沉淀：Obsidian Markdown Vault
 - 文件归集：本地 Raw Sources 目录
-- 后续拓展：MCP、向量库、在线文档连接器、个人记录、办公室视图
+- 当前运行层：MCP HTTP Preview、JSONL Vector Export
+- 后续拓展：真实向量库、在线文档连接器、办公室视图、长期记忆
 
 ## 文档
 
@@ -35,11 +41,12 @@ MVP 的第一目标不是做完整 RAG，也不是做复杂多 Agent 平台，�
 - [需求文档 PRD](docs/current/需求文档-knowledge-base-prd.md)
 - [技术架构 Technical Architecture](docs/current/技术架构-technical-architecture.md)
 - [数据模型 Data Model](docs/current/数据模型-data-model.md)
-- [MVP 实施计划 Implementation Plan](docs/current/2026-05-23-MVP实施计划-WikiForge-mvp-implementation-plan.md)
+- [项目整体计划 Project Roadmap](docs/current/2026-05-24-项目整体计划-WikiForge-project-roadmap.md)
+- [R6-1 向量导出契约 Work Order](docs/superpowers/plans/2026-05-24-V2向量导出契约-WikiForge-r6-vector-export-contract.md)
 - [参考项目清单 Reference Projects](docs/current/2026-05-23-参考项目清单-WikiForge-reference-projects.md)
-- [开发者日志 Developer Log](docs/current/2026-05-23-开发者日志-WikiForge-developer-log.md)
-- [版本更新记录 Release Notes](docs/current/2026-05-23-版本更新记录-WikiForge-release-notes.md)
+- [开发者日志 Developer Log](docs/current/2026-05-24-开发者日志-WikiForge-developer-log.md)
+- [版本更新记录 Release Notes](docs/current/2026-05-24-版本更新记录-WikiForge-release-notes.md)
 
 ## 当前状态
 
-项目已完成 MVP2.1 可用性加固，当前内部开发主线准备进入 MVP3 文档解析。GitHub 版本标签和 Release 由用户单独确认，不阻塞开发分支提交、推送和下一工作流递进。
+R6-1 已完成本地 JSONL chunk 导出契约。下一阶段建议先确认向量库选型和部署方式，再进入 R6-2 Hybrid Search。
