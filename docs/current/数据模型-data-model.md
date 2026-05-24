@@ -22,7 +22,8 @@ Flyway 不在第一个 migration 中创建全部长期规划表。
 | MVP 5 | `mcp_tool_calls`、`personal_records` | Core Service，后续可拆 MCP / Record Service | 轻量 MCP HTTP Preview、调用日志、个人记录最小写入 |
 | V1 | `personal_records` 扩展归档字段，复用 `sources/source_files/source_contents` | Core Service，后续可拆 Link / Record Service | 链接资料收集、个人记录 REST API、个人记录 Obsidian 归档 |
 | V2 / R6-1 | `vector_export_jobs`、`content_chunks` | Core Service，后续可拆 Vector Service | JSONL chunk 导出契约、embedding 状态预留 |
-| V2 / R6-3.1 | `knowledge_maintenance_runs`、`knowledge_maintenance_items` | Core Service，后续可拆 Agent / Maintain Service | 知识维护巡检运行账本、问题列表和人工处理闭环 |
+| V2 / R6-3.1 | `knowledge_maintenance_runs`、`knowledge_maintenance_items` | Core Service，后续可拆 Agent / Maintain Service | 知识库体检运行账本、问题列表和人工处理闭环 |
+| V2 / R6-UI-2 | `wiki_pages`、`wiki_integrations` | Core Service，后续可拆 Wiki / Agent Service | Topic / Project Wiki 页面注册、AI 更新建议、自动写入和审核账本 |
 | V2 后续 | `mcp_servers`、`embedding_jobs`、办公室视图相关表 | MCP / Vector / Agent Service | 完整 MCP 配置、真实向量库、混合检索和运行层 |
 
 ### 0.1.1 服务归属原则
@@ -145,6 +146,7 @@ MySQL 定位为控制平面、索引库、Agent 流程账本和轻量内容缓�
 sources
   |-- source_files
   |-- source_contents
+  |-- wiki_integrations
   |-- source_tags
   |-- source_projects
   |-- source_topics
@@ -167,8 +169,21 @@ tags
 actions
 import_jobs
 model_providers
+wiki_pages
+wiki_integrations
 agent_office_status
 ```
+
+### 2.1 R6-UI-2 最小 Wiki 编译表
+
+`wiki_pages` 是用户确认的 Topic / Project Wiki 页面注册表，不代表 AI 可以自动创建最终知识页。`wiki_integrations` 是 Source / Source File 到 Wiki 页面更新建议的运行账本。
+
+自动写入规则：
+
+- 只允许追加 `WikiForge Updates` 托管区块。
+- 需要目标页存在且状态为 `active`。
+- 需要资料非敏感、非重复、低风险、置信度达标且无冲突。
+- 不满足条件时只生成 `pending_review`，审核通过后再写入，拒绝后不写入。
 
 ## 3. sources
 
@@ -583,7 +598,7 @@ agent_office_status
 
 ## 19. vector_export_jobs
 
-记录 R6-1 向量导出任务。首版导出格式为 JSONL，不接真实向量库。
+记录 R6-1 向量导出任务。首版导出格式为 JSONL，不接真实向量库；当前资料整理主流程不展示向量导出入口，Web UI 仅在高级能力区提供访问。
 
 对应 migration：
 
@@ -633,7 +648,7 @@ V20260524_002__create_vector_export_tables.sql
 
 ## 20.1 knowledge_maintenance_runs
 
-记录 R6-3 知识维护巡检运行。首版为手动触发，不自动修改用户资料，不做定时任务。
+记录 R6-3 知识库体检运行。首版为手动触发，不自动修改用户资料，不做定时任务。
 
 对应 migration：
 
@@ -644,7 +659,7 @@ V20260524_003__create_knowledge_maintenance_tables.sql
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | id | bigint pk | 主键 |
-| run_uid | varchar(64) unique | 巡检运行 ID |
+| run_uid | varchar(64) unique | 体检运行 ID |
 | run_type | varchar(64) | 当前固定为 manual |
 | status | varchar(64) | completed、failed；后续可扩展 running |
 | stale_days | int | 判断未归档或待处理内容过期的天数阈值 |
@@ -657,7 +672,7 @@ V20260524_003__create_knowledge_maintenance_tables.sql
 
 ## 20.2 knowledge_maintenance_items
 
-记录每次知识维护巡检发现的问题。R6-3.1 增加人工处理闭环，支持已解决、忽略和重新打开；后续再扩展修复建议、自动修复和完整事件历史表。
+记录每次知识库体检发现的问题。R6-3.1 增加人工处理闭环，支持已解决、忽略和重新打开；后续再扩展修复建议、自动修复和完整事件历史表。
 
 对应 migration：
 
@@ -670,22 +685,65 @@ V20260524_004__extend_maintenance_items_workflow.sql
 | --- | --- | --- |
 | id | bigint pk | 主键 |
 | item_uid | varchar(64) unique | 问题 ID |
-| run_uid | varchar(64) | 所属巡检运行 ID |
-| issue_type | varchar(64) | missing_source_content、duplicate_source_content、unarchived_personal_record、empty_vector_export、stale_vector_chunk |
+| run_uid | varchar(64) | 所属体检运行 ID |
+| issue_type | varchar(64) | missing_source_content、duplicate_source_content、unarchived_personal_record；高级诊断还包括 empty_vector_export、stale_vector_chunk |
 | severity | varchar(32) | high、medium、low |
-| content_type | varchar(64) | source_content、personal_record、vector_export 等 |
+| content_type | varchar(64) | source_content、personal_record 等 |
 | source_uid | varchar(64) null | 关联 Source UID |
 | file_uid | varchar(64) null | 关联 Source File UID |
 | record_uid | varchar(64) null | 关联 Personal Record UID |
-| chunk_uid | varchar(64) null | 关联 chunk UID |
-| export_uid | varchar(64) null | 关联 vector export UID |
+| chunk_uid | varchar(64) null | 高级诊断关联 chunk UID |
+| export_uid | varchar(64) null | 高级诊断关联 vector export UID |
 | title | varchar(512) null | 便于 UI 展示的标题 |
 | summary | text | 问题摘要 |
-| evidence_json | json null | 证据 JSON，例如 hash、数量、目标 collection、创建时间 |
+| evidence_json | json null | 证据 JSON，例如 hash、数量、创建时间 |
 | status | varchar(64) | open、resolved、ignored；重新打开时恢复 open |
 | resolution_note | text null | 本次处理备注 |
 | resolved_by | varchar(128) null | 本次处理人，Web UI 默认 web-ui |
 | resolved_at | datetime null | 本次处理时间；重新打开时清空 |
+| created_at | datetime | 创建时间 |
+| updated_at | datetime | 更新时间 |
+
+## 20.3 wiki_pages
+
+保存用户确认的 Topic / Project Wiki 页面注册信息。该表只记录目标页，不代表 AI 可以自动创建最终知识页。
+
+对应 migration：
+
+```text
+V20260524_005__create_wiki_compile_tables.sql
+```
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| id | bigint pk | 主键 |
+| page_uid | varchar(64) unique | 页面全局 ID |
+| page_type | varchar(64) | topic 或 project |
+| title | varchar(512) | 页面标题 |
+| slug | varchar(255) unique | 稳定 slug |
+| vault_path | varchar(1024) | Obsidian Vault 内相对路径 |
+| status | varchar(64) | active、archived 等 |
+| created_at | datetime | 创建时间 |
+| updated_at | datetime | 更新时间 |
+
+## 20.4 wiki_integrations
+
+保存 Source / Source File 到 Wiki 页面更新建议、自动写入和审核结果。
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| id | bigint pk | 主键 |
+| integration_uid | varchar(64) unique | 集成记录 ID |
+| source_id | bigint fk | 来源资料 |
+| source_file_id | bigint null fk | 来源文件 |
+| wiki_page_id | bigint null fk | 目标 Wiki 页面；缺目标页时进入审核 |
+| run_id | bigint fk | 对应 agent run |
+| status | varchar(64) | pending_review、auto_applied、approved、rejected |
+| risk_level | varchar(32) | low、medium、high |
+| confidence_score | decimal(5,4) | AI 更新置信度 |
+| change_summary | text | 更新摘要 |
+| proposed_markdown | longtext | 拟追加 Markdown |
+| applied_at | datetime null | 实际写入时间 |
 | created_at | datetime | 创建时间 |
 | updated_at | datetime | 更新时间 |
 

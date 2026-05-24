@@ -159,7 +159,7 @@ class KnowledgeMaintenanceApiIntegrationTests {
                     status VARCHAR(64) NOT NULL DEFAULT 'completed',
                     total_count INT NOT NULL DEFAULT 0,
                     export_file_name VARCHAR(255) NULL,
-                    export_relative_path VARCHAR(1024) NULL,
+                    export_relative_path CLOB NULL,
                     error_message CLOB NULL,
                     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     finished_at TIMESTAMP NULL,
@@ -453,22 +453,25 @@ class KnowledgeMaintenanceApiIntegrationTests {
                 """);
         jdbcTemplate.update("""
                 INSERT INTO vector_export_jobs (
-                    id, export_uid, scope, target_collection, status, total_count,
-                    export_file_name, export_relative_path, created_at, finished_at
+                    id, export_uid, scope, target_collection, export_format, status,
+                    total_count, export_file_name, export_relative_path, created_at, finished_at
                 ) VALUES
-                    (1, 'vexp_empty', 'all', 'wikiforge_test', 'completed', 0,
-                        'vexp_empty.jsonl', '20260524/vexp_empty.jsonl',
-                        CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    (1, 'export_empty', 'all', 'wikiforge-default', 'jsonl', 'completed',
+                        0, 'empty.jsonl', 'exports/empty.jsonl',
+                        TIMESTAMP '2026-01-01 00:00:00', TIMESTAMP '2026-01-01 00:00:01')
                 """);
         jdbcTemplate.update("""
                 INSERT INTO content_chunks (
                     id, chunk_uid, export_uid, content_type, source_uid, file_uid,
-                    title, chunk_index, chunk_text, text_hash, char_count, token_estimate,
-                    embedding_status, target_collection, created_at
+                    record_uid, title, chunk_index, chunk_text, text_hash, char_count,
+                    token_estimate, metadata_json, embedding_status, target_collection,
+                    created_at, updated_at
                 ) VALUES
-                    (1, 'chunk_stale', 'vexp_old', 'source_content', 'src_dup_a', 'file_dup_a',
-                        '旧向量分块', 0, '待向量化内容', 'chunk-hash', 6, 2,
-                        'pending', 'wikiforge_test', TIMESTAMP '2026-01-01 00:00:00')
+                    (1, 'chunk_stale_pending', 'export_chunks', 'source_content',
+                        'src_dup_a', 'file_dup_a', NULL, '长期 pending chunk', 0,
+                        '等待导入向量库的正文', 'chunk-hash', 10, 5, '{}', 'pending',
+                        'wikiforge-default', TIMESTAMP '2026-01-01 00:00:00',
+                        TIMESTAMP '2026-01-01 00:00:00')
                 """);
     }
 

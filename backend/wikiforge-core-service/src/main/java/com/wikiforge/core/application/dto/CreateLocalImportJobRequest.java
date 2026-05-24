@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Positive;
 
 public record CreateLocalImportJobRequest(
         @NotBlank String inputPath,
-        @NotBlank String rawSourcesRoot,
+        String rawSourcesRoot,
         Boolean recursive,
         String organizeMode,
         @Positive Integer maxCopyFileSizeMb

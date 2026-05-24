@@ -1,5 +1,15 @@
 # 知识熔炉 WikiForge 技术架构 v1.5
 
+## 0. R6-UI-2 架构纠偏：Wiki Compile 优先
+
+当前实现从 “Source Note 作为阶段终点” 调整为 “Source Note 溯源层 + Topic / Project Wiki 页面作为长期知识正文”：
+
+- UI 信息架构按工作流组织：总览、收集入口、待整理资料、Wiki 编译、审核队列、Obsidian / Wiki 页面、高级能力。
+- Core Service 新增最小 Wiki Compile 能力：`wiki_pages` 注册用户确认的 Topic / Project 页，`wiki_integrations` 记录 Source File 到 Wiki 页的 AI 更新建议、自动写入和审核结果。
+- 自动写入只追加 Obsidian Markdown 中的 `WikiForge Updates` 托管区块，不覆盖用户手写正文。
+- MCP、Vector Export、Knowledge Health、Orchestration 保留为高级系统能力；Vector Export 后端和维护诊断不删除，但不出现在主流程入口。
+- 本阶段不接真实向量库、不做 Hybrid Search、不推进办公室视图和长期记忆。
+
 ## 1. 架构目标
 
 本系统需要同时满足：
@@ -48,6 +58,7 @@ Core Service
   +--> Source / SourceFile / ImportJob
   +--> Review Queue
   +--> Obsidian Note Mapping
+  +--> Wiki Compile / Wiki Integration
   +--> Search API
   +--> Worker Task API
   |
@@ -170,7 +181,7 @@ docs/ai-skills/wikiforge-development/SKILL.md
 Web UI 长期采用双视图；MVP 先实现 Console 视图，办公室视图放到 V2：
 
 - 办公室视图：以 6 个 Agent 工位展示状态和任务，可点击查看日志、输出、失败原因，并执行重跑、跳过、进入审核等基础操作。
-- Console 视图：传统列表、审核、资料库、日志和系统设置。
+- Console 视图：采用左侧导航按工作流拆分，避免单页堆叠所有能力；当前页面包括总览、收集入口、待整理资料、Wiki 编译、审核队列、Obsidian / Wiki 页面和高级能力。
 
 Console 视图视觉标准：
 
@@ -180,6 +191,7 @@ Console 视图视觉标准：
 - Element Plus 只作为基础交互组件库，必须通过全局 Design Token 覆盖为深色卡片、细边框、Terminal 输入框、mono badge 和暗色表格。
 - 组件圆角控制在 8px 以内，按钮、输入框、表格、抽屉和状态 badge 保持硬朗、克制、面向工作台的视觉。
 - 页面不得退回浅色后台、可爱圆润风、大面积插画或营销型 hero；Dashboard 第一屏必须是可操作控制台。
+- Vector Export / MCP / Knowledge Health 放入高级能力区；主流程不展示向量导出操作，但后端导出契约和维护诊断继续保留。
 - 本轮视觉参考来自本地 `E:\github\claude-agent-examples\ppt\*.html` 的 AI 技术发布会 / 代码编辑器 / Terminal Deck 风格。
 
 ### 3.2 Core Service
@@ -543,7 +555,7 @@ R6-1 首版实现范围：
 
 第一版只完成分块和导出，不要求接入具体向量数据库。
 
-Vector Export Service 属于 GBrain 运行层。它不替代 Obsidian Wiki，而是把稳定 Wiki 内容和结构化记录转换成可被 Agent 检索和调用的运行态知识。
+Vector Export Service 属于 GBrain 运行层预研。它不替代 Obsidian Wiki，而是把稳定 Wiki 内容和结构化记录转换成可被 Agent 检索和调用的运行态知识。当前用户主流程不需要“向量导出”入口，因此 Web UI 不暴露该服务；后续确认 Qdrant / Milvus / pgvector 等真实向量库方案后，再决定是否保留为内部批处理管道。
 
 后续可接入：
 
@@ -557,8 +569,8 @@ Vector Export Service 属于 GBrain 运行层。它不替代 Obsidian Wiki，而
 
 职责：
 
-- 对已收集和已导出的知识资产做确定性巡检。
-- 发现空正文、重复正文、长期未归档个人记录、空向量导出和长期 pending chunk。
+- 对已收集但尚未整理好的知识资产做确定性体检。
+- 发现空正文、重复正文和长期未归档个人记录。
 - 把巡检结果写入 MySQL 运行账本，供 Web UI 和后续 Maintain Agent 查看。
 - R6-3 首版只记录问题，不自动修复、不删除资料、不改写 Obsidian。
 - R6-3.1 增加人工处理闭环，支持将问题标记为已解决、忽略或重新打开，并记录处理备注。
@@ -567,8 +579,8 @@ R6-3 首版实现范围：
 
 - Core Service 内提供 `POST /api/v1/maintenance-runs`、`GET /api/v1/maintenance-runs`、`GET /api/v1/maintenance-items`。
 - MySQL 新增 `knowledge_maintenance_runs` 和 `knowledge_maintenance_items`。
-- Dashboard 新增 `Maintenance 维护巡检` 区块，支持手动运行、查看运行记录和筛选问题列表。
-- 巡检规则基于现有 `source_contents`、`personal_records`、`vector_export_jobs` 和 `content_chunks`。
+- Dashboard 新增 `知识库体检 Knowledge Health` 页面，支持手动运行、查看运行记录和筛选问题列表。
+- 体检规则基于现有 `source_contents` 和 `personal_records`；向量导出相关规则不进入当前用户界面和默认体检。
 
 R6-3.1 处理闭环范围：
 

@@ -2,7 +2,7 @@ export type ImportJobStatus = 'pending' | 'running' | 'completed' | 'failed' | '
 
 export interface CreateLocalImportJobRequest {
   inputPath: string;
-  rawSourcesRoot: string;
+  rawSourcesRoot?: string;
   recursive: boolean;
   organizeMode: 'copy';
   maxCopyFileSizeMb: number;

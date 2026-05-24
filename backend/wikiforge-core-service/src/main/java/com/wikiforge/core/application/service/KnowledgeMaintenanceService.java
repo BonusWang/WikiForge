@@ -393,7 +393,7 @@ public class KnowledgeMaintenanceService {
                     null,
                     null,
                     candidate.exportUid(),
-                    candidate.targetCollection(),
+                    firstText(candidate.targetCollection(), "空 Vector Export"),
                     "Vector Export 已完成但 chunk 数为 0，可能没有可导出的正文。",
                     Map.of(
                             "scope", candidate.scope(),
@@ -435,7 +435,7 @@ public class KnowledgeMaintenanceService {
                     candidate.recordUid(),
                     candidate.chunkUid(),
                     candidate.exportUid(),
-                    candidate.title(),
+                    firstText(candidate.title(), candidate.chunkUid()),
                     "Content Chunk 长时间处于 pending，后续接入向量库后需要补偿导入。",
                     Map.of(
                             "targetCollection", candidate.targetCollection(),
@@ -763,4 +763,5 @@ public class KnowledgeMaintenanceService {
             LocalDateTime createdAt
     ) {
     }
+
 }

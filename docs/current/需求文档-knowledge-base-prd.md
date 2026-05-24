@@ -1,5 +1,27 @@
 # 知识熔炉 WikiForge 需求文档 PRD v0.2
 
+## 0. 2026-05-24 路线纠偏：Wiki 编译闭环
+
+R6-UI-2 将产品主线重新对齐为：
+
+```text
+本地文件 + 手工链接资料
+  -> 收集 / 归集 / 解析
+  -> Source Note 溯源层
+  -> AI 编译
+  -> 用户确认的 Topic / Project Wiki 页面
+  -> 中等自动写入或审核队列
+```
+
+执行边界：
+
+- `Source Note` 继续保留为可追溯中间层，不再被当作最终价值终点。
+- 核心产物是 Obsidian Topic / Project Wiki 页面，页面由用户创建或确认，AI 不自动创建最终 Topic / Project 页。
+- 普通低风险资料可以自动追加到已确认目标页，但只能写入 `WikiForge Updates` 托管区块，不覆盖用户手写内容。
+- 敏感、高风险、低置信度、重复、冲突或缺少目标页的资料进入审核队列。
+- MCP、Vector Export、Knowledge Health、Orchestration 属于高级/系统能力，不放在资料整理主流程中抢入口。
+- 下个版本暂不做完整向量库、Hybrid Search、办公室视图、长期记忆和个人记录周期总结。
+
 ## 1. 产品背景
 
 个人知识目前分散在多个系统和载体中，包括个人看板、密码文档、飞书在线文档、腾讯文档、印象笔记、本地文档、微信收藏、B站收藏、知乎文章、项目文档和杂乱文件。
@@ -40,7 +62,7 @@ WikiForge 采用 **LLM Wiki + GBrain 融合路线**：
 系统通过独立 UI 看板接收资料，由 Agent 流水线进行收集、清洗、分类、整合、审核和归档，最终沉淀为：
 
 - 可追溯的 Source Note
-- 可演化的 Obsidian Wiki 页面
+- 可演化的 Obsidian Topic / Project Wiki 页面
 - 可持续积累的个人记录
 - 可检索的 MySQL 结构化索引
 - 可操作的个人/项目看板
@@ -58,7 +80,7 @@ WikiForge 采用 **LLM Wiki + GBrain 融合路线**：
 
 第一版优先跑通“从混乱到可复用”的知识处理闭环：
 
-资料进入系统 -> 源文件归集整理 -> 建立索引和分类 -> 决定是否进入 Agent 提炼加工 -> 生成建议和草案 -> 自动归档或人工审核 -> 写入 MySQL 和 Obsidian -> UI 看板追踪状态。
+资料进入系统 -> 源文件归集整理 -> 建立索引和分类 -> 解析正文与 Source Note 溯源 -> AI 编译 Wiki 更新建议 -> 自动追加托管区块或进入人工审核 -> 写入 MySQL 账本和 Obsidian Topic / Project Wiki 页面 -> UI 看板追踪状态。
 
 核心目标：
 
@@ -74,7 +96,7 @@ WikiForge 采用 **LLM Wiki + GBrain 融合路线**：
 - 支持 Web UI 内预览 Obsidian Markdown，并一键打开本地 Obsidian 文件。
 - 支持 Markdown 主存储，以及 HTML 预览和报告导出。
 - 支持国内模型调用，并可通过 CC Switch 切换模型供应商。
-- 支持低风险资料自动归档，高价值、不确定、敏感资料进入人工审核。
+- 支持低风险资料自动追加到已确认 Wiki 页面，高价值、不确定、敏感资料进入人工审核。
 - 已开始为后续批量导入向量库落地内容分块、embedding 状态和导出流程；R6-1 首版先提供 JSONL chunk 导出，不强依赖真实向量库。
 - 采用前后端分离架构，主要开发语言和后端技术栈为 Java。
 - 技术选型优先采用国内开发主流、成熟、维护活跃的框架和依赖，避免生僻冷门技术。
@@ -207,10 +229,10 @@ MVP 预留但不完整实现：
 
 ### V2：知识运行层
 
-- 向量导出契约：已落地 `POST /api/v1/vector-exports` 和 `GET /api/v1/vector-exports`，可把 Source 正文和个人记录导出为 JSONL chunks。
+- 向量导出契约：后端曾完成 JSONL chunk 导出预研，但当前用户主流程不需要“向量导出”入口；Web UI 不展示该功能，后续确认真实向量库方案后再作为内部管道或高级功能评估。
 - 向量库：后续接入 Qdrant / Milvus / pgvector 等私有化向量库。
 - hybrid search：等待向量库选型和部署方式确认。
-- Lint / 维护 Agent：已落地首版手动维护巡检，能发现空正文、重复正文、未归档个人记录、空向量导出和长期 pending chunk。
+- 知识库体检 / Knowledge Health：已落地首版手动体检，能发现空正文、重复正文和长期未归档个人记录。
 - 维护问题处理闭环：R6-3.1 增加人工标记已解决、忽略、重新打开和处理备注，先形成可管理的问题队列。
 - 办公室等距视图。
 - 周报 / 月报。
@@ -572,9 +594,12 @@ Markdown 是主知识源，HTML 只用于 Web UI 预览和报告导出，不作�
 
 核心页面：
 
+- 左侧导航：按“模块 -> 功能 -> 页面”组织入口，避免所有能力堆在单个 Dashboard 上。
+- 系统概览页：查看后端服务、工程阶段、导入任务、Source Files 和 Obsidian Vault 关键状态。
 - 收集入口页：粘贴链接、文本，上传文件，选择项目/主题。
-- 路径导入页：配置指定路径，扫描 Word、Markdown、JPG、PDF 等常见文件。
+- 路径导入页：只输入知识来源地址，系统自动使用后台配置的 Raw Sources 归集仓库，扫描 Word、Markdown、JPG、PDF 等常见文件。
 - 待审核队列：查看摘要、分类、Markdown 草案、质量检查结果，确认/驳回/修改。
+- 知识库体检页：手动检查空正文、重复正文和长期未归档记录，可标记已解决、忽略或重新打开。
 - 资料库列表：查看全部 Source，按来源、状态、标签、项目筛选。
 - 项目看板：按项目查看资料、任务、知识页和待补充内容。
 - Agent 运行日志：查看每条资料经过哪些步骤，每步输出什么。
@@ -590,7 +615,7 @@ Markdown 是主知识源，HTML 只用于 Web UI 预览和报告导出，不作�
 - 正文字体使用 IBM Plex Sans；代码、标签、状态、数字、路径、UID 和 API 字段使用 JetBrains Mono。
 - 页面组件以深色卡片、细边框、低透明背景、代码块、状态 badge、流程节点和网格布局为主。
 - 避免浅色商务后台、圆润可爱风、大面积插画、装饰性营销 hero 和低密度宣传页。
-- Dashboard 首屏应直接呈现系统运行状态、导入任务、Obsidian Vault、维护巡检和核心操作入口。
+- Dashboard 首屏应直接呈现系统运行状态，具体操作通过左侧工作流菜单进入；向量导出入口放入高级能力区，不进入资料整理主流程。
 
 功能优先级：
 
@@ -670,7 +695,7 @@ MVP 预计支持：
 
 R6-1 已先完成可落地的导出契约：从 `source_contents.raw_text` 和 `personal_records.raw_content` 生成 JSONL 文件，并在 MySQL 中记录 `vector_export_jobs` 与 `content_chunks`。本轮暂不读取 Obsidian Markdown、不生成 embedding、不接真实向量库。
 
-R6-3 已补充首版知识维护巡检：通过 `POST /api/v1/maintenance-runs` 手动触发，结果写入 `knowledge_maintenance_runs` 与 `knowledge_maintenance_items`，Dashboard 可查看运行记录和问题列表。首版只做发现和展示，不自动修改用户资料。
+R6-3 已补充首版知识库体检：通过 `POST /api/v1/maintenance-runs` 手动触发，结果写入 `knowledge_maintenance_runs` 与 `knowledge_maintenance_items`，Dashboard 可查看运行记录和问题列表。当前体检聚焦空正文、重复正文和长期未归档个人记录；首版只做发现和展示，不自动修改用户资料。
 
 R6-3.1 补充维护问题处理闭环：对 `knowledge_maintenance_items` 增加处理状态、处理备注、处理人和处理时间。用户可以在 Dashboard 将问题标记为已解决、忽略或重新打开。重新打开本质上把状态恢复为 `open`，本轮不做完整历史事件表、不做自动修复、不删除资料、不改写 Obsidian。
 

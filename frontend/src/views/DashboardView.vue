@@ -43,6 +43,14 @@ import {
 } from '../api/obsidian';
 import { approveReviewItem, createAiReviewRun, listReviewItems } from '../api/review';
 import { createVectorExport, listVectorExports } from '../api/vector-exports';
+import {
+  approveWikiIntegration,
+  createWikiCompileRun,
+  createWikiPage,
+  listWikiIntegrations,
+  listWikiPages,
+  rejectWikiIntegration
+} from '../api/wiki';
 import { fetchBackendHealth, type BackendHealth } from '../services/http';
 import { useAppStore } from '../stores/app';
 import type {
@@ -71,12 +79,26 @@ import type {
 } from '../types/obsidianNotes';
 import type { McpCallStatus, McpToolCallLog, McpToolDefinition } from '../types/mcp';
 import type { CreateAiReviewRunRequest, ReviewItem } from '../types/review';
-import type { VectorExportJob, VectorExportScope } from '../types/vectorExports';
+import type {
+  VectorExportJob,
+  VectorExportScope
+} from '../types/vectorExports';
+import type {
+  WikiIntegration,
+  WikiIntegrationStatus,
+  WikiPage,
+  WikiPageStatus,
+  WikiPageType,
+  WikiRiskLevel
+} from '../types/wiki';
+
+type ConsolePage = 'overview' | 'capture' | 'inbox' | 'wiki-compile' | 'review' | 'obsidian' | 'advanced';
 
 const appStore = useAppStore();
 const backendHealth = ref<BackendHealth | null>(null);
 const healthLoading = ref(false);
 const errorMessage = ref('');
+const activePage = ref<ConsolePage>('overview');
 
 const importForm = reactive<CreateLocalImportJobRequest>({
   inputPath: '',
@@ -106,13 +128,6 @@ const personalRecordForm = reactive({
   sensitivityLevel: 'medium' as SensitivityLevel
 });
 
-const vectorExportForm = reactive({
-  scope: 'all' as VectorExportScope,
-  targetCollection: 'wikiforge_default',
-  maxChunkChars: 1600,
-  limit: 1000
-});
-
 const maintenanceForm = reactive({
   staleDays: 7,
   limit: 1000
@@ -133,6 +148,60 @@ const statusLabels: Record<ImportJobStatus, string> = {
   failed: 'Failed',
   cancelled: 'Cancelled'
 };
+
+const navigationGroups: {
+  module: string;
+  items: { page: ConsolePage; functionName: string; label: string }[];
+}[] = [
+  {
+    module: 'Workflow 主流程',
+    items: [
+      { page: 'overview', functionName: '运行态势', label: '总览' },
+      { page: 'capture', functionName: '本地导入 + 链接资料', label: '收集入口' },
+      { page: 'inbox', functionName: '解析状态、重复、缺正文、待分类', label: '待整理资料' },
+      { page: 'wiki-compile', functionName: 'Topic / Project 更新建议', label: 'Wiki 编译' },
+      { page: 'review', functionName: '人工确认后写入', label: '审核队列' },
+      { page: 'obsidian', functionName: '已确认 Wiki 页面', label: 'Obsidian / Wiki 页面' }
+    ]
+  },
+  {
+    module: 'Advanced 系统能力',
+    items: [{ page: 'advanced', functionName: 'MCP / Vector Export / Health / Orchestration', label: '高级能力' }]
+  }
+];
+
+const pageMeta: Record<ConsolePage, { title: string; subtitle: string }> = {
+  overview: {
+    title: '总览 / Workflow Overview',
+    subtitle: '跟踪从资料收集、待整理、Wiki 编译到 Obsidian 写入的主链路状态。'
+  },
+  capture: {
+    title: '收集入口 / Capture',
+    subtitle: '日常只需要提交本地来源路径或链接资料；高级归集仓库覆盖默认折叠。'
+  },
+  inbox: {
+    title: '待整理资料 / Source Inbox',
+    subtitle: '查看导入任务、解析状态、重复资料、缺正文和待分类 Source Files。'
+  },
+  'wiki-compile': {
+    title: 'Wiki 编译 / Topic & Project Compile',
+    subtitle: '把 Source File 编译为 Topic / Project Wiki 页的追加建议，并进入自动写入或审核队列。'
+  },
+  review: {
+    title: '审核队列 / Review Queue',
+    subtitle: '集中处理需要人工确认的 Wiki 更新和旧版 AI 整理草案。'
+  },
+  obsidian: {
+    title: 'Obsidian / Wiki 页面',
+    subtitle: 'Topic / Project Wiki 页由用户主控，AI 只追加托管区块或提出更新建议。'
+  },
+  advanced: {
+    title: '高级能力 / System Capabilities',
+    subtitle: 'MCP、Vector Export、Knowledge Health 和 Orchestration 放在系统能力区，不抢主流程。'
+  }
+};
+
+const activePageMeta = computed(() => pageMeta[activePage.value]);
 
 const personalRecordTypeOptions = [
   { label: '消费 expense', value: 'expense' },
@@ -215,13 +284,6 @@ const personalRecordTypeFilter = ref<PersonalRecordType | ''>('');
 const personalRecordStatusFilter = ref('');
 const personalRecordSourceFilter = ref('');
 const archivingRecordUid = ref('');
-const vectorExports = ref<VectorExportJob[]>([]);
-const vectorExportCreating = ref(false);
-const vectorExportsLoading = ref(false);
-const vectorExportPage = ref(1);
-const vectorExportPageSize = ref(20);
-const vectorExportTotal = ref(0);
-const vectorExportStatusFilter = ref('');
 const maintenanceRuns = ref<KnowledgeMaintenanceRun[]>([]);
 const maintenanceItems = ref<KnowledgeMaintenanceItem[]>([]);
 const maintenanceRunCreating = ref(false);
@@ -243,9 +305,57 @@ const maintenanceIssueTypeOptions = [
   { label: '空正文 missing_source_content', value: 'missing_source_content' },
   { label: '重复正文 duplicate_source_content', value: 'duplicate_source_content' },
   { label: '未归档记录 unarchived_personal_record', value: 'unarchived_personal_record' },
-  { label: '空导出 empty_vector_export', value: 'empty_vector_export' },
-  { label: '待向量化分块 stale_vector_chunk', value: 'stale_vector_chunk' }
+  { label: '空向量导出 empty_vector_export', value: 'empty_vector_export' },
+  { label: '长期 pending chunk stale_vector_chunk', value: 'stale_vector_chunk' }
 ];
+
+const wikiPageForm = reactive({
+  pageType: 'topic' as WikiPageType,
+  title: '',
+  slug: '',
+  vaultPath: '',
+  status: 'active' as WikiPageStatus
+});
+
+const wikiCompileForm = reactive({
+  fileUid: '',
+  targetPageUid: '',
+  riskLevel: 'low' as WikiRiskLevel,
+  confidenceScore: 0.86,
+  changeSummary: '',
+  proposedMarkdown: ''
+});
+
+const wikiPages = ref<WikiPage[]>([]);
+const wikiPagePage = ref(1);
+const wikiPagePageSize = ref(20);
+const wikiPageTotal = ref(0);
+const wikiPagesLoading = ref(false);
+const wikiPageCreating = ref(false);
+const wikiIntegrations = ref<WikiIntegration[]>([]);
+const wikiIntegrationPage = ref(1);
+const wikiIntegrationPageSize = ref(20);
+const wikiIntegrationTotal = ref(0);
+const wikiIntegrationStatusFilter = ref<WikiIntegrationStatus | ''>('pending_review');
+const wikiIntegrationPageFilter = ref('');
+const wikiIntegrationSourceFilter = ref('');
+const wikiIntegrationsLoading = ref(false);
+const wikiCompileLoading = ref(false);
+const wikiDecisionLoadingUid = ref('');
+
+const vectorExportForm = reactive({
+  scope: 'sources' as VectorExportScope,
+  targetCollection: 'wikiforge-default',
+  maxChunkChars: 1200,
+  limit: 1000
+});
+
+const vectorExports = ref<VectorExportJob[]>([]);
+const vectorExportPage = ref(1);
+const vectorExportPageSize = ref(10);
+const vectorExportTotal = ref(0);
+const vectorExportsLoading = ref(false);
+const vectorExportCreating = ref(false);
 
 const selectedJobStatus = computed(() => {
   return selectedJobDetail.value?.status
@@ -301,10 +411,9 @@ async function refreshJobs() {
 
 async function createJob() {
   const inputPath = importForm.inputPath.trim();
-  const rawSourcesRoot = importForm.rawSourcesRoot.trim();
 
-  if (!inputPath || !rawSourcesRoot) {
-    ElMessage.warning('inputPath 和 rawSourcesRoot 必填');
+  if (!inputPath) {
+    ElMessage.warning('知识来源地址必填');
     return;
   }
 
@@ -312,7 +421,7 @@ async function createJob() {
   try {
     const job = await createLocalImportJob({
       inputPath,
-      rawSourcesRoot,
+      rawSourcesRoot: optionalText(importForm.rawSourcesRoot),
       recursive: importForm.recursive,
       organizeMode: 'copy',
       maxCopyFileSizeMb: importForm.maxCopyFileSizeMb
@@ -506,48 +615,6 @@ async function refreshLifeOs() {
   await Promise.all([refreshPersonalRecords(), refreshPersonalSummary()]);
 }
 
-async function refreshVectorExports() {
-  vectorExportsLoading.value = true;
-  try {
-    const result = await listVectorExports({
-      status: optionalText(vectorExportStatusFilter.value),
-      page: vectorExportPage.value,
-      pageSize: vectorExportPageSize.value
-    });
-    vectorExports.value = result.items;
-    vectorExportTotal.value = result.total;
-  } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '向量导出任务加载失败');
-  } finally {
-    vectorExportsLoading.value = false;
-  }
-}
-
-async function createVectorExportJob() {
-  const targetCollection = vectorExportForm.targetCollection.trim();
-  if (!targetCollection) {
-    ElMessage.warning('targetCollection 必填');
-    return;
-  }
-
-  vectorExportCreating.value = true;
-  try {
-    const result = await createVectorExport({
-      scope: vectorExportForm.scope,
-      targetCollection,
-      maxChunkChars: vectorExportForm.maxChunkChars,
-      limit: vectorExportForm.limit
-    });
-    ElMessage.success(`向量导出完成：${result.totalCount} chunks`);
-    vectorExportPage.value = 1;
-    await refreshVectorExports();
-  } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '向量导出创建失败');
-  } finally {
-    vectorExportCreating.value = false;
-  }
-}
-
 async function refreshMaintenanceRuns() {
   maintenanceRunsLoading.value = true;
   try {
@@ -559,7 +626,7 @@ async function refreshMaintenanceRuns() {
     maintenanceRuns.value = result.items;
     maintenanceRunTotal.value = result.total;
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '维护巡检运行记录加载失败');
+    ElMessage.error(error instanceof Error ? error.message : '知识库体检运行记录加载失败');
   } finally {
     maintenanceRunsLoading.value = false;
   }
@@ -578,7 +645,7 @@ async function refreshMaintenanceItems() {
     maintenanceItems.value = result.items;
     maintenanceItemTotal.value = result.total;
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '维护巡检问题列表加载失败');
+    ElMessage.error(error instanceof Error ? error.message : '知识库体检问题列表加载失败');
   } finally {
     maintenanceItemsLoading.value = false;
   }
@@ -595,15 +662,196 @@ async function createMaintenanceRunNow() {
       staleDays: maintenanceForm.staleDays,
       limit: maintenanceForm.limit
     });
-    ElMessage.success(`维护巡检完成：${result.issueCount} issues`);
+    ElMessage.success(`知识库体检完成：${result.issueCount} issues`);
     maintenanceRunUidFilter.value = result.runUid;
     maintenanceRunPage.value = 1;
     maintenanceItemPage.value = 1;
     await refreshKnowledgeMaintenance();
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '维护巡检运行失败');
+    ElMessage.error(error instanceof Error ? error.message : '知识库体检运行失败');
   } finally {
     maintenanceRunCreating.value = false;
+  }
+}
+
+async function refreshWikiPages() {
+  wikiPagesLoading.value = true;
+  try {
+    const result = await listWikiPages({
+      status: 'active',
+      page: wikiPagePage.value,
+      pageSize: wikiPagePageSize.value
+    });
+    wikiPages.value = result.items;
+    wikiPageTotal.value = result.total;
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : 'Wiki 页面加载失败');
+  } finally {
+    wikiPagesLoading.value = false;
+  }
+}
+
+async function refreshWikiIntegrations() {
+  wikiIntegrationsLoading.value = true;
+  try {
+    const result = await listWikiIntegrations({
+      status: wikiIntegrationStatusFilter.value || undefined,
+      pageUid: optionalText(wikiIntegrationPageFilter.value),
+      sourceUid: optionalText(wikiIntegrationSourceFilter.value),
+      page: wikiIntegrationPage.value,
+      pageSize: wikiIntegrationPageSize.value
+    });
+    wikiIntegrations.value = result.items;
+    wikiIntegrationTotal.value = result.total;
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : 'Wiki 更新记录加载失败');
+  } finally {
+    wikiIntegrationsLoading.value = false;
+  }
+}
+
+async function refreshWikiCompile() {
+  await Promise.all([refreshWikiPages(), refreshWikiIntegrations()]);
+}
+
+async function refreshWikiReviewQueue() {
+  wikiIntegrationStatusFilter.value = 'pending_review';
+  wikiIntegrationPage.value = 1;
+  await refreshWikiIntegrations();
+}
+
+async function createWikiPageFromForm() {
+  const title = wikiPageForm.title.trim();
+  const vaultPath = wikiPageForm.vaultPath.trim();
+  if (!title || !vaultPath) {
+    ElMessage.warning('Wiki 页面标题和 Vault 路径必填');
+    return;
+  }
+
+  wikiPageCreating.value = true;
+  try {
+    const page = await createWikiPage({
+      pageType: wikiPageForm.pageType,
+      title,
+      slug: optionalText(wikiPageForm.slug),
+      vaultPath,
+      status: wikiPageForm.status
+    });
+    ElMessage.success(`Wiki 页面已注册：${page.pageUid}`);
+    wikiPageForm.title = '';
+    wikiPageForm.slug = '';
+    wikiPageForm.vaultPath = '';
+    wikiPagePage.value = 1;
+    await refreshWikiPages();
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : 'Wiki 页面注册失败');
+  } finally {
+    wikiPageCreating.value = false;
+  }
+}
+
+function selectSourceFileForWikiCompile(sourceFile: SourceFile) {
+  wikiCompileForm.fileUid = sourceFile.fileUid;
+  activePage.value = 'wiki-compile';
+}
+
+async function runWikiCompile() {
+  const fileUid = wikiCompileForm.fileUid.trim();
+  if (!fileUid) {
+    ElMessage.warning('请选择或填写 Source File UID');
+    return;
+  }
+
+  wikiCompileLoading.value = true;
+  try {
+    const result = await createWikiCompileRun(fileUid, {
+      targetPageUid: optionalText(wikiCompileForm.targetPageUid),
+      riskLevel: wikiCompileForm.riskLevel,
+      confidenceScore: wikiCompileForm.confidenceScore,
+      changeSummary: optionalText(wikiCompileForm.changeSummary),
+      proposedMarkdown: optionalText(wikiCompileForm.proposedMarkdown)
+    });
+    ElMessage.success(`Wiki 编译完成：${result.status}`);
+    wikiIntegrationStatusFilter.value = result.status;
+    wikiIntegrationPage.value = 1;
+    await refreshWikiIntegrations();
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : 'Wiki 编译失败');
+  } finally {
+    wikiCompileLoading.value = false;
+  }
+}
+
+async function approveWikiUpdate(integration: WikiIntegration) {
+  wikiDecisionLoadingUid.value = integration.integrationUid;
+  try {
+    await approveWikiIntegration(integration.integrationUid);
+    ElMessage.success('Wiki 更新已写入托管区块');
+    await refreshWikiIntegrations();
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : 'Wiki 更新审核通过失败');
+  } finally {
+    wikiDecisionLoadingUid.value = '';
+  }
+}
+
+async function rejectWikiUpdate(integration: WikiIntegration) {
+  try {
+    await ElMessageBox.confirm('拒绝后不会写入 Obsidian Wiki 页面。', '拒绝 Wiki 更新建议', {
+      confirmButtonText: '拒绝',
+      cancelButtonText: '取消',
+      type: 'warning'
+    });
+  } catch (error) {
+    if (error === 'cancel' || error === 'close') {
+      return;
+    }
+  }
+
+  wikiDecisionLoadingUid.value = integration.integrationUid;
+  try {
+    await rejectWikiIntegration(integration.integrationUid);
+    ElMessage.success('Wiki 更新建议已拒绝');
+    await refreshWikiIntegrations();
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : 'Wiki 更新拒绝失败');
+  } finally {
+    wikiDecisionLoadingUid.value = '';
+  }
+}
+
+async function refreshVectorExports() {
+  vectorExportsLoading.value = true;
+  try {
+    const result = await listVectorExports({
+      page: vectorExportPage.value,
+      pageSize: vectorExportPageSize.value
+    });
+    vectorExports.value = result.items;
+    vectorExportTotal.value = result.total;
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : 'Vector Export 记录加载失败');
+  } finally {
+    vectorExportsLoading.value = false;
+  }
+}
+
+async function createVectorExportJob() {
+  vectorExportCreating.value = true;
+  try {
+    const result = await createVectorExport({
+      scope: vectorExportForm.scope,
+      targetCollection: optionalText(vectorExportForm.targetCollection),
+      maxChunkChars: vectorExportForm.maxChunkChars,
+      limit: vectorExportForm.limit
+    });
+    ElMessage.success(`Vector Export 已完成：${result.totalCount} chunks`);
+    vectorExportPage.value = 1;
+    await refreshVectorExports();
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : 'Vector Export 失败');
+  } finally {
+    vectorExportCreating.value = false;
   }
 }
 
@@ -614,7 +862,7 @@ async function updateMaintenanceItemStatus(
   let resolutionNote = '';
   try {
     if (status === 'open') {
-      await ElMessageBox.confirm('重新打开后该问题会回到 open 状态。', '重新打开维护问题', {
+      await ElMessageBox.confirm('重新打开后该问题会回到 open 状态。', '重新打开体检问题', {
         confirmButtonText: '重新打开',
         cancelButtonText: '取消',
         type: 'warning'
@@ -636,7 +884,7 @@ async function updateMaintenanceItemStatus(
       resolutionNote,
       resolvedBy: 'web-ui'
     });
-    ElMessage.success(status === 'open' ? '维护问题已重新打开' : '维护问题状态已更新');
+    ElMessage.success(status === 'open' ? '体检问题已重新打开' : '体检问题状态已更新');
     await refreshMaintenanceItems();
   } catch (error) {
     if (error === 'cancel' || error === 'close') {
@@ -865,16 +1113,6 @@ function handlePersonalRecordFilterChange() {
   void refreshPersonalRecords();
 }
 
-function handleVectorExportPageChange(page: number) {
-  vectorExportPage.value = page;
-  void refreshVectorExports();
-}
-
-function handleVectorExportFilterChange() {
-  vectorExportPage.value = 1;
-  void refreshVectorExports();
-}
-
 function handleMaintenanceRunPageChange(page: number) {
   maintenanceRunPage.value = page;
   void refreshMaintenanceRuns();
@@ -893,6 +1131,26 @@ function handleMaintenanceRunFilterChange() {
 function handleMaintenanceItemFilterChange() {
   maintenanceItemPage.value = 1;
   void refreshMaintenanceItems();
+}
+
+function handleWikiPagePageChange(page: number) {
+  wikiPagePage.value = page;
+  void refreshWikiPages();
+}
+
+function handleWikiIntegrationPageChange(page: number) {
+  wikiIntegrationPage.value = page;
+  void refreshWikiIntegrations();
+}
+
+function handleWikiIntegrationFilterChange() {
+  wikiIntegrationPage.value = 1;
+  void refreshWikiIntegrations();
+}
+
+function handleVectorExportPageChange(page: number) {
+  vectorExportPage.value = page;
+  void refreshVectorExports();
 }
 
 function selectMaintenanceRun(run: KnowledgeMaintenanceRun) {
@@ -985,19 +1243,6 @@ function personalRecordTagType(status: string) {
   return 'info';
 }
 
-function vectorExportTagType(status: string) {
-  if (status === 'completed') {
-    return 'success';
-  }
-  if (status === 'failed') {
-    return 'danger';
-  }
-  if (status === 'running') {
-    return 'warning';
-  }
-  return 'info';
-}
-
 function maintenanceSeverityTagType(severity: string) {
   if (severity === 'high') {
     return 'danger';
@@ -1019,6 +1264,23 @@ function maintenanceStatusTagType(status: string) {
     return 'warning';
   }
   return 'info';
+}
+
+function wikiIntegrationStatusTagType(status: string) {
+  if (status === 'auto_applied' || status === 'approved') {
+    return 'success';
+  }
+  if (status === 'pending_review') {
+    return 'warning';
+  }
+  if (status === 'rejected') {
+    return 'info';
+  }
+  return 'primary';
+}
+
+function statusBadgeClass(status: string) {
+  return `status-badge status-badge--${status}`;
 }
 
 function setMaintenanceItemUpdating(itemUid: string, loading: boolean) {
@@ -1096,17 +1358,51 @@ onMounted(() => {
   void refreshReviewItems();
   void refreshMcpPreview();
   void refreshLifeOs();
-  void refreshVectorExports();
   void refreshKnowledgeMaintenance();
+  void refreshWikiCompile();
+  void refreshVectorExports();
 });
 </script>
 
 <template>
-  <main class="shell">
+  <main class="app-shell">
+    <aside class="sidebar-nav" aria-label="WikiForge navigation">
+      <div class="sidebar-brand">
+        <span class="brand-mark">WF</span>
+        <div>
+          <strong>{{ appStore.appName }}</strong>
+          <span>Knowledge Forge</span>
+        </div>
+      </div>
+      <div
+        v-for="group in navigationGroups"
+        :key="group.module"
+        class="nav-group"
+      >
+        <p class="nav-group-title">{{ group.module }}</p>
+        <button
+          v-for="item in group.items"
+          :key="item.page"
+          class="nav-button"
+          :class="{ 'is-active': activePage === item.page }"
+          type="button"
+          @click="activePage = item.page"
+        >
+          <span class="nav-dot" />
+          <span>
+            <strong>{{ item.label }}</strong>
+            <small>{{ item.functionName }}</small>
+          </span>
+        </button>
+      </div>
+    </aside>
+
+    <section class="shell workspace">
     <header class="topbar">
       <div>
         <p class="eyebrow">{{ appStore.stage }}</p>
-        <h1>{{ appStore.appName }}</h1>
+        <h1>{{ activePageMeta.title }}</h1>
+        <p class="page-subtitle">{{ activePageMeta.subtitle }}</p>
       </div>
       <div class="topbar-actions">
         <el-button :loading="vaultInitializing" @click="initializeVault">
@@ -1120,7 +1416,7 @@ onMounted(() => {
       </div>
     </header>
 
-    <section class="status-grid">
+    <section v-if="activePage === 'overview'" class="status-grid">
       <el-card shadow="never">
         <template #header>
           <div class="card-title">
@@ -1142,7 +1438,7 @@ onMounted(() => {
           </div>
         </template>
         <p class="metric">V2</p>
-        <p class="muted">向量导出与知识运行层</p>
+        <p class="muted">收集、整理、体检与 Agent 接入</p>
       </el-card>
 
       <el-card shadow="never">
@@ -1206,7 +1502,7 @@ onMounted(() => {
     />
 
     <section class="dashboard-stack">
-      <el-card shadow="never">
+      <el-card v-if="activePage === 'capture'" shadow="never">
         <template #header>
           <div class="section-title">
             <div class="card-title">
@@ -1221,19 +1517,11 @@ onMounted(() => {
         </template>
 
         <el-form class="import-form" label-position="top">
-          <el-form-item label="inputPath" required>
+          <el-form-item label="知识来源地址 sourcePath" required>
             <el-input
               v-model="importForm.inputPath"
               clearable
-              placeholder="E:/example/messy-sources"
-            />
-          </el-form-item>
-
-          <el-form-item label="rawSourcesRoot" required>
-            <el-input
-              v-model="importForm.rawSourcesRoot"
-              clearable
-              placeholder="E:/WikiForge_RawSources"
+              placeholder="E:/个人知识体系/待整理资料"
             />
           </el-form-item>
 
@@ -1250,7 +1538,22 @@ onMounted(() => {
             />
           </el-form-item>
 
+          <el-collapse class="advanced-import-options">
+            <el-collapse-item title="高级归集设置" name="raw-root">
+              <el-form-item label="rawSourcesRoot 覆盖">
+                <el-input
+                  v-model="importForm.rawSourcesRoot"
+                  clearable
+                  placeholder="留空使用后端配置默认值"
+                />
+              </el-form-item>
+            </el-collapse-item>
+          </el-collapse>
+
           <div class="form-actions">
+            <p class="form-hint">
+              导入后默认复制归集到系统配置的 Raw Sources；只有需要校验高级覆盖时再展开填写。
+            </p>
             <el-tag type="info" effect="plain">organizeMode: copy</el-tag>
             <el-button :loading="createLoading" type="primary" @click="createJob">
               创建任务
@@ -1259,12 +1562,12 @@ onMounted(() => {
         </el-form>
       </el-card>
 
-      <el-card shadow="never">
+      <el-card v-if="activePage === 'advanced'" shadow="never">
         <template #header>
           <div class="section-title">
             <div class="card-title">
               <el-icon><SetUp /></el-icon>
-              Maintenance 维护巡检
+              知识库体检 Knowledge Health
             </div>
             <el-button
               :loading="maintenanceRunsLoading || maintenanceItemsLoading"
@@ -1275,6 +1578,10 @@ onMounted(() => {
             </el-button>
           </div>
         </template>
+
+        <p class="section-helper">
+          用于发现“收集了但没有整理好”的基础问题，例如空正文、重复正文、长期未归档个人记录。当前只做检查和标记，不会自动删除、移动或改写你的资料。
+        </p>
 
         <el-form class="maintenance-form" label-position="top">
           <el-form-item label="staleDays">
@@ -1294,9 +1601,9 @@ onMounted(() => {
             />
           </el-form-item>
           <div class="form-actions">
-            <el-tag effect="plain">manual lint</el-tag>
+            <el-tag effect="plain">manual check</el-tag>
             <el-button :loading="maintenanceRunCreating" type="primary" @click="createMaintenanceRunNow">
-              运行巡检
+              开始体检
             </el-button>
           </div>
         </el-form>
@@ -1319,7 +1626,7 @@ onMounted(() => {
               v-loading="maintenanceRunsLoading"
               :data="maintenanceRuns"
               border
-              empty-text="暂无维护巡检运行"
+              empty-text="暂无知识库体检运行"
             >
               <el-table-column prop="createdAt" label="createdAt" min-width="170" show-overflow-tooltip />
               <el-table-column prop="runUid" label="runUid" min-width="190" show-overflow-tooltip />
@@ -1389,7 +1696,7 @@ onMounted(() => {
               v-loading="maintenanceItemsLoading"
               :data="maintenanceItems"
               border
-              empty-text="暂无维护巡检问题"
+              empty-text="暂无知识库体检问题"
             >
               <el-table-column prop="createdAt" label="createdAt" min-width="170" show-overflow-tooltip />
               <el-table-column prop="issueType" label="issueType" min-width="210" show-overflow-tooltip />
@@ -1459,7 +1766,7 @@ onMounted(() => {
         </div>
       </el-card>
 
-      <el-card shadow="never">
+      <el-card v-if="activePage === 'capture'" shadow="never">
         <template #header>
           <div class="section-title">
             <div class="card-title">
@@ -1703,108 +2010,7 @@ onMounted(() => {
         </div>
       </el-card>
 
-      <el-card shadow="never">
-        <template #header>
-          <div class="section-title">
-            <div class="card-title">
-              <el-icon><Cpu /></el-icon>
-              Vector Export 向量导出
-            </div>
-            <el-button :loading="vectorExportsLoading" @click="refreshVectorExports">
-              <el-icon><Refresh /></el-icon>
-              刷新导出
-            </el-button>
-          </div>
-        </template>
-
-        <el-form class="vector-export-form" label-position="top">
-          <el-form-item label="scope">
-            <el-select v-model="vectorExportForm.scope">
-              <el-option label="全部 all" value="all" />
-              <el-option label="资料 sources" value="sources" />
-              <el-option label="个人记录 personal_records" value="personal_records" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="targetCollection" required>
-            <el-input
-              v-model="vectorExportForm.targetCollection"
-              clearable
-              placeholder="wikiforge_default"
-            />
-          </el-form-item>
-          <el-form-item label="maxChunkChars">
-            <el-input-number
-              v-model="vectorExportForm.maxChunkChars"
-              :min="200"
-              :max="8000"
-              :step="200"
-              controls-position="right"
-            />
-          </el-form-item>
-          <el-form-item label="limit">
-            <el-input-number
-              v-model="vectorExportForm.limit"
-              :min="1"
-              :max="10000"
-              controls-position="right"
-            />
-          </el-form-item>
-          <div class="form-actions">
-            <el-tag effect="plain">format: jsonl</el-tag>
-            <el-button :loading="vectorExportCreating" type="primary" @click="createVectorExportJob">
-              生成导出
-            </el-button>
-          </div>
-        </el-form>
-
-        <div class="lifeos-record-toolbar">
-          <el-select
-            v-model="vectorExportStatusFilter"
-            clearable
-            placeholder="status"
-            @change="handleVectorExportFilterChange"
-          >
-            <el-option label="completed" value="completed" />
-            <el-option label="failed" value="failed" />
-          </el-select>
-        </div>
-
-        <el-table
-          v-loading="vectorExportsLoading"
-          :data="vectorExports"
-          border
-          empty-text="暂无向量导出任务"
-        >
-          <el-table-column prop="createdAt" label="createdAt" min-width="180" show-overflow-tooltip />
-          <el-table-column prop="exportUid" label="exportUid" min-width="190" show-overflow-tooltip />
-          <el-table-column prop="scope" label="scope" width="140" show-overflow-tooltip />
-          <el-table-column prop="targetCollection" label="collection" min-width="180" show-overflow-tooltip />
-          <el-table-column prop="status" label="status" width="120">
-            <template #default="scope">
-              <el-tag :type="vectorExportTagType(scope.row.status)">
-                {{ scope.row.status }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="totalCount" label="chunks" width="100" align="right" />
-          <el-table-column prop="exportRelativePath" label="relativePath" min-width="260" show-overflow-tooltip />
-          <el-table-column prop="errorMessage" label="error" min-width="180" show-overflow-tooltip />
-        </el-table>
-
-        <div class="pagination-row">
-          <el-pagination
-            v-if="vectorExportTotal > vectorExportPageSize"
-            background
-            layout="prev, pager, next"
-            :current-page="vectorExportPage"
-            :page-size="vectorExportPageSize"
-            :total="vectorExportTotal"
-            @current-change="handleVectorExportPageChange"
-          />
-        </div>
-      </el-card>
-
-      <el-card shadow="never">
+      <el-card v-if="activePage === 'advanced'" shadow="never">
         <template #header>
           <div class="section-title">
             <div class="card-title">
@@ -1911,7 +2117,90 @@ onMounted(() => {
         </div>
       </el-card>
 
-      <el-card shadow="never">
+      <el-card v-if="activePage === 'advanced'" shadow="never">
+        <template #header>
+          <div class="section-title">
+            <div class="card-title">
+              <el-icon><SetUp /></el-icon>
+              Vector Export
+            </div>
+            <el-button :loading="vectorExportsLoading" @click="refreshVectorExports">
+              <el-icon><Refresh /></el-icon>
+              刷新导出
+            </el-button>
+          </div>
+        </template>
+
+        <el-form class="vector-export-form" label-position="top">
+          <el-form-item label="scope">
+            <el-select v-model="vectorExportForm.scope">
+              <el-option label="sources" value="sources" />
+              <el-option label="personal_records" value="personal_records" />
+              <el-option label="all" value="all" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="targetCollection">
+            <el-input v-model="vectorExportForm.targetCollection" clearable />
+          </el-form-item>
+          <el-form-item label="maxChunkChars">
+            <el-input-number
+              v-model="vectorExportForm.maxChunkChars"
+              :min="200"
+              :max="8000"
+              controls-position="right"
+            />
+          </el-form-item>
+          <el-form-item label="limit">
+            <el-input-number
+              v-model="vectorExportForm.limit"
+              :min="1"
+              :max="10000"
+              controls-position="right"
+            />
+          </el-form-item>
+          <div class="form-actions">
+            <el-tag effect="plain">advanced diagnostic pipeline</el-tag>
+            <el-button :loading="vectorExportCreating" type="primary" @click="createVectorExportJob">
+              创建导出
+            </el-button>
+          </div>
+        </el-form>
+
+        <el-table
+          v-loading="vectorExportsLoading"
+          :data="vectorExports"
+          border
+          empty-text="暂无 Vector Export 记录"
+        >
+          <el-table-column prop="createdAt" label="createdAt" min-width="170" show-overflow-tooltip />
+          <el-table-column prop="exportUid" label="exportUid" min-width="190" show-overflow-tooltip />
+          <el-table-column prop="scope" label="scope" width="140" />
+          <el-table-column prop="status" label="status" width="120">
+            <template #default="scope">
+              <el-tag :type="scope.row.status === 'completed' ? 'success' : 'warning'">
+                {{ scope.row.status }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="totalCount" label="chunks" width="100" align="right" />
+          <el-table-column prop="targetCollection" label="collection" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="exportRelativePath" label="path" min-width="220" show-overflow-tooltip />
+        </el-table>
+
+        <div class="pagination-row">
+          <el-pagination
+            v-if="vectorExportTotal > vectorExportPageSize"
+            background
+            layout="prev, pager, next"
+            :current-page="vectorExportPage"
+            :page-size="vectorExportPageSize"
+            :total="vectorExportTotal"
+            @current-change="handleVectorExportPageChange"
+          />
+        </div>
+      </el-card>
+
+      <el-card v-if="activePage === 'inbox'" shadow="never">
         <template #header>
           <div class="section-title">
             <div class="card-title">
@@ -1946,7 +2235,11 @@ onMounted(() => {
           <el-table-column prop="jobUid" label="jobUid" min-width="180" show-overflow-tooltip />
           <el-table-column prop="status" label="status" width="120">
             <template #default="scope">
-              <el-tag :type="statusTagType(scope.row.status)">
+              <el-tag
+                :class="statusBadgeClass(scope.row.status)"
+                :type="statusTagType(scope.row.status)"
+                effect="plain"
+              >
                 {{ statusLabels[scope.row.status as ImportJobStatus] }}
               </el-tag>
             </template>
@@ -1955,8 +2248,8 @@ onMounted(() => {
           <el-table-column prop="successCount" label="success" width="94" align="right" />
           <el-table-column prop="skippedCount" label="skipped" width="94" align="right" />
           <el-table-column prop="failedCount" label="failed" width="86" align="right" />
-          <el-table-column prop="inputPath" label="inputPath" min-width="220" show-overflow-tooltip />
-          <el-table-column prop="rawSourcesRoot" label="rawSourcesRoot" min-width="220" show-overflow-tooltip />
+          <el-table-column prop="inputPath" label="sourcePath" min-width="220" show-overflow-tooltip />
+          <el-table-column prop="rawSourcesRoot" label="归集仓库" min-width="220" show-overflow-tooltip />
           <el-table-column prop="createdAt" label="createdAt" min-width="180" show-overflow-tooltip />
           <el-table-column fixed="right" label="操作" width="110">
             <template #default="scope">
@@ -1978,7 +2271,7 @@ onMounted(() => {
         </div>
       </el-card>
 
-      <el-card shadow="never">
+      <el-card v-if="activePage === 'inbox'" shadow="never">
         <template #header>
           <div class="section-title">
             <div class="card-title">
@@ -2021,7 +2314,11 @@ onMounted(() => {
 
         <div v-if="selectedJobDetail" class="job-detail-strip">
           <span class="detail-item">{{ selectedJobDetail.jobUid }}</span>
-          <el-tag :type="statusTagType(selectedJobDetail.status)">
+          <el-tag
+            :class="statusBadgeClass(selectedJobDetail.status)"
+            :type="statusTagType(selectedJobDetail.status)"
+            effect="plain"
+          >
             {{ statusLabels[selectedJobDetail.status] }}
           </el-tag>
           <span class="detail-item">total {{ selectedJobDetail.totalCount }}</span>
@@ -2060,7 +2357,7 @@ onMounted(() => {
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column fixed="right" label="操作" width="220">
+          <el-table-column fixed="right" label="操作" width="300">
             <template #default="scope">
               <div class="row-actions">
                 <el-button
@@ -2081,6 +2378,14 @@ onMounted(() => {
                   <el-icon><Cpu /></el-icon>
                   AI 整理
                 </el-button>
+                <el-button
+                  link
+                  type="warning"
+                  @click="selectSourceFileForWikiCompile(scope.row)"
+                >
+                  <el-icon><EditPen /></el-icon>
+                  Wiki 编译
+                </el-button>
               </div>
             </template>
           </el-table-column>
@@ -2099,7 +2404,329 @@ onMounted(() => {
         </div>
       </el-card>
 
-      <el-card shadow="never">
+      <el-card v-if="activePage === 'wiki-compile'" shadow="never">
+        <template #header>
+          <div class="section-title">
+            <div class="card-title">
+              <el-icon><EditPen /></el-icon>
+              Topic / Project Wiki 页面
+            </div>
+            <el-button :loading="wikiPagesLoading || wikiIntegrationsLoading" @click="refreshWikiCompile">
+              <el-icon><Refresh /></el-icon>
+              刷新 Wiki
+            </el-button>
+          </div>
+        </template>
+
+        <div class="wiki-compile-grid">
+          <div class="wiki-panel">
+            <div class="card-title">注册用户确认的目标页</div>
+            <el-form class="lifeos-form" label-position="top">
+              <div class="record-form-row">
+                <el-form-item label="pageType">
+                  <el-select v-model="wikiPageForm.pageType">
+                    <el-option label="topic" value="topic" />
+                    <el-option label="project" value="project" />
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="status">
+                  <el-select v-model="wikiPageForm.status">
+                    <el-option label="active" value="active" />
+                    <el-option label="archived" value="archived" />
+                  </el-select>
+                </el-form-item>
+              </div>
+              <el-form-item label="标题" required>
+                <el-input v-model="wikiPageForm.title" clearable placeholder="WikiForge 产品路线" />
+              </el-form-item>
+              <el-form-item label="slug">
+                <el-input v-model="wikiPageForm.slug" clearable placeholder="wikiforge-roadmap" />
+              </el-form-item>
+              <el-form-item label="vaultPath" required>
+                <el-input v-model="wikiPageForm.vaultPath" clearable placeholder="10_Topics/WikiForge 产品路线.md" />
+              </el-form-item>
+              <div class="form-actions">
+                <el-button :loading="wikiPageCreating" type="primary" @click="createWikiPageFromForm">
+                  注册页面
+                </el-button>
+              </div>
+            </el-form>
+          </div>
+
+          <div class="wiki-panel">
+            <div class="card-title">从 Source File 编译更新</div>
+            <el-form class="lifeos-form" label-position="top">
+              <el-form-item label="sourceFileUid" required>
+                <el-input v-model="wikiCompileForm.fileUid" clearable placeholder="可从待整理资料页选择" />
+              </el-form-item>
+              <el-form-item label="targetPageUid">
+                <el-select v-model="wikiCompileForm.targetPageUid" clearable filterable placeholder="目标页由用户确认">
+                  <el-option
+                    v-for="page in wikiPages"
+                    :key="page.pageUid"
+                    :label="`${page.pageType} / ${page.title}`"
+                    :value="page.pageUid"
+                  />
+                </el-select>
+              </el-form-item>
+              <div class="record-form-row">
+                <el-form-item label="riskLevel">
+                  <el-select v-model="wikiCompileForm.riskLevel">
+                    <el-option label="low" value="low" />
+                    <el-option label="medium" value="medium" />
+                    <el-option label="high" value="high" />
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="confidenceScore">
+                  <el-input-number
+                    v-model="wikiCompileForm.confidenceScore"
+                    :min="0"
+                    :max="1"
+                    :step="0.01"
+                    controls-position="right"
+                  />
+                </el-form-item>
+              </div>
+              <el-form-item label="changeSummary">
+                <el-input v-model="wikiCompileForm.changeSummary" clearable placeholder="本次建议追加的内容摘要" />
+              </el-form-item>
+              <el-form-item label="proposedMarkdown">
+                <el-input
+                  v-model="wikiCompileForm.proposedMarkdown"
+                  type="textarea"
+                  :rows="4"
+                  resize="vertical"
+                  placeholder="留空时由后端生成最小追加块"
+                />
+              </el-form-item>
+              <div class="form-actions">
+                <el-tag effect="plain">只追加 WikiForge Updates 托管区块</el-tag>
+                <el-button :loading="wikiCompileLoading" type="primary" @click="runWikiCompile">
+                  运行 Wiki 编译
+                </el-button>
+              </div>
+            </el-form>
+          </div>
+        </div>
+
+        <div class="wiki-table-block">
+          <div class="section-title compact">
+            <div class="card-title">Wiki 页面</div>
+            <el-tag effect="plain">{{ wikiPageTotal }} pages</el-tag>
+          </div>
+          <el-table v-loading="wikiPagesLoading" :data="wikiPages" border empty-text="暂无 Wiki 页面">
+            <el-table-column prop="pageType" label="type" width="110" />
+            <el-table-column prop="title" label="title" min-width="180" show-overflow-tooltip />
+            <el-table-column prop="pageUid" label="pageUid" min-width="190" show-overflow-tooltip />
+            <el-table-column prop="vaultPath" label="vaultPath" min-width="260" show-overflow-tooltip />
+            <el-table-column prop="status" label="status" width="110">
+              <template #default="scope">
+                <el-tag :type="scope.row.status === 'active' ? 'success' : 'info'">
+                  {{ scope.row.status }}
+                </el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+          <div class="pagination-row">
+            <el-pagination
+              v-if="wikiPageTotal > wikiPagePageSize"
+              background
+              layout="prev, pager, next"
+              :current-page="wikiPagePage"
+              :page-size="wikiPagePageSize"
+              :total="wikiPageTotal"
+              @current-change="handleWikiPagePageChange"
+            />
+          </div>
+        </div>
+
+        <div class="wiki-table-block">
+          <div class="section-title compact">
+            <div class="card-title">AI 更新建议与写入记录</div>
+            <div class="wiki-filter-row">
+              <el-select
+                v-model="wikiIntegrationStatusFilter"
+                clearable
+                placeholder="status"
+                @change="handleWikiIntegrationFilterChange"
+              >
+                <el-option label="pending_review" value="pending_review" />
+                <el-option label="auto_applied" value="auto_applied" />
+                <el-option label="approved" value="approved" />
+                <el-option label="rejected" value="rejected" />
+              </el-select>
+              <el-input
+                v-model="wikiIntegrationPageFilter"
+                clearable
+                placeholder="pageUid"
+                @change="handleWikiIntegrationFilterChange"
+                @clear="handleWikiIntegrationFilterChange"
+              />
+              <el-input
+                v-model="wikiIntegrationSourceFilter"
+                clearable
+                placeholder="sourceUid"
+                @change="handleWikiIntegrationFilterChange"
+                @clear="handleWikiIntegrationFilterChange"
+              />
+            </div>
+          </div>
+
+          <el-table
+            v-loading="wikiIntegrationsLoading"
+            :data="wikiIntegrations"
+            border
+            empty-text="暂无 Wiki 更新记录"
+          >
+            <el-table-column prop="createdAt" label="createdAt" min-width="170" show-overflow-tooltip />
+            <el-table-column prop="status" label="status" width="130">
+              <template #default="scope">
+                <el-tag :type="wikiIntegrationStatusTagType(scope.row.status)">
+                  {{ scope.row.status }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="pageTitle" label="page" min-width="180" show-overflow-tooltip />
+            <el-table-column prop="sourceFileUid" label="sourceFile" min-width="160" show-overflow-tooltip />
+            <el-table-column prop="riskLevel" label="risk" width="100" />
+            <el-table-column prop="confidenceScore" label="confidence" width="120" align="right" />
+            <el-table-column prop="changeSummary" label="summary" min-width="240" show-overflow-tooltip />
+            <el-table-column label="actions" width="180" fixed="right">
+              <template #default="scope">
+                <template v-if="scope.row.status === 'pending_review'">
+                  <el-button
+                    link
+                    type="success"
+                    :loading="wikiDecisionLoadingUid === scope.row.integrationUid"
+                    @click="approveWikiUpdate(scope.row)"
+                  >
+                    通过
+                  </el-button>
+                  <el-button
+                    link
+                    type="info"
+                    :loading="wikiDecisionLoadingUid === scope.row.integrationUid"
+                    @click="rejectWikiUpdate(scope.row)"
+                  >
+                    拒绝
+                  </el-button>
+                </template>
+                <el-tag v-else effect="plain">{{ scope.row.appliedAt || 'closed' }}</el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <div class="pagination-row">
+            <el-pagination
+              v-if="wikiIntegrationTotal > wikiIntegrationPageSize"
+              background
+              layout="prev, pager, next"
+              :current-page="wikiIntegrationPage"
+              :page-size="wikiIntegrationPageSize"
+              :total="wikiIntegrationTotal"
+              @current-change="handleWikiIntegrationPageChange"
+            />
+          </div>
+        </div>
+      </el-card>
+
+      <el-card v-if="activePage === 'obsidian'" shadow="never">
+        <template #header>
+          <div class="section-title">
+            <div class="card-title">
+              <el-icon><FolderAdd /></el-icon>
+              Obsidian / Wiki 页面
+            </div>
+            <el-button :loading="vaultStatusLoading || wikiPagesLoading" @click="refreshWikiCompile">
+              <el-icon><Refresh /></el-icon>
+              刷新页面
+            </el-button>
+          </div>
+        </template>
+
+        <div class="obsidian-page-grid">
+          <div class="wiki-panel">
+            <div class="card-title">Vault 状态</div>
+            <p class="metric" :class="{ ok: vaultStatus?.exists && vaultStatus?.writable }">
+              {{ vaultStatusLabel }}
+            </p>
+            <p class="muted truncate" :title="vaultStatus?.vaultPath || ''">
+              {{ vaultStatus?.vaultPath || '等待检测' }}
+            </p>
+          </div>
+          <div class="wiki-panel">
+            <div class="card-title">写入边界</div>
+            <p class="muted">
+              自动写入只追加 WikiForge Updates 托管区块；Topic / Project 页面仍由用户创建、确认和长期维护。
+            </p>
+          </div>
+        </div>
+
+        <el-table v-loading="wikiPagesLoading" :data="wikiPages" border empty-text="暂无 Wiki 页面">
+          <el-table-column prop="pageType" label="type" width="110" />
+          <el-table-column prop="title" label="title" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="vaultPath" label="vaultPath" min-width="280" show-overflow-tooltip />
+          <el-table-column prop="status" label="status" width="120">
+            <template #default="scope">
+              <el-tag :type="scope.row.status === 'active' ? 'success' : 'info'">
+                {{ scope.row.status }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="createdAt" label="createdAt" min-width="170" show-overflow-tooltip />
+        </el-table>
+      </el-card>
+
+      <el-card v-if="activePage === 'review'" shadow="never">
+        <template #header>
+          <div class="section-title">
+            <div class="card-title">
+              <el-icon><EditPen /></el-icon>
+              Wiki 更新审核
+            </div>
+            <el-button :loading="wikiIntegrationsLoading" @click="refreshWikiReviewQueue">
+              <el-icon><Refresh /></el-icon>
+              刷新 Wiki 审核
+            </el-button>
+          </div>
+        </template>
+
+        <el-table
+          v-loading="wikiIntegrationsLoading"
+          :data="wikiIntegrations.filter((item) => item.status === 'pending_review')"
+          border
+          empty-text="暂无待审核 Wiki 更新"
+        >
+          <el-table-column prop="createdAt" label="createdAt" min-width="170" show-overflow-tooltip />
+          <el-table-column prop="pageTitle" label="page" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="sourceFileUid" label="sourceFile" min-width="160" show-overflow-tooltip />
+          <el-table-column prop="riskLevel" label="risk" width="100" />
+          <el-table-column prop="confidenceScore" label="confidence" width="120" align="right" />
+          <el-table-column prop="changeSummary" label="summary" min-width="240" show-overflow-tooltip />
+          <el-table-column fixed="right" label="操作" width="160">
+            <template #default="scope">
+              <el-button
+                link
+                type="success"
+                :loading="wikiDecisionLoadingUid === scope.row.integrationUid"
+                @click="approveWikiUpdate(scope.row)"
+              >
+                通过
+              </el-button>
+              <el-button
+                link
+                type="info"
+                :loading="wikiDecisionLoadingUid === scope.row.integrationUid"
+                @click="rejectWikiUpdate(scope.row)"
+              >
+                拒绝
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-card>
+
+      <el-card v-if="activePage === 'review'" shadow="never">
         <template #header>
           <div class="section-title">
             <div class="card-title">
@@ -2286,5 +2913,6 @@ onMounted(() => {
         </div>
       </div>
     </el-drawer>
+    </section>
   </main>
 </template>

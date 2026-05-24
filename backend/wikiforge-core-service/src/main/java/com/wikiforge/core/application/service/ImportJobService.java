@@ -68,14 +68,13 @@ public class ImportJobService {
     @Transactional
     public ImportJobResponse createLocalImportJob(CreateLocalImportJobRequest request) {
         Path inputPath = PathSafety.normalizeAbsolute(Path.of(request.inputPath()));
-        Path rawSourcesRoot = PathSafety.normalizeAbsolute(Path.of(request.rawSourcesRoot()));
+        Path rawSourcesRoot = resolveRawSourcesRoot(request.rawSourcesRoot());
         if (!Files.exists(inputPath)) {
             throw new BusinessException(ErrorCode.SOURCE_PATH_NOT_FOUND);
         }
         if (!Files.isDirectory(inputPath, LinkOption.NOFOLLOW_LINKS)) {
             throw new BusinessException(ErrorCode.SOURCE_UNSUPPORTED_INPUT_TYPE);
         }
-        ensureRawSourcesRootMatchesConfig(rawSourcesRoot);
         ensureInputPathAllowed(inputPath);
         PathSafety.ensureNoOverlap(inputPath, rawSourcesRoot);
 
@@ -331,18 +330,31 @@ public class ImportJobService {
         importJobRepository.update(failedJob);
     }
 
-    private void ensureRawSourcesRootMatchesConfig(Path requestRawSourcesRoot) {
+    private Path resolveRawSourcesRoot(String requestRawSourcesRoot) {
         String configuredValue = runtimeProperties.rawSourcesRoot();
         if (configuredValue == null) {
             throw new BusinessException(ErrorCode.SOURCE_INVALID_PATH, "rawSourcesRoot is not configured");
         }
-        Path configuredRawSourcesRoot = PathSafety.normalizeAbsolute(Path.of(configuredValue));
-        if (!configuredRawSourcesRoot.equals(requestRawSourcesRoot)) {
+        Path configuredRawSourcesRoot = normalizeConfiguredPath(configuredValue);
+        if (requestRawSourcesRoot == null || requestRawSourcesRoot.isBlank()) {
+            return configuredRawSourcesRoot;
+        }
+        Path normalizedRequestRawSourcesRoot = normalizeConfiguredPath(requestRawSourcesRoot);
+        if (!configuredRawSourcesRoot.equals(normalizedRequestRawSourcesRoot)) {
             throw new BusinessException(
                     ErrorCode.SOURCE_INVALID_PATH,
                     "rawSourcesRoot must match configured raw sources root"
             );
         }
+        return configuredRawSourcesRoot;
+    }
+
+    private Path normalizeConfiguredPath(String value) {
+        Path path = Path.of(value);
+        if (!path.isAbsolute()) {
+            path = path.toAbsolutePath();
+        }
+        return PathSafety.normalizeAbsolute(path);
     }
 
     private void ensureInputPathAllowed(Path inputPath) {

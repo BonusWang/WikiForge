@@ -193,7 +193,7 @@ class ImportJobApiIntegrationTests {
 
         ResponseEntity<JsonNode> response = restTemplate.postForEntity(
                 "/api/v1/import-jobs/local",
-                Map.of("inputPath", inputPath.toString(), "rawSourcesRoot", RAW_SOURCES_ROOT.toString()),
+                Map.of("inputPath", inputPath.toString()),
                 JsonNode.class
         );
 
@@ -267,7 +267,7 @@ class ImportJobApiIntegrationTests {
 
         ResponseEntity<JsonNode> response = restTemplate.postForEntity(
                 "/api/v1/import-jobs/local",
-                Map.of("inputPath", inputPath.toString(), "rawSourcesRoot", RAW_SOURCES_ROOT.toString()),
+                Map.of("inputPath", inputPath.toString()),
                 JsonNode.class
         );
 
@@ -439,7 +439,7 @@ class ImportJobApiIntegrationTests {
 
         ResponseEntity<JsonNode> response = restTemplate.postForEntity(
                 "/api/v1/import-jobs/local",
-                Map.of("inputPath", inputPath.toString(), "rawSourcesRoot", RAW_SOURCES_ROOT.toString()),
+                Map.of("inputPath", inputPath.toString()),
                 JsonNode.class
         );
 
