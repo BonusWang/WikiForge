@@ -4,10 +4,9 @@ import type {
   ImportJob,
   ImportJobDetail,
   ImportJobListParams,
-  PageResult,
-  SourceFile,
-  SourceFileListParams
+  PageResult
 } from '../../types/importJobs';
+export { getSourceFile, listSourceFiles } from '../source-files';
 
 function unwrapResponse<T>(response: ApiResponse<T | null>): T {
   if (!response.success || response.data === null) {
@@ -36,14 +35,5 @@ export async function getImportJob(jobUid: string): Promise<ImportJobDetail> {
   const response = await http.get<ApiResponse<ImportJobDetail | null>>(
     `/v1/import-jobs/${encodeURIComponent(jobUid)}`
   );
-  return unwrapResponse(response.data);
-}
-
-export async function listSourceFiles(
-  params: SourceFileListParams
-): Promise<PageResult<SourceFile>> {
-  const response = await http.get<ApiResponse<PageResult<SourceFile> | null>>('/v1/source-files', {
-    params
-  });
   return unwrapResponse(response.data);
 }

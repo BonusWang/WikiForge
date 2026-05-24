@@ -44,9 +44,20 @@ import org.springframework.transaction.annotation.Transactional;
 public class ObsidianVaultService {
 
     private static final String SOURCE_NOTE_TYPE = "source_note";
+    private static final String WIKI_SOURCE_PAGE_TYPE = "wiki_source_page";
     private static final String WRITTEN_STATUS = "written";
+    private static final String MANAGED_ROOT = "WikiForge";
+    private static final String WIKI_SOURCE_DIRECTORY = MANAGED_ROOT + "/10_来源";
+    private static final String WIKI_INDEX_PATH = MANAGED_ROOT + "/index.md";
+    private static final String WIKI_LOG_PATH = MANAGED_ROOT + "/log.md";
     private static final String SOURCE_NOTE_DIRECTORY = "00_Inbox_收集箱/Sources_来源";
     private static final List<String> VAULT_DIRECTORIES = List.of(
+            MANAGED_ROOT,
+            MANAGED_ROOT + "/00_规则",
+            WIKI_SOURCE_DIRECTORY,
+            MANAGED_ROOT + "/20_主题",
+            MANAGED_ROOT + "/30_项目",
+            MANAGED_ROOT + "/90_系统",
             "00_Inbox_收集箱",
             SOURCE_NOTE_DIRECTORY,
             "00_Inbox_收集箱/Personal_个人记录",
@@ -74,6 +85,65 @@ public class ObsidianVaultService {
         this.obsidianNoteRepository = obsidianNoteRepository;
         this.runtimeProperties = runtimeProperties;
         this.objectMapper = objectMapper;
+    }
+
+    @Transactional(noRollbackFor = BusinessException.class)
+    public WikiIngestWriteResult writeWikiIngestSourcePage(String runUid, SourceFileRecord sourceFile) {
+        SourceContent sourceContent = sourceContentRepository.findBySourceFileUid(sourceFile.fileUid()).orElse(null);
+        Path vaultRoot = vaultRoot();
+        String sourcePagePath = wikiSourcePagePath(sourceFile);
+        Path sourcePage = resolveVaultPath(vaultRoot, sourcePagePath);
+        String managedBlock = wikiManagedBlock(runUid, sourceFile, sourceContent);
+        String mergedMarkdown = mergeManagedBlock(readIfExists(sourcePage), managedBlock, managedBlockStart(sourceFile));
+        writeAtomically(sourcePage, mergedMarkdown);
+
+        String indexEntry = "- [[" + wikiLink(sourcePagePath) + "|" + title(sourceFile) + "]] - `"
+                + sourceFile.fileUid()
+                + "`";
+        boolean indexUpdated = ensureLine(WIKI_INDEX_PATH, "# WikiForge Index\n\n## 来源\n", indexEntry);
+
+        String logEntry = "- "
+                + OffsetDateTime.now()
+                + " 写入来源页 `"
+                + sourceFile.fileUid()
+                + "` -> [["
+                + wikiLink(sourcePagePath)
+                + "|"
+                + title(sourceFile)
+                + "]] (`"
+                + runUid
+                + "`)";
+        appendLogLine(WIKI_LOG_PATH, "# WikiForge Log\n\n", logEntry);
+
+        LocalDateTime now = LocalDateTime.now();
+        String contentHash = sha256(mergedMarkdown);
+        ObsidianNote note = obsidianNoteRepository.save(new ObsidianNote(
+                null,
+                nextNoteUid(),
+                sourceFile.sourceId(),
+                sourceFile.sourceFileId(),
+                WIKI_SOURCE_PAGE_TYPE,
+                runtimeProperties.obsidianVaultName(),
+                sourcePagePath,
+                sourcePage.toString(),
+                obsidianUri(runtimeProperties.obsidianVaultName(), sourcePagePath),
+                title(sourceFile),
+                frontmatterJson(sourceFile, contentHash),
+                contentHash,
+                WRITTEN_STATUS,
+                now,
+                now
+        ));
+
+        return new WikiIngestWriteResult(
+                sourcePagePath,
+                List.of(sourcePagePath),
+                indexUpdated,
+                true,
+                managedBlock,
+                logEntry,
+                note.obsidianUri()
+        );
     }
 
     public ObsidianInitResponse initializeVault() {
@@ -292,6 +362,125 @@ public class ObsidianVaultService {
         return "## 正文摘录 Content Excerpt\n\n" + truncate(sourceContent.rawText().trim(), 2000) + "\n";
     }
 
+    private String wikiSourcePagePath(SourceFileRecord sourceFile) {
+        LocalDate today = LocalDate.now();
+        String year = today.format(DateTimeFormatter.ofPattern("yyyy"));
+        String month = today.format(DateTimeFormatter.ofPattern("MM"));
+        return WIKI_SOURCE_DIRECTORY
+                + "/"
+                + year
+                + "/"
+                + month
+                + "/"
+                + sourceFile.fileUid()
+                + "-"
+                + safeFileName(title(sourceFile))
+                + ".md";
+    }
+
+    private String wikiManagedBlock(String runUid, SourceFileRecord sourceFile, SourceContent sourceContent) {
+        String excerpt = sourceContent == null || sourceContent.rawText() == null || sourceContent.rawText().isBlank()
+                ? "暂无正文抽取结果。"
+                : truncate(sourceContent.rawText().trim(), 2000);
+        return """
+                %s
+                # %s
+
+                ## 来源
+
+                - Source UID: `%s`
+                - Source File UID: `%s`
+                - 文件名: `%s`
+                - 文件类型: `%s`
+                - Raw Sources: `%s`
+                - 内容哈希: `%s`
+                - 写入运行: `%s`
+
+                ## 摘要
+
+                MVP0 先按规则写入来源页托管区块，后续再接入 LLM 摘要和主题归档。
+
+                ## 正文摘录
+
+                %s
+                %s
+                """.formatted(
+                managedBlockStart(sourceFile),
+                title(sourceFile),
+                sourceFile.sourceUid(),
+                sourceFile.fileUid(),
+                value(sourceFile.fileName()),
+                value(sourceFile.fileExt()),
+                value(sourceFile.managedPath()),
+                value(sourceFile.contentHash()),
+                runUid,
+                excerpt,
+                managedBlockEnd()
+        );
+    }
+
+    private String managedBlockStart(SourceFileRecord sourceFile) {
+        return "<!-- wikiforge:managed:start source_file_uid=" + sourceFile.fileUid() + " -->";
+    }
+
+    private String managedBlockEnd() {
+        return "<!-- wikiforge:managed:end -->";
+    }
+
+    private String mergeManagedBlock(String existing, String managedBlock, String startMarker) {
+        if (existing == null || existing.isBlank()) {
+            return managedBlock;
+        }
+        int startIndex = existing.indexOf(startMarker);
+        if (startIndex < 0) {
+            return existing.stripTrailing() + "\n\n" + managedBlock;
+        }
+        int endIndex = existing.indexOf(managedBlockEnd(), startIndex);
+        if (endIndex < 0) {
+            return existing.stripTrailing() + "\n\n" + managedBlock;
+        }
+        int afterEnd = endIndex + managedBlockEnd().length();
+        return existing.substring(0, startIndex) + managedBlock + existing.substring(afterEnd);
+    }
+
+    private String readIfExists(Path path) {
+        if (!Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) {
+            return "";
+        }
+        try {
+            return Files.readString(path, StandardCharsets.UTF_8);
+        } catch (IOException exception) {
+            throw new BusinessException(ErrorCode.OBSIDIAN_INVALID_VAULT, "obsidian note cannot be read");
+        }
+    }
+
+    private boolean ensureLine(String vaultPath, String header, String line) {
+        Path target = resolveVaultPath(vaultRoot(), vaultPath);
+        String existing = readIfExists(target);
+        if (existing.contains(line)) {
+            return false;
+        }
+        String next = existing.isBlank()
+                ? header + line + "\n"
+                : existing.stripTrailing() + "\n" + line + "\n";
+        writeAtomically(target, next);
+        return true;
+    }
+
+    private void appendLogLine(String vaultPath, String header, String line) {
+        Path target = resolveVaultPath(vaultRoot(), vaultPath);
+        String existing = readIfExists(target);
+        String next = existing.isBlank()
+                ? header + line + "\n"
+                : existing.stripTrailing() + "\n" + line + "\n";
+        writeAtomically(target, next);
+    }
+
+    private String wikiLink(String vaultPath) {
+        String prefix = MANAGED_ROOT + "/";
+        return vaultPath.startsWith(prefix) ? vaultPath.substring(prefix.length()) : vaultPath;
+    }
+
     private String truncate(String value, int maxLength) {
         if (value.length() <= maxLength) {
             return value;
@@ -446,5 +635,16 @@ public class ObsidianVaultService {
 
     private String value(String value) {
         return value == null ? "" : value;
+    }
+
+    public record WikiIngestWriteResult(
+            String sourcePagePath,
+            List<String> wikiPagePaths,
+            boolean indexUpdated,
+            boolean logEntryAppended,
+            String managedBlockPreview,
+            String logEntryPreview,
+            String obsidianUri
+    ) {
     }
 }

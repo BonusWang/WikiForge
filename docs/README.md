@@ -2,63 +2,61 @@
 
 ## 入口规则
 
-新参与 WikiForge 的 AI Agent 或开发者，建议按以下顺序阅读：
+当前项目按 MVP0 重新开始。新任务默认只读当前基座，历史文档仅在追溯旧实现时读取。
 
-1. `../AGENTS.md`：项目协作、归档和 Git 规则。
-2. `../WORKFLOW.md`：任务控制平面、Issue 风格任务卡和完成定义。
-3. `archive/` 最新日期目录下的最高版本归档索引。
-4. `current/` 当前主文档。
-5. `ai-skills/wikiforge-development/` 项目专用开发 Skill。
-6. `superpowers/plans/` 当前开发切片或并行工作单。
+建议阅读顺序：
 
-当前 R6 / V2 执行计划：
+1. `../AGENTS.md`
+2. `../WORKFLOW.md`
+3. [MVP0 基座](rebuild/2026-05-24-mvp0-baseline/README.md)
+4. [现状基线](rebuild/2026-05-24-mvp0-baseline/2026-05-24-现状基线-WikiForge-pre-rebuild-baseline.md)
+5. 当前任务需要的需求、架构、路线或资源盘点文档
 
-- [V2 知识维护巡检 Knowledge Maintenance Work Order](superpowers/plans/2026-05-24-V2知识维护巡检-WikiForge-r6-maintenance-lint-agent.md)
-- [V2 知识维护处理闭环 Maintenance Issue Workflow Work Order](superpowers/plans/2026-05-24-V2知识维护处理闭环-WikiForge-r6-maintenance-issue-workflow.md)
-- [V1 在线资料与个人记录 LifeOS Work Order](superpowers/plans/2026-05-24-V1在线资料与个人记录-WikiForge-v1-lifeos-work-order.md)
+## 当前 MVP0 基座
 
-## 目录结构
+- [MVP0 基座 README](rebuild/2026-05-24-mvp0-baseline/README.md)
+- [现状基线 Pre-Rebuild Baseline](rebuild/2026-05-24-mvp0-baseline/2026-05-24-现状基线-WikiForge-pre-rebuild-baseline.md)
+- [MVP0 需求文档 PRD](rebuild/2026-05-24-mvp0-baseline/2026-05-24-整体重构需求文档-WikiForge-rebuild-prd.md)
+- [四层架构设计 Four-Layer Architecture](rebuild/2026-05-24-mvp0-baseline/2026-05-24-四层架构设计-WikiForge-four-layer-architecture.md)
+- [MVP0 前端设计方案 Frontend Design](rebuild/2026-05-24-mvp0-baseline/2026-05-24-前端设计方案-WikiForge-mvp0-frontend-design.md)
+- [MVP0 后端设计方案 Backend Design](rebuild/2026-05-24-mvp0-baseline/2026-05-24-后端设计方案-WikiForge-mvp0-backend-design.md)
+- [MVP0 数据库设计方案 Data Design](rebuild/2026-05-24-mvp0-baseline/2026-05-24-数据库设计方案-WikiForge-mvp0-data-design.md)
+- [MVP0 API 契约设计 API Contract](rebuild/2026-05-24-mvp0-baseline/2026-05-24-API契约设计-WikiForge-mvp0-api-contract.md)
+- [MVP0 Obsidian LLM Wiki 设计](rebuild/2026-05-24-mvp0-baseline/2026-05-24-Obsidian-LLM-Wiki设计-WikiForge-mvp0-obsidian-llm-wiki-design.md)
+- [四层架构图 Drawio](rebuild/2026-05-24-mvp0-baseline/diagrams/2026-05-24-WikiForge-four-layer-architecture.drawio)
+- [现有资源盘点 Reusable Assets Inventory](rebuild/2026-05-24-mvp0-baseline/2026-05-24-现有资源盘点-WikiForge-reusable-assets-inventory.md)
+- [MVP0 路线图 Roadmap](rebuild/2026-05-24-mvp0-baseline/2026-05-24-整体重构路线-WikiForge-refactor-roadmap.md)
+
+## 全项目强约定
+
+- [项目架构强约定 Project Architecture Conventions](current/项目架构强约定-WikiForge-project-architecture-conventions.md)
+
+## 文档隔离
 
 ```text
 docs/
-  README.md                         # 本文档入口
-  current/                          # 当前主线文档，开发和需求以这里为准
-  process/                          # 过程性材料、评审、阶段设计
-  superpowers/plans/                # 可执行开发计划和 Parallel Work Order
-  ai-skills/wikiforge-development/  # WikiForge 项目内 AI 开发 Skill
-  archive/YYYY-MM-DD/               # 按日期归档的需求、日志、方案快照
+  current/   # 公共规则，不放产品主线
+  rebuild/   # MVP0 基座和后续设计
+  archive/   # 历史材料
 ```
 
-## 当前主线文档
+## 历史归档
 
-- [需求文档 PRD](current/需求文档-knowledge-base-prd.md)
-- [技术架构 Technical Architecture](current/技术架构-technical-architecture.md)
-- [数据模型 Data Model](current/数据模型-data-model.md)
-- [架构决策 Architecture Decisions](current/架构决策-DECISIONS.md)
-- [MCP 接口契约 MCP API Contract](current/MCP接口契约-mcp-api-contract.md)
-- [OpenClaw / Hermes 接入说明 OpenClaw Hermes MCP Integration](current/2026-05-23-OpenClaw-Hermes接入说明-WikiForge-openclaw-hermes-mcp-integration.md)
-- [MVP 审核报告 MVP Audit Report](current/2026-05-23-MVP审核报告-WikiForge-mvp-audit-report.md)
-- [MVP 实施计划 Implementation Plan](current/2026-05-23-MVP实施计划-WikiForge-mvp-implementation-plan.md)
-- [项目整体计划 Project Roadmap](current/2026-05-24-项目整体计划-WikiForge-project-roadmap.md)
-- [MVP2 发布前自检 MVP2 Release Checklist](current/2026-05-23-MVP2发布前自检-WikiForge-mvp2-release-checklist.md)
-- [参考项目清单 Reference Projects](current/2026-05-23-参考项目清单-WikiForge-reference-projects.md)
-- [开发者日志 Developer Log](current/2026-05-24-开发者日志-WikiForge-developer-log.md)
-- [版本更新记录 Release Notes](current/2026-05-24-版本更新记录-WikiForge-release-notes.md)
+以下内容已经退出当前主线：
 
-## 过程材料
+- 旧 PRD、旧技术架构、旧数据模型和旧架构决策。
+- MCP / OpenClaw / Hermes 接入说明。
+- 旧 MVP 实施计划、审核报告、发布检查。
+- 旧项目计划、开发者日志、版本记录和参考项目清单。
+- 旧过程材料、旧 Work Order、旧项目内 AI Skill、旧并行 Agent 状态收件箱。
 
-- [需求完整度自检 Requirements Review](process/2026-05-22-需求完整度自检-WikiForge-requirements-completeness-review.md)
-- [微服务架构与 AI 开发 Skill 设计](process/2026-05-23-微服务架构与AI开发Skill设计-WikiForge-microservice-ai-skill-design.md)
-- [架构评审材料 Architecture Review](process/2026-05-23-架构评审材料-WikiForge-architecture-review.md)
-- [架构评审结论 Architecture Review Conclusion](process/2026-05-23-架构评审结论-WikiForge-architecture-review-conclusion.md)
-- [文档一致性自检 Docs Consistency Check](process/2026-05-23-文档一致性自检-WikiForge-docs-consistency-check.md)
-- [Symphony 工作模式评估 Symphony Workflow Review](process/2026-05-23-Symphony工作模式评估-WikiForge-symphony-workflow-review.md)
+入口：
 
-## 当前本机实施信息
+- [2026-05-24 归档索引 Archive Index](archive/2026-05-24/2026-05-24-归档索引-archive-index-v0.7.md)
+- [重构前文档归档索引 Pre-Rebuild Docs Index](archive/2026-05-24/pre-rebuild-docs/2026-05-24-重构前文档归档索引-WikiForge-pre-rebuild-docs-index.md)
 
-- 用户确认的 Obsidian Vault 宿主机路径：`E:\WikiForgeVault`
-- 当前 Web UI 不展示向量导出入口；后续确认真实向量库方案后，再评估是否作为内部管道保留。
-- R6-3 知识库体检使用 MySQL 运行账本：`knowledge_maintenance_runs` 和 `knowledge_maintenance_items`。
-- R6-3.1 维护问题处理闭环使用 `knowledge_maintenance_items.status`、`resolution_note`、`resolved_by`、`resolved_at` 记录最新处理状态。
-- Docker 容器内 Vault 路径仍使用：`/data/wikiforge/obsidian-vault`
-- 不能把 Vault 内容、Raw Sources、运行数据或本地 `.env` 提交到 Git。
+## 本机实施信息
+
+- Obsidian Vault 宿主机路径：`E:\WikiForgeVault`
+- Docker 容器内 Vault 路径：`/data/wikiforge/obsidian-vault`
+- 不提交 Vault、Raw Sources、运行数据或本地 `.env`。

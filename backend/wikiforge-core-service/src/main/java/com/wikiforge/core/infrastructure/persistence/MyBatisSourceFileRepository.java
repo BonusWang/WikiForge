@@ -141,6 +141,7 @@ public class MyBatisSourceFileRepository implements SourceFileRepository {
                 sourceFile.getContentHash(),
                 sourceFile.getParseStatus(),
                 sourceFile.getOrganizeStatus(),
+                sourceFile.getParseError(),
                 duplicateFileUid(sourceFile.getDuplicateOfFileId()),
                 sourceFile.getCreatedAt()
         );

@@ -1,154 +1,73 @@
 # WikiForge 工作流 Workflow
 
-本文件是 WikiForge 的 Agent 任务控制入口。它吸收 OpenAI Symphony 的“任务控制平面”思想，并在 WikiForge 内落地为独立辅助工程：`wikiforge-orchestration-service` + `wikiforge-orchestration-ui`。
+当前工作流服务于 **MVP0 重新开始**。目标是减少过程负担，用单线、清晰、可验证的方式完成重构。
 
-## 1. 核心原则
+## 1. 当前工作方式
 
-- GitHub Issue / Issue 风格任务卡是任务控制平面，文档计划是产品和架构事实来源，代码分支是实现隔离层。
-- `wikiforge-orchestration-service` 是长期开发编排状态服务，优先管理任务、Agent、工作区、运行状态和 Handoff，不承载知识库业务能力。
-- `wikiforge-orchestration-ui` 是长期开发编排控制台，优先展示任务看板、Agent 状态、验证命令和下一步动作。
-- 每个可执行任务都必须能映射到一个 Issue 风格任务卡，即使暂时没有真实创建 GitHub Issue。
-- 一个任务未关闭前，必须能从任务卡看出当前 owner、状态、允许修改文件、验证命令和下一步动作。
-- 多 Agent 并行时，每个 Agent 只处理自己的任务卡和文件边界，不抢同一批文件。
-- 主编排 Agent 负责拆解、派发、集成、验证、文档归档和提交推送。
+- 单主线推进，不做多 Agent 并行。
+- 先需求与设计对齐，再进入代码改造。
+- 每次只处理一个明确节点。
+- 文档基座、代码改动和验证结果必须一致。
+- Orchestration 辅助开发工程不再作为当前项目能力规划。
+- 数据库按 MVP0 最小表集合推进，不预建未来能力表。
+- 新增功能、服务、原子能力、API、数据库表必须同步维护项目架构强约定。
+- API 请求、响应、错误和状态字段必须同步维护 MVP0 API 契约设计。
+- 用户可见状态使用中文码值和中文说明，统一由字典表维护。
 
 ## 2. 启动顺序
 
-新 Agent 或外部工具接入时，按顺序读取：
+新任务开始时按顺序读取：
 
 1. `AGENTS.md`
 2. `WORKFLOW.md`
-3. 最新 `docs/archive/YYYY-MM-DD/*归档索引-archive-index-vX.Y.md`
-4. `docs/current/2026-05-24-项目整体计划-WikiForge-project-roadmap.md`
-5. 当前任务对应的 `docs/superpowers/plans/*.md`
-6. 当前任务对应的 `agentteam/{team}/README.md` 和本 Agent 目录
-7. `docs/ai-skills/wikiforge-development/SKILL.md`
-8. 角色相关 reference，例如 `development-workflow.md`、`multi-agent-collaboration.md`
+3. `docs/README.md`
+4. `docs/rebuild/2026-05-24-mvp0-baseline/README.md`
+5. 当前任务需要的设计文档、计划文档或代码文件
 
-## 3. 任务状态
+只有需要追溯历史时，才读取 `docs/archive/`。
 
-WikiForge 任务使用以下状态：
+## 3. 节点状态
 
 | 状态 | 含义 |
 | --- | --- |
-| Backlog | 已记录，未进入当前迭代 |
-| Ready | 契约清楚，可被 Agent 接手 |
-| Doing | 正在执行 |
-| Review | 等待集成评审或人工复核 |
-| Blocked | 被外部依赖、权限、环境或需求冲突阻塞 |
-| Done | 已验证、已更新文档、可进入下一节点 |
+| 待办 | 已记录，暂不处理 |
+| 就绪 | 需求和边界清楚 |
+| 执行中 | 正在执行 |
+| 复核 | 等待用户或自检确认 |
+| 阻塞 | 存在真实阻塞 |
+| 完成 | 已验证并更新相关文档 |
 
-## 4. Issue 风格任务卡
+## 4. 任务卡
 
-每个任务至少包含：
+需要记录任务时，使用轻量任务卡：
 
 ```text
-任务ID：
-父任务：
-当前状态：
-Owner：
+任务：
 目标：
 范围：
-允许修改文件：
-禁止修改文件：
-输入契约：
-输出契约：
-验收命令：
-文档更新：
+允许修改：
+不修改：
+验收：
 风险：
 下一步：
 ```
 
-## 5. 分支和隔离
+## 5. 完成定义
 
-- `main` 是稳定主干，阶段发布或预览发布完成后必须合入 `main` 并推送，避免 GitHub 默认分支长期落后。
-- 日常开发分支使用 `codex/{stage-or-task}`，优先按任务节点缩短生命周期。
-- 分支分类以 `docs/current/分支管理策略-branch-strategy.md` 为准：`main`、阶段分支、任务分支、实验分支、修复分支分开管理。
-- 并行开发优先使用独立分支或 worktree。
-- 高冲突串行区必须由主编排 Agent 修改，包括 Flyway migration、共享 DTO、错误码、CI、Compose 和归档索引。
-- 子 Agent 完成后输出 Handoff Packet，主编排 Agent 再集成。
-- Agent 不得自动删除远程历史分支；只能生成清理建议，删除或重命名远程分支必须用户确认。
+任务完成必须满足：
 
-## 5.1 Agent Team 文件夹
-
-主开发 Agent 负责当前主链路和高冲突文件。并行子节点只处理独立模块、只读审查或低冲突文档，不直接修改 Roadmap、开发者日志、归档索引、发布说明和主 Work Order。
-
-每个并行团队必须在项目根目录建立独立 Agent Team 文件夹：
-
-```text
-agentteam/{YYYY-MM-DD}-{task-id}-{team-name}/
-  README.md
-  任务计划-team-plan.md
-  agents/
-    {agent-name}/
-      README.md
-      PROMPT.md
-      SKILL.md
-      WORKSPACE.md
-      STATUS.md
-```
-
-规则：
-
-- 每个子节点只创建或修改自己 Agent 目录下的 `STATUS.md`。
-- `PROMPT.md` 用于新会话启动；`SKILL.md` 用于角色规则；`WORKSPACE.md` 用于文件边界；`STATUS.md` 用于交接状态。
-- 子节点不得修改其他 Agent 目录下的文件。
-- 子节点不得直接改 `docs/current/2026-05-24-项目整体计划-WikiForge-project-roadmap.md`、开发者日志和 `docs/archive/**归档索引*`。
-- 子节点完成后在状态文件写明分支、提交、修改文件、验证命令、风险和需要主开发处理的事项。
-- 主开发 Agent 读取状态文件后，统一合并代码、运行验证、更新正式文档、归档快照和发布标签。
-
-推荐状态：
-
-| 状态 | 含义 |
-| --- | --- |
-| Assigned | 已分配，尚未开始 |
-| In Progress | 正在执行 |
-| Ready for Integration | 已提交，等待主开发合并 |
-| Blocked | 遇到阻塞，需要主开发处理 |
-| Integrated | 主开发已集成 |
-
-## 6. GitHub Issue 使用规则
-
-当网络、权限和上下文允许时，按 `.github/ISSUE_TEMPLATE/wikiforge-agent-task.yml` 创建任务。
-
-Issue 标题建议：
-
-```text
-[R4-4] 实现 MCP get_obsidian_note / create_personal_record
-[R4-5] 记录 MCP 调用日志和接入说明
-```
-
-Label 建议：
-
-```text
-agent-task
-mvp5
-backend
-frontend
-docs
-blocked
-review
-```
-
-## 7. 完成定义
-
-任务完成必须同时满足：
-
-- 代码或文档已按任务范围完成。
+- 改动符合当前 MVP0 基座。
 - 对应验证命令已执行，或明确说明未执行原因。
-- 项目整体计划的复选框/单选指针已更新。
-- 开发者日志已追加。
-- 需要归档时，`docs/archive/YYYY-MM-DD/` 最新索引已更新。
-- 日常开发提交已推送当前分支；阶段发布成果已按需要合入 `main`；版本标签和 GitHub Release 已在验证通过后直接创建并推送。
-- 当前任务完成后自动进入下一任务节点，不等待用户确认，直到 MVP 整体全流程结束或出现真实阻塞。
+- 入口文档和当前节点文档已同步。
+- 未引入历史阶段、并行 Agent 或 Orchestration 主流程设定。
+- `git diff --check` 通过。
 
-## 8. 当前适用结论
+## 6. 当前结论
 
-WikiForge 当前采用 WikiForge Orchestration 辅助工程模式：
-
-- 不照搬 Symphony Elixir 服务端，但吸收其 Issue/工作区/Agent 控制平面思想。
-- 新增独立后端服务 `wikiforge-orchestration-service`，默认端口 `8090`。
-- 新增独立前端服务 `wikiforge-orchestration-ui`，默认端口 `3001`。
-- 保留现有 `AGENTS.md + docs/current + docs/archive + Skill + Work Order` 体系。
-- 第一版先做只读任务状态和任务详情，不自动执行 Codex、OpenClaw 或外部命令。
-- 后续再逐步增加 GitHub Issue 同步、worktree 管理、Agent runner、重试和可观察性。
+- 当前主线：统一入口、Raw Sources 收纳、SourceFile 账本、正文抽取、Obsidian LLM Wiki 写入。
+- 当前数据库原则：保留最小收纳、Wiki 写入账本和中文状态字典，历史表结构后续单独清理。
+- 当前 Obsidian 原则：只写 Vault 内 `WikiForge/` 托管目录，不覆盖托管区块外内容。
+- 当前文档基座：`docs/rebuild/2026-05-24-mvp0-baseline/`。
+- 当前公共规则：`AGENTS.md`、`WORKFLOW.md`、`docs/README.md`、`docs/current/分支管理策略-branch-strategy.md`。
+- 当前全项目架构约定：`docs/current/项目架构强约定-WikiForge-project-architecture-conventions.md`。
+- 当前历史参考：`docs/archive/2026-05-24/pre-rebuild-docs/`。

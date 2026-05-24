@@ -139,4 +139,23 @@ class MigrationSqlCompatibilityTests {
             assertThat(migrationSql).contains("KEY idx_wiki_integrations_status_created (status, created_at)");
         }
     }
+
+    @Test
+    void mvp0DictionaryAndWikiIngestMigrationCreatesOnlyCurrentTables() throws Exception {
+        try (var inputStream = getClass().getResourceAsStream(
+                "/db/migration/V20260524_006__create_mvp0_dictionary_and_wiki_ingest_tables.sql"
+        )) {
+            assertThat(inputStream).isNotNull();
+            String migrationSql = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+            assertThat(migrationSql).contains("CREATE TABLE system_dictionaries");
+            assertThat(migrationSql).contains("CREATE TABLE wiki_ingest_runs");
+            assertThat(migrationSql).contains("UNIQUE KEY uk_system_dictionaries_type_code (dict_type, dict_code)");
+            assertThat(migrationSql).contains("已收纳");
+            assertThat(migrationSql).contains("待整理到 Wiki");
+            assertThat(migrationSql).contains("run_uid VARCHAR(64) NOT NULL");
+            assertThat(migrationSql).contains("status_code VARCHAR(128) NOT NULL DEFAULT '已创建'");
+            assertThat(migrationSql).doesNotContain("CREATE TABLE agent_runs");
+            assertThat(migrationSql).doesNotContain("CREATE TABLE vector_export_jobs");
+        }
+    }
 }

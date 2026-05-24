@@ -17,6 +17,7 @@ public record SourceFileRecord(
         String contentHash,
         String parseStatus,
         String organizeStatus,
+        String parseError,
         String duplicateOfFileUid,
         LocalDateTime createdAt
 ) {

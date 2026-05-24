@@ -58,6 +58,7 @@ class ObsidianApiIntegrationTests {
         Files.createDirectories(RAW_SOURCES_ROOT);
         Files.createDirectories(OBSIDIAN_VAULT);
         jdbcTemplate.execute("DROP TABLE IF EXISTS obsidian_notes");
+        jdbcTemplate.execute("DROP TABLE IF EXISTS wiki_ingest_runs");
         jdbcTemplate.execute("DROP TABLE IF EXISTS source_contents");
         jdbcTemplate.execute("DROP TABLE IF EXISTS source_files");
         jdbcTemplate.execute("DROP TABLE IF EXISTS sources");
@@ -174,6 +175,34 @@ class ObsidianApiIntegrationTests {
                     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (id),
                     UNIQUE KEY uk_obsidian_notes_note_uid (note_uid)
+                )
+                """);
+        jdbcTemplate.execute("""
+                CREATE TABLE wiki_ingest_runs (
+                    id BIGINT NOT NULL AUTO_INCREMENT,
+                    run_uid VARCHAR(64) NOT NULL,
+                    source_file_id BIGINT NOT NULL,
+                    file_uid VARCHAR(64) NOT NULL,
+                    file_name VARCHAR(512) NULL,
+                    status_code VARCHAR(128) NOT NULL DEFAULT '已创建',
+                    status_label VARCHAR(128) NOT NULL DEFAULT '已创建',
+                    source_page_path VARCHAR(1024) NULL,
+                    wiki_page_paths CLOB NULL,
+                    index_updated BOOLEAN NOT NULL DEFAULT FALSE,
+                    log_entry_appended BOOLEAN NOT NULL DEFAULT FALSE,
+                    write_status_code VARCHAR(128) NOT NULL DEFAULT '已创建',
+                    write_status_label VARCHAR(128) NOT NULL DEFAULT '已创建',
+                    fallback_reason CLOB NULL,
+                    failure_reason CLOB NULL,
+                    managed_block_preview CLOB NULL,
+                    log_entry_preview CLOB NULL,
+                    obsidian_uri VARCHAR(2048) NULL,
+                    retryable BOOLEAN NOT NULL DEFAULT FALSE,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    completed_at TIMESTAMP NULL,
+                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY uk_wiki_ingest_runs_run_uid (run_uid)
                 )
                 """);
         seedSourceFile();
@@ -333,6 +362,45 @@ class ObsidianApiIntegrationTests {
         );
         assertThat(previewResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(previewResponse.getBody().path("data").path("markdown").asText()).isEqualTo(markdown);
+    }
+
+    @Test
+    void wikiIngestRunWritesSourcePageIndexAndLog() {
+        jdbcTemplate.update("""
+                INSERT INTO source_contents (
+                    id, content_uid, source_id, source_file_id, parser_name, content_type,
+                    raw_text, text_hash, char_count, raw_text_saved, parse_status,
+                    created_at, updated_at
+                ) VALUES (
+                    401, 'content_wiki_ingest', 100, 200, 'markdown-text', 'plain_text',
+                    '这是用于 Wiki ingest 的正文。', 'text-hash-wiki', 18, TRUE, 'success',
+                    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                )
+                """);
+
+        ResponseEntity<JsonNode> response = restTemplate.postForEntity(
+                "/api/v1/source-files/file_test/wiki-ingest-runs",
+                Map.of("writeMode", "自动"),
+                JsonNode.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode data = response.getBody().path("data");
+        assertThat(data.path("runUid").asText()).matches("wir_\\d{8}_[0-9a-f]{12}");
+        assertThat(data.path("statusCode").asText()).isEqualTo("已写入");
+        assertThat(data.path("sourcePagePath").asText()).startsWith("WikiForge/10_来源/");
+        assertThat(data.path("indexUpdated").asBoolean()).isTrue();
+        assertThat(data.path("logEntryAppended").asBoolean()).isTrue();
+
+        Path sourcePage = OBSIDIAN_VAULT.resolve(data.path("sourcePagePath").asText()).normalize();
+        assertThat(Files.isRegularFile(sourcePage)).isTrue();
+        assertThat(readString(sourcePage)).contains("wikiforge:managed:start");
+        assertThat(readString(sourcePage)).contains("这是用于 Wiki ingest 的正文。");
+        assertThat(readString(OBSIDIAN_VAULT.resolve("WikiForge/index.md"))).contains("file_test");
+        assertThat(readString(OBSIDIAN_VAULT.resolve("WikiForge/log.md"))).contains(data.path("runUid").asText());
+
+        Integer runCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM wiki_ingest_runs", Integer.class);
+        assertThat(runCount).isEqualTo(1);
     }
 
     @Test
