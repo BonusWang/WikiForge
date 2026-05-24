@@ -1,165 +1,81 @@
 # AGENTS.md
 
-本文件用于约束参与 WikiForge 开发的 AI Agent，避免读取旧需求后跑偏。
+本文件用于约束参与 WikiForge 的 AI Agent。当前项目从历史阶段抽离，按 **MVP0 重新开始**。
 
-## 开始工作前必须先读最新快照
+## 当前基座
 
-在进行任何代码开发、文档修改、方案设计或需求分析前，先完成以下步骤：
+- 当前阶段：MVP0。
+- 当前目标：做减法，重建个人私有知识库工具的最小可用闭环。
+- 当前事实来源：`docs/rebuild/2026-05-24-mvp0-baseline/`。
+- 历史文档位置：`docs/archive/2026-05-24/pre-rebuild-docs/`。
+- 历史文档只作为参考，不直接驱动开发。
 
-1. 阅读 `WORKFLOW.md`，确认当前任务控制模式、任务状态和完成定义。
-2. 查找 `docs/archive/YYYY-MM-DD/` 中日期最新的目录。
-3. 先阅读该目录下版本号最高的 `YYYY-MM-DD-归档索引-archive-index-vX.Y.md`。
-4. 再按任务需要阅读同目录中的最新需求文档、技术架构、数据模型、实施计划和开发者日志快照。
-5. 最后再阅读 `docs/current/` 下的当前主文档。
+## 开始工作前
 
-优先级规则：
+进行代码开发、文档修改、需求分析或架构设计前，按顺序阅读：
 
-1. 用户当前明确指令优先级最高。
-2. 最新日期快照用于确认项目阶段、冻结范围和历史决策。
-3. `docs/current/` 当前主文档用于继续编辑和落地实现。
-4. 如果最新快照、主文档和用户当前指令存在冲突，不要自行猜测；先在回复中指出冲突并请用户确认。
+1. `WORKFLOW.md`
+2. `docs/README.md`
+3. `docs/rebuild/2026-05-24-mvp0-baseline/README.md`
+4. 当前任务需要的 PRD、四层架构、路线图或资源盘点
+5. 涉及新功能、新服务、新原子能力、新 API 或新表时，阅读并更新 `docs/current/项目架构强约定-WikiForge-project-architecture-conventions.md`
 
-## WikiForge 项目内 Skill
+只有在追溯旧实现、解释旧接口、复用旧模块时，才读取 `docs/archive/`。
 
-本项目已经建立 WikiForge 专用 AI 开发 Skill：
+## 优先级
+
+1. 用户当前明确指令。
+2. MVP0 基座文档。
+3. 当前代码事实。
+4. 历史归档材料。
+
+如果历史材料与 MVP0 基座冲突，以 MVP0 基座为准。
+
+## 当前不做
+
+- 不建立多 Agent 并行体系。
+- 不维护并行协作目录体系。
+- 不把 Orchestration 辅助开发工程作为产品能力继续规划。
+- 不把 MCP、向量、LifeOS、知识体检提前塞回 MVP0 主流程。
+- 不恢复旧 `DashboardView.vue` 单体页面。
+- 不为未来能力预建数据库表。
+
+## 文档结构
 
 ```text
-docs/ai-skills/wikiforge-development/SKILL.md
+docs/current/        # 少量仍有效的公共规则
+docs/rebuild/        # MVP0 需求、设计、架构和计划基座
+docs/archive/        # 历史文档归档
 ```
 
-在进行架构设计、代码开发、评审、重构、CI/CD、Docker、MCP、Agent、Obsidian、前端页面或多人协作任务前，必须阅读该 Skill，并按任务类型阅读 `references/` 下对应规约。
-
-当前架构选择为 B：少服务微服务。MVP 0/1 以 `wikiforge-core-service + wikiforge-worker-service + wikiforge-ui` 为目标架构，后续再扩展 gateway、agent、connector、MCP、vector、record 等服务。
-
-## 并行开发前置规则
-
-WikiForge 采用 WikiForge Orchestration 辅助工程模式：
-
-- GitHub Issue 或 Issue 风格任务卡是任务控制平面。
-- `wikiforge-orchestration-service` 是长期开发编排状态服务，负责沉淀任务、Agent、工作区、验证和 Handoff 状态。
-- `wikiforge-orchestration-ui` 是长期开发编排控制台，负责让用户和后续 Agent 看清当前任务、状态、验证结果和下一步。
-- `WORKFLOW.md` 是所有 Agent 识别任务状态、分支隔离、Handoff 和完成定义的入口。
-- `docs/current/` 和 `docs/archive/` 是产品、架构和历史决策事实来源。
-- `docs/superpowers/plans/` 是当前阶段的可执行 Work Order。
-- 不照搬 OpenAI Symphony 的 Elixir 服务端；WikiForge 使用 Java + Spring Boot + Vue 实现自己的辅助工程。
-- 第一版 Orchestration 只做任务控制台和只读 API，不自动执行本机命令，不自动修改 GitHub Issue。
-
-并行开发必须先由主编排 Agent 产出 Parallel Work Order，不允许多个 Agent 直接抢同一批文件。
-
-并行前必须确认：
-
-- 当前骨架已经提交或形成可复用基线，避免子 Agent / worktree 拿不到未跟踪文件。
-- API path、DTO、数据表归属、状态枚举、错误码、跨服务调用和 migration 编号已经冻结。
-- 每个子任务都有明确的目标角色、允许修改文件、禁止修改文件、依赖任务、验证命令和交付格式。
-- `backend/pom.xml`、`backend/wikiforge-common/`、Flyway migration、`deploy/docker-compose*.yml`、`.github/workflows/ci.yml`、共享 DTO、错误码、状态枚举、Orchestration 任务契约属于高冲突串行区，同一时间只能一个 Agent 修改。
-- 主编排 Agent 负责最终集成验证、文档和归档更新；子 Agent 不直接修改归档索引，除非任务明确指定其为 Docs Agent。
-
-## 阶段节点进度与测试门禁
-
-所有阶段计划、Work Order 和发布自检必须使用 Agent 可识别的进度标记：
-
-- 复选框 `- [x]` 表示阶段或节点已完成。
-- 复选框 `- [ ]` 表示阶段或节点未完成。
-- 单选框 `(x)` 表示当前唯一执行位置。
-- 单选框 `( )` 表示候选但非当前执行位置。
-
-完成任一阶段或节点后，必须同步更新：
-
-- 项目整体计划中的阶段/节点复选框和当前执行单选指针。
-- 当前节点对应的自检清单或 Work Order。
-- 开发者日志。
-- 归档索引。
-
-测试按节点递进，不按每个小功能重复执行完整验收：
-
-- T0 文档与 Git 卫生：文档-only 节点使用。
-- T1 契约与单元测试：单服务代码节点至少执行到这里。
-- T2 构建验证：前后端联动节点至少执行到这里。
-- T3 Docker 节点烟测：涉及 Core / Worker / UI / Docker 的节点至少执行到这里。
-- T4 阶段级端到端验收：只在 MVP 阶段发布前执行。
-
-每个 Work Order 必须声明本节点目标测试门禁，完成后再更新勾选状态。
-
-## 文档命名规则
-
-`docs/` 目录当前分层：
+新增重构文档优先放入：
 
 ```text
-docs/current/        # 当前主线文档
-docs/process/        # 过程性评审、阶段设计和自检材料
-docs/archive/        # 按日期归档快照
-docs/superpowers/    # 开发计划和工作单
-docs/ai-skills/      # 项目内 AI 开发 Skill
+docs/rebuild/2026-05-24-mvp0-baseline/
 ```
 
-除 `README.md` 外，项目文档采用中文名 + EnglishName 的方式命名：
+除 `README.md`、`AGENTS.md`、`WORKFLOW.md` 等生态约定文件外，项目文档采用中文名 + EnglishName：
 
 ```text
-中文名-EnglishName.md
 YYYY-MM-DD-中文名-EnglishName.md
-YYYY-MM-DD-中文名-EnglishName-版本号.md
 ```
-
-约定文件名例外：
-
-- `README.md`、`AGENTS.md`、`SKILL.md`、`.gitignore`、`.env.example` 等工具或平台约定文件保持原名，不为了中文化而改名。
-- `WORKFLOW.md`、`.github/ISSUE_TEMPLATE/*.yml` 等工作流约定文件保持生态原名。
-- 这类文件的内容可以使用中文说明，但文件名必须保持生态约定，避免工具失效。
-- 其他项目文档的文件名和一级标题必须同时包含中文语义和英文标识，例如 `项目整体计划 Project Roadmap`、`开发者日志 Developer Log`。
-- `docs/current/` 下仍在维护的主线文档，如果日期前缀与最新迭代日期不一致，完成本轮修改时必须同步改名并更新入口链接。
-- 历史归档旧版本保留原貌；只修正当天最新快照和当前主线文档，避免破坏历史追溯。
-
-归档文件按日期目录存放：
-
-```text
-docs/archive/YYYY-MM-DD/
-```
-
-同日归档规则：
-
-- 同一天内同一类文档多次更新时，优先更新当天该文档的最新版本文件，不再为每次小改动都新增一份独立快照。
-- 更新方式是在同一个文件内追加“版本记录 / Version History”或对应小节，保留本次变更说明、验证结果和影响范围。
-- 文件名版本号随最新内容同步递增：`v0.1 -> v0.2 -> ... -> v0.9 -> v1.0 -> v1.1`。
-- 当小版本累计到 10 次时提升大版本，例如 `v0.9` 下一版为 `v1.0`。
-- 归档索引只需要指向同一天同一类文档的最新版本文件，旧版本文件仅作为已经存在的历史保留，不再主动复制扩散。
-- 如果同一个归档文件内版本记录过多，必须在文件顶部增加“版本索引 / Version Index”，列出最新版本、小节标题和关键变更；AI 默认只阅读版本索引和最新版本小节，只有需要追溯时才读取旧版本内容。
 
 ## 开发原则
 
-- 先实现 MVP 可行闭环，再拓展长期能力。
-- 不要把 V1/V2 能力提前塞进 MVP。
-- 不要静默覆盖用户手工修改的文档或代码。
-- 发现需求边界不清时，先说明不确定点，再继续行动。
+- 先做 MVP0 最小闭环，再谈扩展能力。
+- 文件收纳、Raw Sources、Obsidian LLM Wiki 是主线。
+- 数据库只保留 MVP0 当前需要的最小表集合，后续按需求新增。
+- 新增功能、服务、原子能力、API、数据库表和状态码必须同步登记到项目架构强约定。
+- 用户可见状态必须使用中文码值和中文说明，由字典表统一维护。
+- 新增或修改 API 时必须同步维护 MVP0 API 契约设计。
+- Obsidian 写入只能发生在 Vault 内 `WikiForge/` 托管目录。
+- 代码改动要小步、可验证、可回滚。
+- 不静默覆盖用户手工修改。
+- 不提交 Raw Sources、Obsidian Vault、本地 `.env`、运行日志或数据库数据。
 
-## Git 提交规则
+## Git 规则
 
-- 前端 `node_modules/`、`dist/`、`.vite/` 属于依赖或编译产物，不允许提交到 Git 仓库。
-- 后端 `target/`、`build/` 属于编译产物，不允许提交到 Git 仓库。
-- 本地 `.env`、日志、运行数据、Raw Sources、Obsidian Vault 数据不允许提交。
-- 提交前必须检查 `git status --short`，发现上述目录或文件进入暂存区时必须先移除。
-- 如果确实需要提交构建相关文件，只允许提交源码、配置模板、锁文件和 CI/Docker 定义，例如 `package-lock.json`、`.env.example`、`Dockerfile`、workflow。
-- 用户已授权：日常开发完成后可以自动提交并推送当前开发分支。
-- 每次提交信息必须简要说明本次改动点。
-- 用户已授权：版本标签、GitHub Release 和正式版本发布可由 Agent 在验证通过后直接执行。
-- 版本标签和 GitHub Release 属于交付收口动作，不阻塞项目内开发分支、提交推送和下一工作流递进。
-- 后续 AI 不得把“等待用户确认标签/Release”识别为开发阻塞；只要开发节点已完成验证，就继续按计划提交、推送、发布并进入下一工作流。
-- 用户已授权：每一轮任务结束后自动进入下一轮，不等待用户确认，直到 MVP 整体全流程结束或遇到真实阻塞；每轮完成后汇总结果即可。
-
-## 分支管理规则
-
-- `main` 是稳定主干，阶段发布或预览发布完成后必须合入 `main` 并推送。
-- 分支分类和生命周期以 `docs/current/分支管理策略-branch-strategy.md` 为准。
-- 后续任务优先使用短生命周期任务分支，例如 `codex/r4-4-mcp-personal-record`，避免每个小节点都留下长期远程分支。
-- 现有 `codex/mvp*` 分支按历史阶段分支处理，可用于追溯，不自动删除。
-- Agent 可以列出分支、判断是否已合入 `main`、生成清理建议；不得在未获用户确认时删除或重命名远程分支。
-
-## 并行子节点规则
-
-- 主开发 Agent 负责主链路、高冲突文件、最终集成、正式文档、归档和发布。
-- 每个并行 Agent Team 必须在 `agentteam/{date}-{task-id}-{team-name}/` 下建立独立目录。
-- 每个 Agent 必须在 Agent Team 目录内拥有独立文件夹，并至少包含 `README.md`、`PROMPT.md`、`SKILL.md`、`WORKSPACE.md`、`STATUS.md`。
-- 子节点 Agent 只处理独立模块或只读审查，不直接修改 Roadmap、开发者日志、归档索引、发布说明和主 Work Order。
-- 子节点通过自己 Agent 文件夹内的 `STATUS.md` 汇报执行状态；临时跨会话草稿可放在同一 Agent 文件夹内，不再散落到正式文档目录。
-- 每个子节点只创建或修改自己的状态文件，不修改其他 Agent 的状态文件。
-- 子节点状态文件必须包含：任务范围、分支、状态、改动文件、验证命令、结果、风险、需要主开发处理的事项。
-- 主开发 Agent 读取专业 Agent 的 `STATUS.md` 后，统一决定是否合并、补测、更新正式文档、归档和发布。
+- `main` 是稳定主干。
+- 日常任务使用短生命周期分支，建议命名 `codex/mvp0-*`。
+- 历史分支只用于追溯，不自动删除。
+- 提交前检查 `git status --short` 和 `git diff --check`。

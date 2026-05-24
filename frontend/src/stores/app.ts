@@ -3,6 +3,6 @@ import { defineStore } from 'pinia';
 export const useAppStore = defineStore('app', {
   state: () => ({
     appName: '知识熔炉 WikiForge',
-    stage: 'V2 Maintenance Workflow'
+    stage: 'MVP0 私有知识库'
   })
 });

@@ -3,6 +3,7 @@ package com.wikiforge.core;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.wikiforge.core.application.dto.RunLocalImportJobRequest;
 import com.wikiforge.core.application.port.WorkerImportJobClient;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -13,17 +14,21 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
@@ -232,6 +237,66 @@ class ImportJobApiIntegrationTests {
                 data.path("jobUid").asText()
         );
         assertThat(persisted).isEqualTo(1);
+    }
+
+    @Test
+    void uploadSourcesCopiesFilesToRawSourcesAndRegistersSourceFile() throws Exception {
+        byte[] content = "浏览器上传进入 Raw Sources".getBytes(StandardCharsets.UTF_8);
+        ByteArrayResource resource = new ByteArrayResource(content) {
+            @Override
+            public String getFilename() {
+                return "upload-note.md";
+            }
+        };
+        HttpHeaders fileHeaders = new HttpHeaders();
+        fileHeaders.setContentType(MediaType.TEXT_PLAIN);
+        fileHeaders.setContentDispositionFormData("files", resource.getFilename());
+
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("files", new HttpEntity<>(resource, fileHeaders));
+        body.add("wikiWritebackMode", "关闭");
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        ResponseEntity<JsonNode> response = restTemplate.postForEntity(
+                "/api/v1/upload-sources",
+                new HttpEntity<>(body, headers),
+                JsonNode.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode data = response.getBody().path("data");
+        assertThat(data.path("jobUid").asText()).startsWith("job_");
+        assertThat(data.path("importType").asText()).isEqualTo("浏览器上传");
+        assertThat(data.path("statusCode").asText()).isEqualTo("已完成");
+        assertThat(data.path("uploadedCount").asInt()).isEqualTo(1);
+
+        Map<String, Object> sourceFile = jdbcTemplate.queryForMap(
+                "SELECT sf.file_name, sf.original_path, sf.managed_path, sf.content_hash, "
+                        + "sf.organize_status, sf.parse_status, ij.import_type, ij.status "
+                        + "FROM source_files sf JOIN import_jobs ij ON sf.import_job_id = ij.id "
+                        + "WHERE ij.job_uid = ?",
+                data.path("jobUid").asText()
+        );
+        assertThat(sourceFile.get("file_name")).isEqualTo("upload-note.md");
+        assertThat(sourceFile.get("original_path").toString()).startsWith("browser-upload://");
+        assertThat(sourceFile.get("content_hash").toString()).hasSize(64);
+        assertThat(sourceFile.get("organize_status")).isEqualTo("copied");
+        assertThat(sourceFile.get("parse_status")).isEqualTo("success");
+        assertThat(sourceFile.get("import_type")).isEqualTo("upload");
+        assertThat(sourceFile.get("status")).isEqualTo("completed");
+
+        Map<String, Object> sourceContent = jdbcTemplate.queryForMap(
+                "SELECT parser_name, raw_text, parse_status FROM source_contents"
+        );
+        assertThat(sourceContent.get("parser_name")).isEqualTo("markdown-text");
+        assertThat(sourceContent.get("raw_text")).isEqualTo("浏览器上传进入 Raw Sources");
+        assertThat(sourceContent.get("parse_status")).isEqualTo("success");
+
+        Path managedPath = Path.of(sourceFile.get("managed_path").toString());
+        assertThat(managedPath).startsWith(RAW_SOURCES_ROOT);
+        assertThat(Files.exists(managedPath)).isTrue();
+        assertThat(Files.readString(managedPath, StandardCharsets.UTF_8)).isEqualTo("浏览器上传进入 Raw Sources");
     }
 
     @Test

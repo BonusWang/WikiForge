@@ -32,6 +32,10 @@ public enum ErrorCode {
     WIKI_INVALID_INPUT("WIKI_001", "invalid wiki input"),
     WIKI_PAGE_NOT_FOUND("WIKI_002", "wiki page not found"),
     WIKI_INTEGRATION_NOT_FOUND("WIKI_003", "wiki integration not found"),
+    WIKI_INGEST_RUN_NOT_FOUND("WIKI_004", "wiki ingest run not found"),
+    UPLOAD_EMPTY_INPUT("UPLOAD_001", "upload files are required"),
+    UPLOAD_WRITE_FAILED("UPLOAD_002", "upload file cannot be written"),
+    DICTIONARY_INVALID_TYPE("DICT_001", "invalid dictionary type"),
     ORCHESTRATION_TASK_NOT_FOUND("ORCHESTRATION_001", "orchestration task not found"),
     WORKER_REJECTED_IMPORT_TASK("WORKER_001", "worker rejected import task"),
     VALIDATION_FAILED("COMMON_001", "validation failed");

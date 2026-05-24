@@ -34,10 +34,11 @@ public class ImportJobController {
     @GetMapping
     public ApiResponse<ImportJobPageResponse> listImportJobs(
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String statusCode,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int pageSize
     ) {
-        return ApiResponse.ok(importJobService.listImportJobs(status, page, pageSize));
+        return ApiResponse.ok(importJobService.listImportJobs(status, statusCode, page, pageSize));
     }
 
     @GetMapping("/{jobUid}")

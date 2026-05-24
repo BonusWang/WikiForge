@@ -1,57 +1,58 @@
 # 知识熔炉 WikiForge
 
-知识熔炉 WikiForge 是一个本地优先的个人知识与资料整理系统。它先把散落的本地文件和手工链接资料收集整理起来，再由 AI 编译为可维护的 Obsidian Topic / Project Wiki 页面；MySQL 负责索引、状态、运行账本和集成记录。
+WikiForge 是一个本地优先的个人私有知识库工具。
 
-项目当前原则不是一上来做完整 RAG，也不是直接搭复杂多 Agent 平台，而是先解决一个现实问题：
-
-> 资料太乱，需要先统一收集、整理、归档，再把稳定结果交给 AI、MCP 和向量库复用。
+MVP0 从减法开始：先把散落文件统一收纳到 Raw Sources，再把可整理内容按 LLM Wiki 规则写入 Obsidian。向量检索、MCP、LifeOS、知识体检和辅助开发工程都不进入 MVP0 主线。
 
 ## 当前阶段
 
-- 当前版本：`2.0-v2-preview.4`
-- 当前阶段：R6-UI-2 / 路线与信息架构纠偏 + R6-version-api / WikiForge 版本 API 小版本
-- 已完成：本地源文件归集、链接资料收集、Obsidian Source Note、正文解析、AI 审核、MCP Preview、LifeOS 个人记录、JSONL chunk 导出、知识维护巡检、维护问题处理闭环、Core 版本 API、最小 Wiki 页面注册与 Wiki 更新审核/自动写入账本
-- 未完成：真实向量库接入、Hybrid Search、办公室视图、定时总结和长期记忆
+- 当前阶段：MVP0 重新开始
+- 当前基座：`docs/rebuild/2026-05-24-mvp0-baseline/`
+- 核心目标：统一入口、原始文件规整收纳、Obsidian LLM Wiki 自动归档
+- 数据库原则：只保留 MVP0 最小表集合，后续按需求新增
+- 不做事项：多 Agent 并行、Orchestration 辅助工程、真实向量库、文档问答、在线文档 OAuth 抓取
 
-## 产品闭环
+## MVP0 闭环
 
 ```text
-本地文件 / 手工链接资料
-  -> Raw Sources 和 MySQL 运行账本
-  -> 正文解析和 Source Note 溯源层
-  -> AI 编译为 Topic / Project Wiki 更新建议
-  -> 普通资料自动追加 WikiForge Updates 托管区块
-  -> 敏感、低置信度、冲突或缺目标页进入审核队列
-  -> Obsidian Wiki 页面成为长期知识正文
-  -> MCP / UI / JSONL chunks / Knowledge Health 作为高级运行能力复用
-  -> 版本 API 暴露当前 WikiForge 小版本
-  -> 后续导入真实向量库与 Hybrid Search
+本地路径扫描 / 浏览器上传
+  -> Raw Sources 复制收纳
+  -> hash 去重和类型识别
+  -> SourceFile 账本
+  -> 正文抽取
+  -> LLM Wiki 规则整理
+  -> Obsidian Wiki 页面写入
+  -> index.md / log.md 更新
 ```
 
 ## 技术方向
 
-- 后端：Java 21/17 + Spring Boot 3.x
+- 后端：Java + Spring Boot
 - 前端：Vue 3 + Vite + TypeScript
-- 数据库：MySQL 8.x
-- 知识沉淀：Obsidian Markdown Vault
-- 文件归集：本地 Raw Sources 目录
-- 当前运行层：Wiki Compile、Review Queue、MCP HTTP Preview、JSONL Vector Export、Knowledge Maintenance
-- 后续拓展：真实向量库、在线文档连接器、办公室视图、长期记忆
+- 数据库：MySQL
+- 知识库：Obsidian Markdown Vault
+- 文件源：本地 Raw Sources
 
-## 文档
+## 文档入口
 
-- [文档入口 Docs Index](docs/README.md)
-- [需求文档 PRD](docs/current/需求文档-knowledge-base-prd.md)
-- [技术架构 Technical Architecture](docs/current/技术架构-technical-architecture.md)
-- [数据模型 Data Model](docs/current/数据模型-data-model.md)
-- [项目整体计划 Project Roadmap](docs/current/2026-05-24-项目整体计划-WikiForge-project-roadmap.md)
-- [R6-1 向量导出契约 Work Order](docs/superpowers/plans/2026-05-24-V2向量导出契约-WikiForge-r6-vector-export-contract.md)
-- [R6-3 知识维护巡检 Work Order](docs/superpowers/plans/2026-05-24-V2知识维护巡检-WikiForge-r6-maintenance-lint-agent.md)
-- [R6-3.1 维护问题处理闭环 Work Order](docs/superpowers/plans/2026-05-24-V2知识维护处理闭环-WikiForge-r6-maintenance-issue-workflow.md)
-- [参考项目清单 Reference Projects](docs/current/2026-05-23-参考项目清单-WikiForge-reference-projects.md)
-- [开发者日志 Developer Log](docs/current/2026-05-24-开发者日志-WikiForge-developer-log.md)
-- [版本更新记录 Release Notes](docs/current/2026-05-24-版本更新记录-WikiForge-release-notes.md)
+- [文档目录 Docs Index](docs/README.md)
+- [MVP0 基座](docs/rebuild/2026-05-24-mvp0-baseline/README.md)
+- [现状基线 Pre-Rebuild Baseline](docs/rebuild/2026-05-24-mvp0-baseline/2026-05-24-现状基线-WikiForge-pre-rebuild-baseline.md)
+- [MVP0 需求文档 PRD](docs/rebuild/2026-05-24-mvp0-baseline/2026-05-24-整体重构需求文档-WikiForge-rebuild-prd.md)
+- [四层架构设计 Four-Layer Architecture](docs/rebuild/2026-05-24-mvp0-baseline/2026-05-24-四层架构设计-WikiForge-four-layer-architecture.md)
+- [MVP0 前端设计方案 Frontend Design](docs/rebuild/2026-05-24-mvp0-baseline/2026-05-24-前端设计方案-WikiForge-mvp0-frontend-design.md)
+- [MVP0 后端设计方案 Backend Design](docs/rebuild/2026-05-24-mvp0-baseline/2026-05-24-后端设计方案-WikiForge-mvp0-backend-design.md)
+- [MVP0 数据库设计方案 Data Design](docs/rebuild/2026-05-24-mvp0-baseline/2026-05-24-数据库设计方案-WikiForge-mvp0-data-design.md)
+- [MVP0 API 契约设计 API Contract](docs/rebuild/2026-05-24-mvp0-baseline/2026-05-24-API契约设计-WikiForge-mvp0-api-contract.md)
+- [MVP0 Obsidian LLM Wiki 设计](docs/rebuild/2026-05-24-mvp0-baseline/2026-05-24-Obsidian-LLM-Wiki设计-WikiForge-mvp0-obsidian-llm-wiki-design.md)
+- [项目架构强约定 Project Architecture Conventions](docs/current/项目架构强约定-WikiForge-project-architecture-conventions.md)
+- [MVP0 路线图 Roadmap](docs/rebuild/2026-05-24-mvp0-baseline/2026-05-24-整体重构路线-WikiForge-refactor-roadmap.md)
+- [MVP0 新起点交付记录 Starting Point](docs/rebuild/2026-05-24-mvp0-baseline/2026-05-25-MVP0新起点交付记录-WikiForge-mvp0-starting-point.md)
+- [现有资源盘点 Reusable Assets Inventory](docs/rebuild/2026-05-24-mvp0-baseline/2026-05-24-现有资源盘点-WikiForge-reusable-assets-inventory.md)
+- [重构前文档归档索引 Pre-Rebuild Docs Index](docs/archive/2026-05-24/pre-rebuild-docs/2026-05-24-重构前文档归档索引-WikiForge-pre-rebuild-docs-index.md)
 
 ## 当前状态
 
-R6-version-api 已完成 Core 版本 API 小版本；R6-UI-2 已完成路线与信息架构纠偏：主线从 “Source Note 终点” 调整为 “Source Note 溯源层 -> Topic / Project Wiki 页面”。当前实现了最小 `wiki_pages` / `wiki_integrations` 账本、Wiki 编译 API、自动追加托管区块和审核通过/拒绝接口。R6-2 Hybrid Search、完整向量库、办公室视图、长期记忆和个人记录周期总结继续挂起。
+MVP0 基座已进入代码闭环：路径扫描、浏览器上传、Raw Sources 收纳、正文抽取、Obsidian LLM Wiki 写入和 index/log 更新已经接入。后续所有开发都在 MVP0 基座上递增。
+
+本地验收入口：`http://127.0.0.1:5174/capture`。Obsidian Vault 按本机验收口径指向 `E:\WikiForgeVault`。
