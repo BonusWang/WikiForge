@@ -34,6 +34,10 @@ springdoc:
     path: /swagger-ui.html
 
 wikiforge:
+  release:
+    version: ${WIKIFORGE_VERSION:2.0-v2-preview.4}
+    stage: ${WIKIFORGE_RELEASE_STAGE:R6-version-api}
+    release-date: ${WIKIFORGE_RELEASE_DATE:2026-05-24}
   storage:
     raw-sources-root: ${WIKIFORGE_RAW_SOURCES_ROOT:${WIKIFORGE_RAW_SOURCES_PATH:./data/raw-sources}}
   raw-sources-path: ${WIKIFORGE_RAW_SOURCES_PATH:${WIKIFORGE_RAW_SOURCES_ROOT:./data/raw-sources}}

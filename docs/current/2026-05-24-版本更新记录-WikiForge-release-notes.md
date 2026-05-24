@@ -1,5 +1,31 @@
 # 2026-05-24 WikiForge 版本更新记录 Release Notes
 
+## 2.0-v2-preview.4 - WikiForge 版本 API 小版本
+
+发布日期：2026-05-24
+
+本版本是一个小版本收口，给 Core Service 增加稳定的版本查询 API，便于 ForgeOps Bridge、运维脚本、后续 UI 和外部 Agent 判断当前 WikiForge 实例的发布版本。
+
+### 更新内容
+
+- 新增 Core API：`GET /api/v1/version`。
+- 响应继续使用统一 `ApiResponse<T>` 包装。
+- 返回字段包括 `product`、`service`、`version`、`stage`、`releaseDate` 和 `apiBasePath`。
+- 默认版本推进到 `2.0-v2-preview.4`。
+- 新增 `wikiforge.release.version`、`wikiforge.release.stage`、`wikiforge.release.release-date` 配置，可通过 `WIKIFORGE_VERSION`、`WIKIFORGE_RELEASE_STAGE`、`WIKIFORGE_RELEASE_DATE` 覆盖。
+- 根 `README.md` 当前版本同步到 `2.0-v2-preview.4`。
+
+### 验证结果
+
+- RED 定向测试通过预期失败：`WikiForgeCoreApplicationTests.versionApiReturnsCurrentSmallRelease` 初次返回 `404 NOT_FOUND`。
+- GREEN 定向测试通过：`WikiForgeCoreApplicationTests` 合计 2 个测试，0 失败。
+- Core 相关 Maven 测试通过：`wikiforge-common` + `wikiforge-core-service` 合计 46 个测试，0 失败。
+- 工单验证命令 `echo wikiforge-test-ok` 已执行并返回 `wikiforge-test-ok`。
+
+### 版本边界
+
+本版本只增加版本查询 API 和版本文档，不新增数据库表、不修改业务数据流、不创建 Git tag、不创建 GitHub Release、不提交、不推送。
+
 ## 2.0-v2-preview.3 - R6-3.1 维护问题处理闭环
 
 发布日期：2026-05-24
