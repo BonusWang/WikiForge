@@ -2,10 +2,43 @@
 
 ## 版本索引 Version Index
 
-- 最新版本：v5.6
-- 最新小节：`2026-05-24 R6-UI-1 / Console 暗色开发者控制台主题`
+- 最新版本：v5.7
+- 最新小节：`2026-05-24 R6-UI-2 / Console 信息架构与导入体验纠偏`
 - 推荐阅读：新 AI 开始工作时，先读本索引和最新小节，再按任务需要阅读历史小节。
 - 历史范围：v0.1-v0.9 记录需求发掘、架构评审、MVP0 骨架、微服务拆分和同日滚动归档规则；仅在追溯需求来源或架构决策时阅读。
+
+## 2026-05-24 R6-UI-2 / Console 信息架构与导入体验纠偏
+
+本轮根据用户对 MVP 可用性的反馈，修正 Dashboard 信息架构和几个不符合实际需求的入口。核心目标是让 WikiForge 回到“先整理杂乱资料，再逐步提炼和复用”的主线，而不是把后续向量化预研能力提前暴露成主功能。
+
+问题输入：
+
+- 单页展示所有功能过于混乱，需要左侧菜单按模块、功能、页面拆分。
+- 用户当前不需要向量导出，Vector Export 不应作为主界面入口。
+- 文件地址导入应只输入知识来源地址，不应要求用户填写 Raw Sources 归集地址。
+- `Maintenance 维护巡检` 语义不清，需要解释为知识库体检。
+- 导入任务列表 status 样式缺少状态区分。
+
+实现内容：
+
+- Dashboard 增加左侧导航：系统概览、文件导入、LifeOS 收集、审核队列、MCP Preview、知识库体检。
+- 本地导入表单移除 `rawSourcesRoot` 输入项，后端 `CreateLocalImportJobRequest.rawSourcesRoot` 改为可选，默认读取 `wikiforge.storage.raw-sources-root`。
+- 后端会把配置中的相对 Raw Sources 路径解析为服务工作目录下的绝对路径，避免本地 jar 默认 `./data/raw-sources` 导致导入接口误报路径非法。
+- 前端移除 Vector Export 入口，文档说明向量导出后续仅作为内部管道或高级能力评估。
+- Knowledge Maintenance 默认体检规则收敛为：空正文、重复正文、长期未归档个人记录。
+- 维护页改名为 `知识库体检 Knowledge Health`，并增加“不自动删除、移动或改写资料”的说明。
+- 导入任务状态 badge 增加 pending、running、completed、failed、cancelled 的颜色区分。
+- 同步更新 PRD、技术架构、数据模型和项目整体计划。
+
+验证结果：
+
+- 后端定向测试通过：`ImportJobApiIntegrationTests`、`KnowledgeMaintenanceApiIntegrationTests` 合计 13 个测试，0 失败。
+- 前端构建通过：`npm --prefix frontend run build`，保留既有 VueUse PURE 注释和大 chunk warning。
+- `git diff --check` 通过。
+- 禁止路径扫描通过，未发现 `node_modules`、`frontend/dist`、`.vite`、`target`、真实 `.env`、Vault 或 Raw Sources 内容进入待提交列表。
+- 密钥扫描通过，未发现本轮泄露的真实模型 token。
+- 页面 HTTP 检查通过：`http://127.0.0.1:3000/` 返回 200；当前本地未安装 Playwright，未做自动截图检查。
+- 已重新 package 并重启本地 Core Service，`http://127.0.0.1:8080/actuator/health` 返回 `UP`；手工验证不带 `rawSourcesRoot` 的导入请求已进入来源路径校验，不再因缺少归集地址被拦截。
 
 ## 2026-05-24 R6-UI-1 / Console 暗色开发者控制台主题
 

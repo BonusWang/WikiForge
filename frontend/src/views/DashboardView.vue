@@ -42,7 +42,6 @@ import {
   writeSourceNote
 } from '../api/obsidian';
 import { approveReviewItem, createAiReviewRun, listReviewItems } from '../api/review';
-import { createVectorExport, listVectorExports } from '../api/vector-exports';
 import { fetchBackendHealth, type BackendHealth } from '../services/http';
 import { useAppStore } from '../stores/app';
 import type {
@@ -71,16 +70,17 @@ import type {
 } from '../types/obsidianNotes';
 import type { McpCallStatus, McpToolCallLog, McpToolDefinition } from '../types/mcp';
 import type { CreateAiReviewRunRequest, ReviewItem } from '../types/review';
-import type { VectorExportJob, VectorExportScope } from '../types/vectorExports';
+
+type ConsolePage = 'overview' | 'source-import' | 'lifeos' | 'review' | 'mcp' | 'maintenance';
 
 const appStore = useAppStore();
 const backendHealth = ref<BackendHealth | null>(null);
 const healthLoading = ref(false);
 const errorMessage = ref('');
+const activePage = ref<ConsolePage>('overview');
 
 const importForm = reactive<CreateLocalImportJobRequest>({
   inputPath: '',
-  rawSourcesRoot: '',
   recursive: true,
   organizeMode: 'copy',
   maxCopyFileSizeMb: 100
@@ -106,13 +106,6 @@ const personalRecordForm = reactive({
   sensitivityLevel: 'medium' as SensitivityLevel
 });
 
-const vectorExportForm = reactive({
-  scope: 'all' as VectorExportScope,
-  targetCollection: 'wikiforge_default',
-  maxChunkChars: 1600,
-  limit: 1000
-});
-
 const maintenanceForm = reactive({
   staleDays: 7,
   limit: 1000
@@ -133,6 +126,63 @@ const statusLabels: Record<ImportJobStatus, string> = {
   failed: 'Failed',
   cancelled: 'Cancelled'
 };
+
+const navigationGroups: {
+  module: string;
+  items: { page: ConsolePage; functionName: string; label: string }[];
+}[] = [
+  {
+    module: 'Console 总览',
+    items: [{ page: 'overview', functionName: '运行态势', label: '系统概览' }]
+  },
+  {
+    module: 'Collection 收集层',
+    items: [
+      { page: 'source-import', functionName: '本地文件归集', label: '文件导入' },
+      { page: 'lifeos', functionName: '链接与个人记录', label: 'LifeOS 收集' }
+    ]
+  },
+  {
+    module: 'Forge 加工层',
+    items: [{ page: 'review', functionName: 'AI 草案确认', label: '审核队列' }]
+  },
+  {
+    module: 'Ops 集成运维',
+    items: [
+      { page: 'mcp', functionName: '外部机器人接入', label: 'MCP Preview' },
+      { page: 'maintenance', functionName: '质量问题体检', label: '知识库体检' }
+    ]
+  }
+];
+
+const pageMeta: Record<ConsolePage, { title: string; subtitle: string }> = {
+  overview: {
+    title: '系统概览 / Console Overview',
+    subtitle: '查看后端、导入任务、Source Files 和 Obsidian Vault 的关键运行状态。'
+  },
+  'source-import': {
+    title: '文件导入 / Source Import',
+    subtitle: '输入一个知识来源地址，系统会自动归集到配置好的 Raw Sources 仓库。'
+  },
+  lifeos: {
+    title: 'LifeOS 收集 / Personal Capture',
+    subtitle: '收集链接资料、消费、账单、邮件、人际关系和个人记录，再决定是否归档到 Obsidian。'
+  },
+  review: {
+    title: '审核队列 / Review Queue',
+    subtitle: '查看 AI 整理草案，人工确认后再写入 Obsidian 知识层。'
+  },
+  mcp: {
+    title: 'MCP Preview / Agent Integration',
+    subtitle: '观察 OpenClaw、Hermes 或其他 Agent 调用 WikiForge MCP 工具的记录。'
+  },
+  maintenance: {
+    title: '知识库体检 / Knowledge Health',
+    subtitle: '手动检查空正文、重复正文和长期未归档记录，不自动删除或改写资料。'
+  }
+};
+
+const activePageMeta = computed(() => pageMeta[activePage.value]);
 
 const personalRecordTypeOptions = [
   { label: '消费 expense', value: 'expense' },
@@ -215,13 +265,6 @@ const personalRecordTypeFilter = ref<PersonalRecordType | ''>('');
 const personalRecordStatusFilter = ref('');
 const personalRecordSourceFilter = ref('');
 const archivingRecordUid = ref('');
-const vectorExports = ref<VectorExportJob[]>([]);
-const vectorExportCreating = ref(false);
-const vectorExportsLoading = ref(false);
-const vectorExportPage = ref(1);
-const vectorExportPageSize = ref(20);
-const vectorExportTotal = ref(0);
-const vectorExportStatusFilter = ref('');
 const maintenanceRuns = ref<KnowledgeMaintenanceRun[]>([]);
 const maintenanceItems = ref<KnowledgeMaintenanceItem[]>([]);
 const maintenanceRunCreating = ref(false);
@@ -242,9 +285,7 @@ const maintenanceItemUpdatingUids = ref<Set<string>>(new Set());
 const maintenanceIssueTypeOptions = [
   { label: '空正文 missing_source_content', value: 'missing_source_content' },
   { label: '重复正文 duplicate_source_content', value: 'duplicate_source_content' },
-  { label: '未归档记录 unarchived_personal_record', value: 'unarchived_personal_record' },
-  { label: '空导出 empty_vector_export', value: 'empty_vector_export' },
-  { label: '待向量化分块 stale_vector_chunk', value: 'stale_vector_chunk' }
+  { label: '未归档记录 unarchived_personal_record', value: 'unarchived_personal_record' }
 ];
 
 const selectedJobStatus = computed(() => {
@@ -301,10 +342,9 @@ async function refreshJobs() {
 
 async function createJob() {
   const inputPath = importForm.inputPath.trim();
-  const rawSourcesRoot = importForm.rawSourcesRoot.trim();
 
-  if (!inputPath || !rawSourcesRoot) {
-    ElMessage.warning('inputPath 和 rawSourcesRoot 必填');
+  if (!inputPath) {
+    ElMessage.warning('知识来源地址必填');
     return;
   }
 
@@ -312,7 +352,6 @@ async function createJob() {
   try {
     const job = await createLocalImportJob({
       inputPath,
-      rawSourcesRoot,
       recursive: importForm.recursive,
       organizeMode: 'copy',
       maxCopyFileSizeMb: importForm.maxCopyFileSizeMb
@@ -506,48 +545,6 @@ async function refreshLifeOs() {
   await Promise.all([refreshPersonalRecords(), refreshPersonalSummary()]);
 }
 
-async function refreshVectorExports() {
-  vectorExportsLoading.value = true;
-  try {
-    const result = await listVectorExports({
-      status: optionalText(vectorExportStatusFilter.value),
-      page: vectorExportPage.value,
-      pageSize: vectorExportPageSize.value
-    });
-    vectorExports.value = result.items;
-    vectorExportTotal.value = result.total;
-  } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '向量导出任务加载失败');
-  } finally {
-    vectorExportsLoading.value = false;
-  }
-}
-
-async function createVectorExportJob() {
-  const targetCollection = vectorExportForm.targetCollection.trim();
-  if (!targetCollection) {
-    ElMessage.warning('targetCollection 必填');
-    return;
-  }
-
-  vectorExportCreating.value = true;
-  try {
-    const result = await createVectorExport({
-      scope: vectorExportForm.scope,
-      targetCollection,
-      maxChunkChars: vectorExportForm.maxChunkChars,
-      limit: vectorExportForm.limit
-    });
-    ElMessage.success(`向量导出完成：${result.totalCount} chunks`);
-    vectorExportPage.value = 1;
-    await refreshVectorExports();
-  } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '向量导出创建失败');
-  } finally {
-    vectorExportCreating.value = false;
-  }
-}
-
 async function refreshMaintenanceRuns() {
   maintenanceRunsLoading.value = true;
   try {
@@ -559,7 +556,7 @@ async function refreshMaintenanceRuns() {
     maintenanceRuns.value = result.items;
     maintenanceRunTotal.value = result.total;
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '维护巡检运行记录加载失败');
+    ElMessage.error(error instanceof Error ? error.message : '知识库体检运行记录加载失败');
   } finally {
     maintenanceRunsLoading.value = false;
   }
@@ -578,7 +575,7 @@ async function refreshMaintenanceItems() {
     maintenanceItems.value = result.items;
     maintenanceItemTotal.value = result.total;
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '维护巡检问题列表加载失败');
+    ElMessage.error(error instanceof Error ? error.message : '知识库体检问题列表加载失败');
   } finally {
     maintenanceItemsLoading.value = false;
   }
@@ -595,13 +592,13 @@ async function createMaintenanceRunNow() {
       staleDays: maintenanceForm.staleDays,
       limit: maintenanceForm.limit
     });
-    ElMessage.success(`维护巡检完成：${result.issueCount} issues`);
+    ElMessage.success(`知识库体检完成：${result.issueCount} issues`);
     maintenanceRunUidFilter.value = result.runUid;
     maintenanceRunPage.value = 1;
     maintenanceItemPage.value = 1;
     await refreshKnowledgeMaintenance();
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '维护巡检运行失败');
+    ElMessage.error(error instanceof Error ? error.message : '知识库体检运行失败');
   } finally {
     maintenanceRunCreating.value = false;
   }
@@ -614,7 +611,7 @@ async function updateMaintenanceItemStatus(
   let resolutionNote = '';
   try {
     if (status === 'open') {
-      await ElMessageBox.confirm('重新打开后该问题会回到 open 状态。', '重新打开维护问题', {
+      await ElMessageBox.confirm('重新打开后该问题会回到 open 状态。', '重新打开体检问题', {
         confirmButtonText: '重新打开',
         cancelButtonText: '取消',
         type: 'warning'
@@ -636,7 +633,7 @@ async function updateMaintenanceItemStatus(
       resolutionNote,
       resolvedBy: 'web-ui'
     });
-    ElMessage.success(status === 'open' ? '维护问题已重新打开' : '维护问题状态已更新');
+    ElMessage.success(status === 'open' ? '体检问题已重新打开' : '体检问题状态已更新');
     await refreshMaintenanceItems();
   } catch (error) {
     if (error === 'cancel' || error === 'close') {
@@ -865,16 +862,6 @@ function handlePersonalRecordFilterChange() {
   void refreshPersonalRecords();
 }
 
-function handleVectorExportPageChange(page: number) {
-  vectorExportPage.value = page;
-  void refreshVectorExports();
-}
-
-function handleVectorExportFilterChange() {
-  vectorExportPage.value = 1;
-  void refreshVectorExports();
-}
-
 function handleMaintenanceRunPageChange(page: number) {
   maintenanceRunPage.value = page;
   void refreshMaintenanceRuns();
@@ -985,19 +972,6 @@ function personalRecordTagType(status: string) {
   return 'info';
 }
 
-function vectorExportTagType(status: string) {
-  if (status === 'completed') {
-    return 'success';
-  }
-  if (status === 'failed') {
-    return 'danger';
-  }
-  if (status === 'running') {
-    return 'warning';
-  }
-  return 'info';
-}
-
 function maintenanceSeverityTagType(severity: string) {
   if (severity === 'high') {
     return 'danger';
@@ -1019,6 +993,10 @@ function maintenanceStatusTagType(status: string) {
     return 'warning';
   }
   return 'info';
+}
+
+function statusBadgeClass(status: string) {
+  return `status-badge status-badge--${status}`;
 }
 
 function setMaintenanceItemUpdating(itemUid: string, loading: boolean) {
@@ -1096,17 +1074,49 @@ onMounted(() => {
   void refreshReviewItems();
   void refreshMcpPreview();
   void refreshLifeOs();
-  void refreshVectorExports();
   void refreshKnowledgeMaintenance();
 });
 </script>
 
 <template>
-  <main class="shell">
+  <main class="app-shell">
+    <aside class="sidebar-nav" aria-label="WikiForge navigation">
+      <div class="sidebar-brand">
+        <span class="brand-mark">WF</span>
+        <div>
+          <strong>{{ appStore.appName }}</strong>
+          <span>Knowledge Forge</span>
+        </div>
+      </div>
+      <div
+        v-for="group in navigationGroups"
+        :key="group.module"
+        class="nav-group"
+      >
+        <p class="nav-group-title">{{ group.module }}</p>
+        <button
+          v-for="item in group.items"
+          :key="item.page"
+          class="nav-button"
+          :class="{ 'is-active': activePage === item.page }"
+          type="button"
+          @click="activePage = item.page"
+        >
+          <span class="nav-dot" />
+          <span>
+            <strong>{{ item.label }}</strong>
+            <small>{{ item.functionName }}</small>
+          </span>
+        </button>
+      </div>
+    </aside>
+
+    <section class="shell workspace">
     <header class="topbar">
       <div>
         <p class="eyebrow">{{ appStore.stage }}</p>
-        <h1>{{ appStore.appName }}</h1>
+        <h1>{{ activePageMeta.title }}</h1>
+        <p class="page-subtitle">{{ activePageMeta.subtitle }}</p>
       </div>
       <div class="topbar-actions">
         <el-button :loading="vaultInitializing" @click="initializeVault">
@@ -1120,7 +1130,7 @@ onMounted(() => {
       </div>
     </header>
 
-    <section class="status-grid">
+    <section v-if="activePage === 'overview'" class="status-grid">
       <el-card shadow="never">
         <template #header>
           <div class="card-title">
@@ -1142,7 +1152,7 @@ onMounted(() => {
           </div>
         </template>
         <p class="metric">V2</p>
-        <p class="muted">向量导出与知识运行层</p>
+        <p class="muted">收集、整理、体检与 Agent 接入</p>
       </el-card>
 
       <el-card shadow="never">
@@ -1206,7 +1216,7 @@ onMounted(() => {
     />
 
     <section class="dashboard-stack">
-      <el-card shadow="never">
+      <el-card v-if="activePage === 'source-import'" shadow="never">
         <template #header>
           <div class="section-title">
             <div class="card-title">
@@ -1221,19 +1231,11 @@ onMounted(() => {
         </template>
 
         <el-form class="import-form" label-position="top">
-          <el-form-item label="inputPath" required>
+          <el-form-item label="知识来源地址 sourcePath" required>
             <el-input
               v-model="importForm.inputPath"
               clearable
-              placeholder="E:/example/messy-sources"
-            />
-          </el-form-item>
-
-          <el-form-item label="rawSourcesRoot" required>
-            <el-input
-              v-model="importForm.rawSourcesRoot"
-              clearable
-              placeholder="E:/WikiForge_RawSources"
+              placeholder="E:/个人知识体系/待整理资料"
             />
           </el-form-item>
 
@@ -1251,6 +1253,9 @@ onMounted(() => {
           </el-form-item>
 
           <div class="form-actions">
+            <p class="form-hint">
+              导入后会复制归集到系统配置的 Raw Sources，不需要手工输入归集目标地址。
+            </p>
             <el-tag type="info" effect="plain">organizeMode: copy</el-tag>
             <el-button :loading="createLoading" type="primary" @click="createJob">
               创建任务
@@ -1259,12 +1264,12 @@ onMounted(() => {
         </el-form>
       </el-card>
 
-      <el-card shadow="never">
+      <el-card v-if="activePage === 'maintenance'" shadow="never">
         <template #header>
           <div class="section-title">
             <div class="card-title">
               <el-icon><SetUp /></el-icon>
-              Maintenance 维护巡检
+              知识库体检 Knowledge Health
             </div>
             <el-button
               :loading="maintenanceRunsLoading || maintenanceItemsLoading"
@@ -1275,6 +1280,10 @@ onMounted(() => {
             </el-button>
           </div>
         </template>
+
+        <p class="section-helper">
+          用于发现“收集了但没有整理好”的基础问题，例如空正文、重复正文、长期未归档个人记录。当前只做检查和标记，不会自动删除、移动或改写你的资料。
+        </p>
 
         <el-form class="maintenance-form" label-position="top">
           <el-form-item label="staleDays">
@@ -1294,9 +1303,9 @@ onMounted(() => {
             />
           </el-form-item>
           <div class="form-actions">
-            <el-tag effect="plain">manual lint</el-tag>
+            <el-tag effect="plain">manual check</el-tag>
             <el-button :loading="maintenanceRunCreating" type="primary" @click="createMaintenanceRunNow">
-              运行巡检
+              开始体检
             </el-button>
           </div>
         </el-form>
@@ -1319,7 +1328,7 @@ onMounted(() => {
               v-loading="maintenanceRunsLoading"
               :data="maintenanceRuns"
               border
-              empty-text="暂无维护巡检运行"
+              empty-text="暂无知识库体检运行"
             >
               <el-table-column prop="createdAt" label="createdAt" min-width="170" show-overflow-tooltip />
               <el-table-column prop="runUid" label="runUid" min-width="190" show-overflow-tooltip />
@@ -1389,7 +1398,7 @@ onMounted(() => {
               v-loading="maintenanceItemsLoading"
               :data="maintenanceItems"
               border
-              empty-text="暂无维护巡检问题"
+              empty-text="暂无知识库体检问题"
             >
               <el-table-column prop="createdAt" label="createdAt" min-width="170" show-overflow-tooltip />
               <el-table-column prop="issueType" label="issueType" min-width="210" show-overflow-tooltip />
@@ -1459,7 +1468,7 @@ onMounted(() => {
         </div>
       </el-card>
 
-      <el-card shadow="never">
+      <el-card v-if="activePage === 'lifeos'" shadow="never">
         <template #header>
           <div class="section-title">
             <div class="card-title">
@@ -1703,108 +1712,7 @@ onMounted(() => {
         </div>
       </el-card>
 
-      <el-card shadow="never">
-        <template #header>
-          <div class="section-title">
-            <div class="card-title">
-              <el-icon><Cpu /></el-icon>
-              Vector Export 向量导出
-            </div>
-            <el-button :loading="vectorExportsLoading" @click="refreshVectorExports">
-              <el-icon><Refresh /></el-icon>
-              刷新导出
-            </el-button>
-          </div>
-        </template>
-
-        <el-form class="vector-export-form" label-position="top">
-          <el-form-item label="scope">
-            <el-select v-model="vectorExportForm.scope">
-              <el-option label="全部 all" value="all" />
-              <el-option label="资料 sources" value="sources" />
-              <el-option label="个人记录 personal_records" value="personal_records" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="targetCollection" required>
-            <el-input
-              v-model="vectorExportForm.targetCollection"
-              clearable
-              placeholder="wikiforge_default"
-            />
-          </el-form-item>
-          <el-form-item label="maxChunkChars">
-            <el-input-number
-              v-model="vectorExportForm.maxChunkChars"
-              :min="200"
-              :max="8000"
-              :step="200"
-              controls-position="right"
-            />
-          </el-form-item>
-          <el-form-item label="limit">
-            <el-input-number
-              v-model="vectorExportForm.limit"
-              :min="1"
-              :max="10000"
-              controls-position="right"
-            />
-          </el-form-item>
-          <div class="form-actions">
-            <el-tag effect="plain">format: jsonl</el-tag>
-            <el-button :loading="vectorExportCreating" type="primary" @click="createVectorExportJob">
-              生成导出
-            </el-button>
-          </div>
-        </el-form>
-
-        <div class="lifeos-record-toolbar">
-          <el-select
-            v-model="vectorExportStatusFilter"
-            clearable
-            placeholder="status"
-            @change="handleVectorExportFilterChange"
-          >
-            <el-option label="completed" value="completed" />
-            <el-option label="failed" value="failed" />
-          </el-select>
-        </div>
-
-        <el-table
-          v-loading="vectorExportsLoading"
-          :data="vectorExports"
-          border
-          empty-text="暂无向量导出任务"
-        >
-          <el-table-column prop="createdAt" label="createdAt" min-width="180" show-overflow-tooltip />
-          <el-table-column prop="exportUid" label="exportUid" min-width="190" show-overflow-tooltip />
-          <el-table-column prop="scope" label="scope" width="140" show-overflow-tooltip />
-          <el-table-column prop="targetCollection" label="collection" min-width="180" show-overflow-tooltip />
-          <el-table-column prop="status" label="status" width="120">
-            <template #default="scope">
-              <el-tag :type="vectorExportTagType(scope.row.status)">
-                {{ scope.row.status }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="totalCount" label="chunks" width="100" align="right" />
-          <el-table-column prop="exportRelativePath" label="relativePath" min-width="260" show-overflow-tooltip />
-          <el-table-column prop="errorMessage" label="error" min-width="180" show-overflow-tooltip />
-        </el-table>
-
-        <div class="pagination-row">
-          <el-pagination
-            v-if="vectorExportTotal > vectorExportPageSize"
-            background
-            layout="prev, pager, next"
-            :current-page="vectorExportPage"
-            :page-size="vectorExportPageSize"
-            :total="vectorExportTotal"
-            @current-change="handleVectorExportPageChange"
-          />
-        </div>
-      </el-card>
-
-      <el-card shadow="never">
+      <el-card v-if="activePage === 'mcp'" shadow="never">
         <template #header>
           <div class="section-title">
             <div class="card-title">
@@ -1911,7 +1819,7 @@ onMounted(() => {
         </div>
       </el-card>
 
-      <el-card shadow="never">
+      <el-card v-if="activePage === 'source-import'" shadow="never">
         <template #header>
           <div class="section-title">
             <div class="card-title">
@@ -1946,7 +1854,11 @@ onMounted(() => {
           <el-table-column prop="jobUid" label="jobUid" min-width="180" show-overflow-tooltip />
           <el-table-column prop="status" label="status" width="120">
             <template #default="scope">
-              <el-tag :type="statusTagType(scope.row.status)">
+              <el-tag
+                :class="statusBadgeClass(scope.row.status)"
+                :type="statusTagType(scope.row.status)"
+                effect="plain"
+              >
                 {{ statusLabels[scope.row.status as ImportJobStatus] }}
               </el-tag>
             </template>
@@ -1955,8 +1867,8 @@ onMounted(() => {
           <el-table-column prop="successCount" label="success" width="94" align="right" />
           <el-table-column prop="skippedCount" label="skipped" width="94" align="right" />
           <el-table-column prop="failedCount" label="failed" width="86" align="right" />
-          <el-table-column prop="inputPath" label="inputPath" min-width="220" show-overflow-tooltip />
-          <el-table-column prop="rawSourcesRoot" label="rawSourcesRoot" min-width="220" show-overflow-tooltip />
+          <el-table-column prop="inputPath" label="sourcePath" min-width="220" show-overflow-tooltip />
+          <el-table-column prop="rawSourcesRoot" label="归集仓库" min-width="220" show-overflow-tooltip />
           <el-table-column prop="createdAt" label="createdAt" min-width="180" show-overflow-tooltip />
           <el-table-column fixed="right" label="操作" width="110">
             <template #default="scope">
@@ -1978,7 +1890,7 @@ onMounted(() => {
         </div>
       </el-card>
 
-      <el-card shadow="never">
+      <el-card v-if="activePage === 'source-import'" shadow="never">
         <template #header>
           <div class="section-title">
             <div class="card-title">
@@ -2021,7 +1933,11 @@ onMounted(() => {
 
         <div v-if="selectedJobDetail" class="job-detail-strip">
           <span class="detail-item">{{ selectedJobDetail.jobUid }}</span>
-          <el-tag :type="statusTagType(selectedJobDetail.status)">
+          <el-tag
+            :class="statusBadgeClass(selectedJobDetail.status)"
+            :type="statusTagType(selectedJobDetail.status)"
+            effect="plain"
+          >
             {{ statusLabels[selectedJobDetail.status] }}
           </el-tag>
           <span class="detail-item">total {{ selectedJobDetail.totalCount }}</span>
@@ -2099,7 +2015,7 @@ onMounted(() => {
         </div>
       </el-card>
 
-      <el-card shadow="never">
+      <el-card v-if="activePage === 'review'" shadow="never">
         <template #header>
           <div class="section-title">
             <div class="card-title">
@@ -2286,5 +2202,6 @@ onMounted(() => {
         </div>
       </div>
     </el-drawer>
+    </section>
   </main>
 </template>

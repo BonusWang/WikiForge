@@ -1,5 +1,26 @@
 # 2026-05-24 WikiForge 版本更新记录 Release Notes
 
+## Unreleased - R6-UI-2 Console 信息架构与导入体验纠偏
+
+本轮修正 MVP 控制台可用性问题，聚焦用户当前主线：先整理杂乱资料，再逐步提炼、归档和复用。
+
+### 更新内容
+
+- Dashboard 增加左侧菜单，按模块拆分为系统概览、文件导入、LifeOS 收集、审核队列、MCP Preview 和知识库体检。
+- 本地导入只需要输入知识来源地址，Raw Sources 归集仓库由后端配置默认。
+- 后端支持将配置中的相对 Raw Sources 路径解析为绝对路径，兼容本地 jar 默认 `./data/raw-sources`。
+- 当前 Web UI 移除 Vector Export / 向量导出入口。
+- `Maintenance 维护巡检` 更名为 `知识库体检 Knowledge Health`，并说明不会自动删除、移动或改写资料。
+- 知识库体检默认规则收敛为：空正文、重复正文、长期未归档个人记录。
+- 导入任务状态 badge 增加 pending、running、completed、failed、cancelled 的视觉区分。
+
+### 验证结果
+
+- 后端定向测试通过：`ImportJobApiIntegrationTests`、`KnowledgeMaintenanceApiIntegrationTests` 合计 13 个测试，0 失败。
+- 前端构建通过，保留既有 VueUse PURE 注释和大 chunk warning。
+- `git diff --check`、密钥扫描和禁止路径扫描通过。
+- `http://127.0.0.1:3000/` 返回 200；本地 Core Service 重新 package 并重启后 health 为 `UP`；当前本地未安装 Playwright，未做自动截图检查。
+
 ## 2.0-v2-preview.3 - R6-3.1 维护问题处理闭环
 
 发布日期：2026-05-24

@@ -207,10 +207,10 @@ MVP 预留但不完整实现：
 
 ### V2：知识运行层
 
-- 向量导出契约：已落地 `POST /api/v1/vector-exports` 和 `GET /api/v1/vector-exports`，可把 Source 正文和个人记录导出为 JSONL chunks。
+- 向量导出契约：后端曾完成 JSONL chunk 导出预研，但当前用户主流程不需要“向量导出”入口；Web UI 不展示该功能，后续确认真实向量库方案后再作为内部管道或高级功能评估。
 - 向量库：后续接入 Qdrant / Milvus / pgvector 等私有化向量库。
 - hybrid search：等待向量库选型和部署方式确认。
-- Lint / 维护 Agent：已落地首版手动维护巡检，能发现空正文、重复正文、未归档个人记录、空向量导出和长期 pending chunk。
+- 知识库体检 / Knowledge Health：已落地首版手动体检，能发现空正文、重复正文和长期未归档个人记录。
 - 维护问题处理闭环：R6-3.1 增加人工标记已解决、忽略、重新打开和处理备注，先形成可管理的问题队列。
 - 办公室等距视图。
 - 周报 / 月报。
@@ -572,9 +572,12 @@ Markdown 是主知识源，HTML 只用于 Web UI 预览和报告导出，不作�
 
 核心页面：
 
+- 左侧导航：按“模块 -> 功能 -> 页面”组织入口，避免所有能力堆在单个 Dashboard 上。
+- 系统概览页：查看后端服务、工程阶段、导入任务、Source Files 和 Obsidian Vault 关键状态。
 - 收集入口页：粘贴链接、文本，上传文件，选择项目/主题。
-- 路径导入页：配置指定路径，扫描 Word、Markdown、JPG、PDF 等常见文件。
+- 路径导入页：只输入知识来源地址，系统自动使用后台配置的 Raw Sources 归集仓库，扫描 Word、Markdown、JPG、PDF 等常见文件。
 - 待审核队列：查看摘要、分类、Markdown 草案、质量检查结果，确认/驳回/修改。
+- 知识库体检页：手动检查空正文、重复正文和长期未归档记录，可标记已解决、忽略或重新打开。
 - 资料库列表：查看全部 Source，按来源、状态、标签、项目筛选。
 - 项目看板：按项目查看资料、任务、知识页和待补充内容。
 - Agent 运行日志：查看每条资料经过哪些步骤，每步输出什么。
@@ -590,7 +593,7 @@ Markdown 是主知识源，HTML 只用于 Web UI 预览和报告导出，不作�
 - 正文字体使用 IBM Plex Sans；代码、标签、状态、数字、路径、UID 和 API 字段使用 JetBrains Mono。
 - 页面组件以深色卡片、细边框、低透明背景、代码块、状态 badge、流程节点和网格布局为主。
 - 避免浅色商务后台、圆润可爱风、大面积插画、装饰性营销 hero 和低密度宣传页。
-- Dashboard 首屏应直接呈现系统运行状态、导入任务、Obsidian Vault、维护巡检和核心操作入口。
+- Dashboard 首屏应直接呈现系统运行状态，具体操作通过左侧模块菜单进入；当前不展示向量导出入口。
 
 功能优先级：
 
@@ -670,7 +673,7 @@ MVP 预计支持：
 
 R6-1 已先完成可落地的导出契约：从 `source_contents.raw_text` 和 `personal_records.raw_content` 生成 JSONL 文件，并在 MySQL 中记录 `vector_export_jobs` 与 `content_chunks`。本轮暂不读取 Obsidian Markdown、不生成 embedding、不接真实向量库。
 
-R6-3 已补充首版知识维护巡检：通过 `POST /api/v1/maintenance-runs` 手动触发，结果写入 `knowledge_maintenance_runs` 与 `knowledge_maintenance_items`，Dashboard 可查看运行记录和问题列表。首版只做发现和展示，不自动修改用户资料。
+R6-3 已补充首版知识库体检：通过 `POST /api/v1/maintenance-runs` 手动触发，结果写入 `knowledge_maintenance_runs` 与 `knowledge_maintenance_items`，Dashboard 可查看运行记录和问题列表。当前体检聚焦空正文、重复正文和长期未归档个人记录；首版只做发现和展示，不自动修改用户资料。
 
 R6-3.1 补充维护问题处理闭环：对 `knowledge_maintenance_items` 增加处理状态、处理备注、处理人和处理时间。用户可以在 Dashboard 将问题标记为已解决、忽略或重新打开。重新打开本质上把状态恢复为 `open`，本轮不做完整历史事件表、不做自动修复、不删除资料、不改写 Obsidian。
 

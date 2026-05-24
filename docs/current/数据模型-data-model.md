@@ -22,7 +22,7 @@ Flyway 不在第一个 migration 中创建全部长期规划表。
 | MVP 5 | `mcp_tool_calls`、`personal_records` | Core Service，后续可拆 MCP / Record Service | 轻量 MCP HTTP Preview、调用日志、个人记录最小写入 |
 | V1 | `personal_records` 扩展归档字段，复用 `sources/source_files/source_contents` | Core Service，后续可拆 Link / Record Service | 链接资料收集、个人记录 REST API、个人记录 Obsidian 归档 |
 | V2 / R6-1 | `vector_export_jobs`、`content_chunks` | Core Service，后续可拆 Vector Service | JSONL chunk 导出契约、embedding 状态预留 |
-| V2 / R6-3.1 | `knowledge_maintenance_runs`、`knowledge_maintenance_items` | Core Service，后续可拆 Agent / Maintain Service | 知识维护巡检运行账本、问题列表和人工处理闭环 |
+| V2 / R6-3.1 | `knowledge_maintenance_runs`、`knowledge_maintenance_items` | Core Service，后续可拆 Agent / Maintain Service | 知识库体检运行账本、问题列表和人工处理闭环 |
 | V2 后续 | `mcp_servers`、`embedding_jobs`、办公室视图相关表 | MCP / Vector / Agent Service | 完整 MCP 配置、真实向量库、混合检索和运行层 |
 
 ### 0.1.1 服务归属原则
@@ -583,7 +583,7 @@ agent_office_status
 
 ## 19. vector_export_jobs
 
-记录 R6-1 向量导出任务。首版导出格式为 JSONL，不接真实向量库。
+记录 R6-1 向量导出任务。首版导出格式为 JSONL，不接真实向量库；当前用户主流程不展示向量导出入口，后续仅作为内部管道或高级能力评估。
 
 对应 migration：
 
@@ -633,7 +633,7 @@ V20260524_002__create_vector_export_tables.sql
 
 ## 20.1 knowledge_maintenance_runs
 
-记录 R6-3 知识维护巡检运行。首版为手动触发，不自动修改用户资料，不做定时任务。
+记录 R6-3 知识库体检运行。首版为手动触发，不自动修改用户资料，不做定时任务。
 
 对应 migration：
 
@@ -644,7 +644,7 @@ V20260524_003__create_knowledge_maintenance_tables.sql
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | id | bigint pk | 主键 |
-| run_uid | varchar(64) unique | 巡检运行 ID |
+| run_uid | varchar(64) unique | 体检运行 ID |
 | run_type | varchar(64) | 当前固定为 manual |
 | status | varchar(64) | completed、failed；后续可扩展 running |
 | stale_days | int | 判断未归档或待处理内容过期的天数阈值 |
@@ -657,7 +657,7 @@ V20260524_003__create_knowledge_maintenance_tables.sql
 
 ## 20.2 knowledge_maintenance_items
 
-记录每次知识维护巡检发现的问题。R6-3.1 增加人工处理闭环，支持已解决、忽略和重新打开；后续再扩展修复建议、自动修复和完整事件历史表。
+记录每次知识库体检发现的问题。R6-3.1 增加人工处理闭环，支持已解决、忽略和重新打开；后续再扩展修复建议、自动修复和完整事件历史表。
 
 对应 migration：
 
@@ -670,18 +670,18 @@ V20260524_004__extend_maintenance_items_workflow.sql
 | --- | --- | --- |
 | id | bigint pk | 主键 |
 | item_uid | varchar(64) unique | 问题 ID |
-| run_uid | varchar(64) | 所属巡检运行 ID |
-| issue_type | varchar(64) | missing_source_content、duplicate_source_content、unarchived_personal_record、empty_vector_export、stale_vector_chunk |
+| run_uid | varchar(64) | 所属体检运行 ID |
+| issue_type | varchar(64) | 当前 UI 暴露 missing_source_content、duplicate_source_content、unarchived_personal_record |
 | severity | varchar(32) | high、medium、low |
-| content_type | varchar(64) | source_content、personal_record、vector_export 等 |
+| content_type | varchar(64) | source_content、personal_record 等 |
 | source_uid | varchar(64) null | 关联 Source UID |
 | file_uid | varchar(64) null | 关联 Source File UID |
 | record_uid | varchar(64) null | 关联 Personal Record UID |
-| chunk_uid | varchar(64) null | 关联 chunk UID |
-| export_uid | varchar(64) null | 关联 vector export UID |
+| chunk_uid | varchar(64) null | 历史预留 chunk UID，当前 UI 不展示 |
+| export_uid | varchar(64) null | 历史预留 vector export UID，当前 UI 不展示 |
 | title | varchar(512) null | 便于 UI 展示的标题 |
 | summary | text | 问题摘要 |
-| evidence_json | json null | 证据 JSON，例如 hash、数量、目标 collection、创建时间 |
+| evidence_json | json null | 证据 JSON，例如 hash、数量、创建时间 |
 | status | varchar(64) | open、resolved、ignored；重新打开时恢复 open |
 | resolution_note | text null | 本次处理备注 |
 | resolved_by | varchar(128) null | 本次处理人，Web UI 默认 web-ui |
