@@ -2,9 +2,9 @@
 
 ## 版本信息
 
-- 文档版本：v3.3
-- 当前分支：`codex/r6-maintenance-lint-agent`
-- 当前工程阶段：R6-3 / V2 知识维护巡检首版完成，准备发布 `2.0-v2-preview.2`
+- 文档版本：v3.5
+- 当前分支：`codex/r6-maintenance-workflow`
+- 当前工程阶段：R6-3.1 / V2 知识维护处理闭环已完成，准备发布 `2.0-v2-preview.3`
 - 当前产品主线：先把杂乱资料收集、整理、归档，再把个人 LifeOS 记录纳入统一系统，后续进入 AI 提炼、向量库和知识运行层
 
 ## 阅读规则
@@ -12,7 +12,7 @@
 新参与的 AI 或开发者先读：
 
 1. `AGENTS.md`
-2. `docs/archive/2026-05-24/2026-05-24-归档索引-archive-index-v0.3.md`
+2. `docs/archive/2026-05-24/2026-05-24-归档索引-archive-index-v0.4.md`
 3. 本文档
 4. 当前执行节点对应的计划文档或 Work Order
 5. 分支相关操作先读 `docs/current/分支管理策略-branch-strategy.md`
@@ -347,6 +347,7 @@ R5 首版完成记录：
 | R6-1 | Done | 向量导出契约 | Source 正文 / Personal Record 可导出为 JSONL chunks |
 | R6-2 | Blocked | Hybrid Search：MySQL 条件 + 向量 + rerank | 等待向量库选型和部署方式确认 |
 | R6-3 | Done | Lint / Maintain Agent 首版 | 可发现重复、空正文、未归档和向量导出异常 |
+| R6-3.1 | Done | 维护问题处理闭环 | 问题可标记已解决、忽略或重新打开 |
 | R6-4 | Later | 办公室视图 | Agent 状态和任务流可视化 |
 | R6-5 | Later | 定时总结和长期记忆 | 知识可持续演进 |
 
@@ -366,6 +367,11 @@ R6 当前执行指针：
 - [x] R6-3-4 Dashboard 增加 `Maintenance 维护巡检` 区块。
 - [x] R6-3-5 更新需求、架构、数据模型、开发者日志、版本记录和归档索引。
 - [x] R6-3-6 验证、提交推送、合入 main、标签和发布。
+- [x] ( ) R6-3.1-0 补充需求、技术架构、数据模型和 Work Order。
+- [x] ( ) R6-3.1-1 新增维护问题处理字段和 PATCH API。
+- [x] ( ) R6-3.1-2 Dashboard 增加已解决、忽略、重新打开操作。
+- [x] ( ) R6-3.1-3 定向测试、前端构建、Compose config 和 Git 卫生验证。
+- [x] ( ) R6-3.1-4 更新开发者日志、归档索引、提交并推送。
 
 R6-1 完成记录：
 
@@ -385,6 +391,15 @@ R6-3 完成记录：
 - Dashboard 新增 `Maintenance 维护巡检` 区块，可手动运行、查看运行记录、按 runUid / issueType / status 筛选问题。
 - 本轮不做自动修复、不做定时任务、不接真实向量库、不做办公室视图。
 - 验证完成：后端全量 62 个测试、前端构建、生产/开发 Compose config、Git 卫生、密钥扫描和禁止路径扫描均通过。
+
+R6-3.1 当前执行记录：
+
+- 新增 R6-3.1 Work Order：`docs/superpowers/plans/2026-05-24-V2知识维护处理闭环-WikiForge-r6-maintenance-issue-workflow.md`。
+- 本轮已把维护问题从只读列表升级为人工可处理队列。
+- 冻结新增 API：`PATCH /api/v1/maintenance-items/{itemUid}/status`。
+- 状态流转：`open -> resolved / ignored -> open`；重新打开以恢复 `open` 表示。
+- 本轮不做自动修复、不做完整事件历史表、不接真实向量库、不做办公室视图。
+- 验证完成：后端定向 13 个测试通过；后端全量 65 个测试通过；前端构建通过；生产/开发 Compose config 通过；Git 卫生、密钥扫描和禁止路径扫描通过；Vite preview `http://127.0.0.1:3003/` 返回 200。
 
 ## 近期三轮执行计划
 

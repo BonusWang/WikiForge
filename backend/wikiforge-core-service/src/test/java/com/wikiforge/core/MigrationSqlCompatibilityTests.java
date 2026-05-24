@@ -110,4 +110,18 @@ class MigrationSqlCompatibilityTests {
             assertThat(migrationSql).contains("KEY idx_maintenance_items_status_created (status, created_at)");
         }
     }
+
+    @Test
+    void knowledgeMaintenanceWorkflowMigrationAddsResolutionColumns() throws Exception {
+        try (var inputStream = getClass().getResourceAsStream(
+                "/db/migration/V20260524_004__extend_maintenance_items_workflow.sql"
+        )) {
+            assertThat(inputStream).isNotNull();
+            String migrationSql = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+            assertThat(migrationSql).contains("ADD COLUMN resolution_note TEXT NULL");
+            assertThat(migrationSql).contains("ADD COLUMN resolved_by VARCHAR(128) NULL");
+            assertThat(migrationSql).contains("ADD COLUMN resolved_at DATETIME NULL");
+            assertThat(migrationSql).contains("KEY idx_maintenance_items_resolved_at (resolved_at)");
+        }
+    }
 }

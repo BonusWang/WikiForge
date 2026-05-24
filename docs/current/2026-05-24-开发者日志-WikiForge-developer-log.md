@@ -2,10 +2,73 @@
 
 ## 版本索引 Version Index
 
-- 最新版本：v5.3
-- 最新小节：`2026-05-24 R6-3 / V2 知识维护巡检首版完成`
+- 最新版本：v5.5
+- 最新小节：`2026-05-24 R6-3.1 / V2 知识维护处理闭环完成`
 - 推荐阅读：新 AI 开始工作时，先读本索引和最新小节，再按任务需要阅读历史小节。
 - 历史范围：v0.1-v0.9 记录需求发掘、架构评审、MVP0 骨架、微服务拆分和同日滚动归档规则；仅在追溯需求来源或架构决策时阅读。
+
+## 2026-05-24 R6-3.1 / V2 知识维护处理闭环启动
+
+本轮根据需求复核结论进入 R6-3.1：维护问题处理闭环。当前 R6-3 已能发现问题，但用户无法在系统内标记处理结果，因此下一步优先补齐“发现 -> 人工处理 -> 状态可追踪”的最小闭环。
+
+需求补充：
+
+- 新增 R6-3.1 Work Order：`docs/superpowers/plans/2026-05-24-V2知识维护处理闭环-WikiForge-r6-maintenance-issue-workflow.md`。
+- 维护问题状态保持简单：`open`、`resolved`、`ignored`。
+- “重新打开”作为操作，将状态恢复为 `open`，不新增 `reopened` 状态值。
+- 维护问题增加本次处理备注、处理人、处理时间。
+- Dashboard 维护巡检区块增加已解决、忽略、重新打开操作。
+
+边界说明：
+
+- 不做自动修复。
+- 不删除资料。
+- 不改写 Obsidian。
+- 不新增完整事件历史表。
+- 不推进 R6-2 真实向量库和 R6-4 办公室视图。
+
+当前状态：
+
+- R6-3.1 已完成。
+- 下一步可在 R6-3.2 做修复建议模板，或转入 R6-4 办公室视图。
+
+实现内容：
+
+- 新增 migration：`V20260524_004__extend_maintenance_items_workflow.sql`。
+- `knowledge_maintenance_items` 增加 `resolution_note`、`resolved_by`、`resolved_at`。
+- 新增请求 DTO：`UpdateKnowledgeMaintenanceItemStatusRequest`。
+- 新增错误码：`MAINTENANCE_004`。
+- 新增 Core API：`PATCH /api/v1/maintenance-items/{itemUid}/status`。
+- `KnowledgeMaintenanceItemResponse` 返回处理备注、处理人和处理时间。
+- Dashboard 维护巡检问题列表增加 `已解决`、`忽略`、`重新打开` 操作和处理备注列。
+
+验证记录：
+
+```text
+RED: mvn -s %TEMP%\wikiforge-maven-settings.xml -gs %TEMP%\wikiforge-maven-settings.xml "-Dmaven.repo.local=E:\repository" -pl wikiforge-core-service -am "-Dtest=KnowledgeMaintenanceApiIntegrationTests,MigrationSqlCompatibilityTests" "-Dsurefire.failIfNoSpecifiedTests=false" test
+Result: expected fail, PATCH API 404 and V20260524_004 migration missing
+
+GREEN: mvn -s %TEMP%\wikiforge-maven-settings.xml -gs %TEMP%\wikiforge-maven-settings.xml "-Dmaven.repo.local=E:\repository" -pl wikiforge-core-service -am "-Dtest=KnowledgeMaintenanceApiIntegrationTests,MigrationSqlCompatibilityTests" "-Dsurefire.failIfNoSpecifiedTests=false" test
+Result: pass, Tests run: 13, Failures: 0, Errors: 0, Skipped: 0
+
+npm --prefix frontend run build
+Result: pass, existing VueUse PURE annotation and Rollup chunk warnings only
+
+mvn -s %TEMP%\wikiforge-maven-settings.xml -gs %TEMP%\wikiforge-maven-settings.xml "-Dmaven.repo.local=E:\repository" test
+Result: pass, 5 modules, Tests run: 65, Failures: 0, Errors: 0, Skipped: 0
+
+docker compose -f deploy/docker-compose.yml config --quiet
+docker compose -f deploy/docker-compose.dev.yml config --quiet
+Result: pass
+
+git diff --check
+forbidden tracked path scan
+secret scan
+Result: pass
+
+Vite preview: http://127.0.0.1:3003/
+Result: HTTP 200
+```
 
 ## 2026-05-24 R5 / V1 在线资料与个人记录启动
 

@@ -17,6 +17,9 @@ public record KnowledgeMaintenanceItemResponse(
         String summary,
         String evidenceJson,
         String status,
+        String resolutionNote,
+        String resolvedBy,
+        OffsetDateTime resolvedAt,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
 ) {

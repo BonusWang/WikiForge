@@ -11,8 +11,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -33,6 +36,7 @@ class KnowledgeMaintenanceApiIntegrationTests {
 
     @BeforeEach
     void prepareSchema() {
+        restTemplate.getRestTemplate().setRequestFactory(new JdkClientHttpRequestFactory());
         jdbcTemplate.execute("DROP TABLE IF EXISTS knowledge_maintenance_items");
         jdbcTemplate.execute("DROP TABLE IF EXISTS knowledge_maintenance_runs");
         jdbcTemplate.execute("DROP TABLE IF EXISTS content_chunks");
@@ -221,6 +225,9 @@ class KnowledgeMaintenanceApiIntegrationTests {
                     summary CLOB NOT NULL,
                     evidence_json CLOB NULL,
                     status VARCHAR(64) NOT NULL DEFAULT 'open',
+                    resolution_note CLOB NULL,
+                    resolved_by VARCHAR(128) NULL,
+                    resolved_at TIMESTAMP NULL,
                     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (id),
@@ -317,6 +324,90 @@ class KnowledgeMaintenanceApiIntegrationTests {
         assertThat(data.path("items").get(0).path("issueCount").asInt()).isEqualTo(5);
     }
 
+    @Test
+    void updateItemStatusCanResolveAndReopenMaintenanceIssue() {
+        String runUid = restTemplate.postForEntity(
+                "/api/v1/maintenance-runs",
+                Map.of("staleDays", 1, "limit", 50),
+                JsonNode.class
+        ).getBody().path("data").path("runUid").asText();
+        String itemUid = firstMaintenanceItemUid(runUid);
+
+        ResponseEntity<JsonNode> resolvedResponse = restTemplate.exchange(
+                "/api/v1/maintenance-items/{itemUid}/status",
+                HttpMethod.PATCH,
+                new HttpEntity<>(Map.of(
+                        "status", "resolved",
+                        "resolutionNote", "已人工确认完成处理",
+                        "resolvedBy", "web-ui"
+                )),
+                JsonNode.class,
+                itemUid
+        );
+
+        assertThat(resolvedResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode resolved = resolvedResponse.getBody().path("data");
+        assertThat(resolved.path("itemUid").asText()).isEqualTo(itemUid);
+        assertThat(resolved.path("status").asText()).isEqualTo("resolved");
+        assertThat(resolved.path("resolutionNote").asText()).isEqualTo("已人工确认完成处理");
+        assertThat(resolved.path("resolvedBy").asText()).isEqualTo("web-ui");
+        assertThat(resolved.path("resolvedAt").asText()).isNotBlank();
+
+        Integer resolvedCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM knowledge_maintenance_items WHERE run_uid = ? AND status = 'resolved' AND resolved_at IS NOT NULL",
+                Integer.class,
+                runUid
+        );
+        assertThat(resolvedCount).isEqualTo(1);
+
+        ResponseEntity<JsonNode> openResponse = restTemplate.exchange(
+                "/api/v1/maintenance-items/{itemUid}/status",
+                HttpMethod.PATCH,
+                new HttpEntity<>(Map.of("status", "open")),
+                JsonNode.class,
+                itemUid
+        );
+
+        assertThat(openResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode opened = openResponse.getBody().path("data");
+        assertThat(opened.path("status").asText()).isEqualTo("open");
+        assertThat(opened.path("resolutionNote").isNull()).isTrue();
+        assertThat(opened.path("resolvedBy").isNull()).isTrue();
+        assertThat(opened.path("resolvedAt").isNull()).isTrue();
+    }
+
+    @Test
+    void updateItemStatusRejectsInvalidStatusAndMissingItem() {
+        String runUid = restTemplate.postForEntity(
+                "/api/v1/maintenance-runs",
+                Map.of("staleDays", 1, "limit", 50),
+                JsonNode.class
+        ).getBody().path("data").path("runUid").asText();
+        String itemUid = firstMaintenanceItemUid(runUid);
+
+        ResponseEntity<JsonNode> invalidStatusResponse = restTemplate.exchange(
+                "/api/v1/maintenance-items/{itemUid}/status",
+                HttpMethod.PATCH,
+                new HttpEntity<>(Map.of("status", "closed")),
+                JsonNode.class,
+                itemUid
+        );
+
+        assertThat(invalidStatusResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(invalidStatusResponse.getBody().path("code").asText()).isEqualTo("MAINTENANCE_001");
+
+        ResponseEntity<JsonNode> missingItemResponse = restTemplate.exchange(
+                "/api/v1/maintenance-items/{itemUid}/status",
+                HttpMethod.PATCH,
+                new HttpEntity<>(Map.of("status", "resolved")),
+                JsonNode.class,
+                "maint_item_missing"
+        );
+
+        assertThat(missingItemResponse.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(missingItemResponse.getBody().path("code").asText()).isEqualTo("MAINTENANCE_004");
+    }
+
     private void seedRows() {
         jdbcTemplate.update("""
                 INSERT INTO import_jobs (id, job_uid, import_type, input_path, raw_sources_root)
@@ -379,5 +470,13 @@ class KnowledgeMaintenanceApiIntegrationTests {
                         '旧向量分块', 0, '待向量化内容', 'chunk-hash', 6, 2,
                         'pending', 'wikiforge_test', TIMESTAMP '2026-01-01 00:00:00')
                 """);
+    }
+
+    private String firstMaintenanceItemUid(String runUid) {
+        return jdbcTemplate.queryForObject(
+                "SELECT item_uid FROM knowledge_maintenance_items WHERE run_uid = ? ORDER BY id ASC LIMIT 1",
+                String.class,
+                runUid
+        );
     }
 }

@@ -11,7 +11,7 @@ import {
   SetUp,
   View
 } from '@element-plus/icons-vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { computed, onMounted, reactive, ref } from 'vue';
 import {
   createLocalImportJob,
@@ -29,7 +29,8 @@ import {
 import {
   createKnowledgeMaintenanceRun,
   listKnowledgeMaintenanceItems,
-  listKnowledgeMaintenanceRuns
+  listKnowledgeMaintenanceRuns,
+  updateKnowledgeMaintenanceItemStatus
 } from '../api/knowledge-maintenance';
 import { listMcpCalls, listMcpTools } from '../api/mcp';
 import {
@@ -236,6 +237,7 @@ const maintenanceRunStatusFilter = ref('');
 const maintenanceRunUidFilter = ref('');
 const maintenanceIssueTypeFilter = ref('');
 const maintenanceItemStatusFilter = ref('open');
+const maintenanceItemUpdatingUids = ref<Set<string>>(new Set());
 
 const maintenanceIssueTypeOptions = [
   { label: '空正文 missing_source_content', value: 'missing_source_content' },
@@ -602,6 +604,47 @@ async function createMaintenanceRunNow() {
     ElMessage.error(error instanceof Error ? error.message : '维护巡检运行失败');
   } finally {
     maintenanceRunCreating.value = false;
+  }
+}
+
+async function updateMaintenanceItemStatus(
+  item: KnowledgeMaintenanceItem,
+  status: 'open' | 'resolved' | 'ignored'
+) {
+  let resolutionNote = '';
+  try {
+    if (status === 'open') {
+      await ElMessageBox.confirm('重新打开后该问题会回到 open 状态。', '重新打开维护问题', {
+        confirmButtonText: '重新打开',
+        cancelButtonText: '取消',
+        type: 'warning'
+      });
+    } else {
+      const actionLabel = status === 'resolved' ? '标记已解决' : '忽略问题';
+      const result = await ElMessageBox.prompt('处理备注', actionLabel, {
+        confirmButtonText: actionLabel,
+        cancelButtonText: '取消',
+        inputPlaceholder: '填写本次处理备注',
+        inputValue: status === 'resolved' ? '已人工确认处理完成' : '已人工确认暂不处理'
+      });
+      resolutionNote = String(result.value || '').trim();
+    }
+
+    setMaintenanceItemUpdating(item.itemUid, true);
+    await updateKnowledgeMaintenanceItemStatus(item.itemUid, {
+      status,
+      resolutionNote,
+      resolvedBy: 'web-ui'
+    });
+    ElMessage.success(status === 'open' ? '维护问题已重新打开' : '维护问题状态已更新');
+    await refreshMaintenanceItems();
+  } catch (error) {
+    if (error === 'cancel' || error === 'close') {
+      return;
+    }
+    ElMessage.error(error instanceof Error ? error.message : '维护问题状态更新失败');
+  } finally {
+    setMaintenanceItemUpdating(item.itemUid, false);
   }
 }
 
@@ -978,6 +1021,20 @@ function maintenanceStatusTagType(status: string) {
   return 'info';
 }
 
+function setMaintenanceItemUpdating(itemUid: string, loading: boolean) {
+  const next = new Set(maintenanceItemUpdatingUids.value);
+  if (loading) {
+    next.add(itemUid);
+  } else {
+    next.delete(itemUid);
+  }
+  maintenanceItemUpdatingUids.value = next;
+}
+
+function isMaintenanceItemUpdating(itemUid: string) {
+  return maintenanceItemUpdatingUids.value.has(itemUid);
+}
+
 function recordTypeLabel(recordType: string) {
   return personalRecordTypeOptions.find((item) => item.value === recordType)?.label || recordType;
 }
@@ -1352,6 +1409,38 @@ onMounted(() => {
                   <el-tag :type="maintenanceStatusTagType(scope.row.status)">
                     {{ scope.row.status }}
                   </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="resolutionNote" label="resolution" min-width="180" show-overflow-tooltip />
+              <el-table-column label="actions" width="230" fixed="right">
+                <template #default="scope">
+                  <template v-if="scope.row.status === 'open'">
+                    <el-button
+                      link
+                      type="success"
+                      :loading="isMaintenanceItemUpdating(scope.row.itemUid)"
+                      @click="updateMaintenanceItemStatus(scope.row, 'resolved')"
+                    >
+                      已解决
+                    </el-button>
+                    <el-button
+                      link
+                      type="info"
+                      :loading="isMaintenanceItemUpdating(scope.row.itemUid)"
+                      @click="updateMaintenanceItemStatus(scope.row, 'ignored')"
+                    >
+                      忽略
+                    </el-button>
+                  </template>
+                  <el-button
+                    v-else
+                    link
+                    type="warning"
+                    :loading="isMaintenanceItemUpdating(scope.row.itemUid)"
+                    @click="updateMaintenanceItemStatus(scope.row, 'open')"
+                  >
+                    重新打开
+                  </el-button>
                 </template>
               </el-table-column>
             </el-table>

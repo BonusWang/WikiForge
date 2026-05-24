@@ -3,10 +3,15 @@ package com.wikiforge.core.interfaces.web;
 import com.wikiforge.common.web.ApiResponse;
 import com.wikiforge.core.application.dto.CreateKnowledgeMaintenanceRunRequest;
 import com.wikiforge.core.application.dto.KnowledgeMaintenanceItemPageResponse;
+import com.wikiforge.core.application.dto.KnowledgeMaintenanceItemResponse;
 import com.wikiforge.core.application.dto.KnowledgeMaintenanceRunPageResponse;
 import com.wikiforge.core.application.dto.KnowledgeMaintenanceRunResponse;
+import com.wikiforge.core.application.dto.UpdateKnowledgeMaintenanceItemStatusRequest;
 import com.wikiforge.core.application.service.KnowledgeMaintenanceService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -56,5 +61,13 @@ public class KnowledgeMaintenanceController {
                 page,
                 pageSize
         ));
+    }
+
+    @PatchMapping("/maintenance-items/{itemUid}/status")
+    public ApiResponse<KnowledgeMaintenanceItemResponse> updateItemStatus(
+            @PathVariable String itemUid,
+            @Valid @RequestBody UpdateKnowledgeMaintenanceItemStatusRequest request
+    ) {
+        return ApiResponse.ok(knowledgeMaintenanceService.updateItemStatus(itemUid, request));
     }
 }

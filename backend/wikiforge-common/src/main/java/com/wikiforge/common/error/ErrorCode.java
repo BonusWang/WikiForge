@@ -28,6 +28,7 @@ public enum ErrorCode {
     MAINTENANCE_INVALID_INPUT("MAINTENANCE_001", "invalid maintenance input"),
     MAINTENANCE_RUN_NOT_FOUND("MAINTENANCE_002", "maintenance run not found"),
     MAINTENANCE_FAILED("MAINTENANCE_003", "maintenance scan failed"),
+    MAINTENANCE_ITEM_NOT_FOUND("MAINTENANCE_004", "maintenance item not found"),
     ORCHESTRATION_TASK_NOT_FOUND("ORCHESTRATION_001", "orchestration task not found"),
     WORKER_REJECTED_IMPORT_TASK("WORKER_001", "worker rejected import task"),
     VALIDATION_FAILED("COMMON_001", "validation failed");

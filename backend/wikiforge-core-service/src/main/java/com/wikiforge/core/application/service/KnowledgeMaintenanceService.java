@@ -9,6 +9,7 @@ import com.wikiforge.core.application.dto.KnowledgeMaintenanceItemPageResponse;
 import com.wikiforge.core.application.dto.KnowledgeMaintenanceItemResponse;
 import com.wikiforge.core.application.dto.KnowledgeMaintenanceRunPageResponse;
 import com.wikiforge.core.application.dto.KnowledgeMaintenanceRunResponse;
+import com.wikiforge.core.application.dto.UpdateKnowledgeMaintenanceItemStatusRequest;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -20,7 +21,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -35,6 +38,7 @@ public class KnowledgeMaintenanceService {
     private static final int MAX_STALE_DAYS = 365;
     private static final int DEFAULT_LIMIT = 1000;
     private static final int MAX_LIMIT = 10000;
+    private static final Set<String> ITEM_STATUSES = Set.of("open", "resolved", "ignored");
 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
@@ -167,6 +171,72 @@ public class KnowledgeMaintenanceService {
             throw new BusinessException(ErrorCode.MAINTENANCE_RUN_NOT_FOUND);
         }
         return runs.get(0);
+    }
+
+    @Transactional
+    public KnowledgeMaintenanceItemResponse updateItemStatus(
+            String itemUid,
+            UpdateKnowledgeMaintenanceItemStatusRequest request
+    ) {
+        String normalizedItemUid = normalizeRequired(itemUid, "itemUid is required");
+        String status = normalizeRequired(request == null ? null : request.status(), "status is required")
+                .toLowerCase(Locale.ROOT);
+        if (!ITEM_STATUSES.contains(status)) {
+            throw new BusinessException(ErrorCode.MAINTENANCE_INVALID_INPUT, "status must be open, resolved or ignored");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        int updatedRows;
+        if ("open".equals(status)) {
+            updatedRows = jdbcTemplate.update("""
+                    UPDATE knowledge_maintenance_items
+                    SET status = 'open',
+                        resolution_note = NULL,
+                        resolved_by = NULL,
+                        resolved_at = NULL,
+                        updated_at = ?
+                    WHERE item_uid = ?
+                    """,
+                    now,
+                    normalizedItemUid
+            );
+        } else {
+            String resolutionNote = normalizeOptional(request.resolutionNote());
+            String resolvedBy = firstText(request.resolvedBy(), "web-ui");
+            updatedRows = jdbcTemplate.update("""
+                    UPDATE knowledge_maintenance_items
+                    SET status = ?,
+                        resolution_note = ?,
+                        resolved_by = ?,
+                        resolved_at = ?,
+                        updated_at = ?
+                    WHERE item_uid = ?
+                    """,
+                    status,
+                    resolutionNote,
+                    resolvedBy,
+                    now,
+                    now,
+                    normalizedItemUid
+            );
+        }
+        if (updatedRows == 0) {
+            throw new BusinessException(ErrorCode.MAINTENANCE_ITEM_NOT_FOUND);
+        }
+        return getItem(normalizedItemUid);
+    }
+
+    @Transactional(readOnly = true)
+    public KnowledgeMaintenanceItemResponse getItem(String itemUid) {
+        List<KnowledgeMaintenanceItemResponse> items = jdbcTemplate.query(
+                baseItemSelect() + " WHERE item_uid = ? LIMIT 1",
+                this::mapItem,
+                itemUid
+        );
+        if (items.isEmpty()) {
+            throw new BusinessException(ErrorCode.MAINTENANCE_ITEM_NOT_FOUND);
+        }
+        return items.get(0);
     }
 
     private void addMissingSourceContentIssues(
@@ -450,7 +520,9 @@ public class KnowledgeMaintenanceService {
         return """
                 SELECT item_uid, run_uid, issue_type, severity, content_type,
                     source_uid, file_uid, record_uid, chunk_uid, export_uid,
-                    title, summary, evidence_json, status, created_at, updated_at
+                    title, summary, evidence_json, status,
+                    resolution_note, resolved_by, resolved_at,
+                    created_at, updated_at
                 FROM knowledge_maintenance_items
                 """;
     }
@@ -486,6 +558,9 @@ public class KnowledgeMaintenanceService {
                 rs.getString("summary"),
                 rs.getString("evidence_json"),
                 rs.getString("status"),
+                rs.getString("resolution_note"),
+                rs.getString("resolved_by"),
+                toOffset(rs.getTimestamp("resolved_at")),
                 toOffset(rs.getTimestamp("created_at")),
                 toOffset(rs.getTimestamp("updated_at"))
         );
@@ -604,6 +679,14 @@ public class KnowledgeMaintenanceService {
             return null;
         }
         return value.trim();
+    }
+
+    private String normalizeRequired(String value, String message) {
+        String normalized = normalizeOptional(value);
+        if (normalized == null) {
+            throw new BusinessException(ErrorCode.MAINTENANCE_INVALID_INPUT, message);
+        }
+        return normalized;
     }
 
     private OffsetDateTime toOffset(Timestamp timestamp) {

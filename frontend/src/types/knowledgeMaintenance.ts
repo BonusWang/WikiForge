@@ -38,6 +38,9 @@ export interface KnowledgeMaintenanceItem {
   summary: string;
   evidenceJson?: string | null;
   status: string;
+  resolutionNote?: string | null;
+  resolvedBy?: string | null;
+  resolvedAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -62,4 +65,10 @@ export interface KnowledgeMaintenanceItemListParams {
   status?: string;
   page?: number;
   pageSize?: number;
+}
+
+export interface UpdateKnowledgeMaintenanceItemStatusRequest {
+  status: 'open' | 'resolved' | 'ignored';
+  resolutionNote?: string;
+  resolvedBy?: string;
 }

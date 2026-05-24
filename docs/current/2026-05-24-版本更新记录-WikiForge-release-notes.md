@@ -1,5 +1,32 @@
 # 2026-05-24 WikiForge 版本更新记录 Release Notes
 
+## 2.0-v2-preview.3 - R6-3.1 维护问题处理闭环
+
+发布日期：2026-05-24
+
+本版本在 R6-3 维护巡检首版基础上补齐人工处理闭环。R6-3 已经能发现问题，本版本让问题可以被标记、过滤和追踪。
+
+### 更新内容
+
+- 维护问题支持状态流转：`open`、`resolved`、`ignored`。
+- “重新打开”操作将问题恢复为 `open`。
+- `knowledge_maintenance_items` 增加处理备注、处理人和处理时间字段。
+- 新增 `PATCH /api/v1/maintenance-items/{itemUid}/status`。
+- Dashboard 维护巡检问题列表增加已解决、忽略、重新打开操作。
+
+### 验证结果
+
+- 后端定向 Maven 测试通过：`KnowledgeMaintenanceApiIntegrationTests` 和 `MigrationSqlCompatibilityTests` 合计 13 个测试，0 失败。
+- 后端全量 Maven 测试通过：5 个模块合计 65 个测试，0 失败。
+- 前端构建通过，保留既有 Rollup 大 chunk 和 VueUse PURE 注释 warning。
+- Docker Compose 生产与开发配置通过。
+- `git diff --check`、敏感信息扫描和禁止路径扫描通过。
+- Vite preview `http://127.0.0.1:3003/` 返回 200。
+
+### 版本边界
+
+本版本不做自动修复、不删除资料、不改写 Obsidian、不做完整事件历史表、不接真实向量库、不做办公室视图。
+
 ## 2.0-v2-preview.2 - R6-3 知识维护巡检
 
 发布日期：2026-05-24

@@ -1,11 +1,13 @@
 import { http, type ApiResponse } from '../../services/http';
 import type {
   CreateKnowledgeMaintenanceRunRequest,
+  KnowledgeMaintenanceItem,
   KnowledgeMaintenanceItemListParams,
   KnowledgeMaintenanceItemPageResponse,
   KnowledgeMaintenanceRun,
   KnowledgeMaintenanceRunListParams,
-  KnowledgeMaintenanceRunPageResponse
+  KnowledgeMaintenanceRunPageResponse,
+  UpdateKnowledgeMaintenanceItemStatusRequest
 } from '../../types/knowledgeMaintenance';
 
 function unwrapResponse<T>(response: ApiResponse<T | null>): T {
@@ -37,5 +39,16 @@ export async function listKnowledgeMaintenanceItems(
   const response = await http.get<ApiResponse<KnowledgeMaintenanceItemPageResponse | null>>('/v1/maintenance-items', {
     params
   });
+  return unwrapResponse(response.data);
+}
+
+export async function updateKnowledgeMaintenanceItemStatus(
+  itemUid: string,
+  payload: UpdateKnowledgeMaintenanceItemStatusRequest
+): Promise<KnowledgeMaintenanceItem> {
+  const response = await http.patch<ApiResponse<KnowledgeMaintenanceItem | null>>(
+    `/v1/maintenance-items/${itemUid}/status`,
+    payload
+  );
   return unwrapResponse(response.data);
 }

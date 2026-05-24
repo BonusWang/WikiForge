@@ -538,7 +538,8 @@ Vector Export Service 属于 GBrain 运行层。它不替代 Obsidian Wiki，而
 - 对已收集和已导出的知识资产做确定性巡检。
 - 发现空正文、重复正文、长期未归档个人记录、空向量导出和长期 pending chunk。
 - 把巡检结果写入 MySQL 运行账本，供 Web UI 和后续 Maintain Agent 查看。
-- 首版只记录问题，不自动修复、不删除资料、不改写 Obsidian。
+- R6-3 首版只记录问题，不自动修复、不删除资料、不改写 Obsidian。
+- R6-3.1 增加人工处理闭环，支持将问题标记为已解决、忽略或重新打开，并记录处理备注。
 
 R6-3 首版实现范围：
 
@@ -547,7 +548,14 @@ R6-3 首版实现范围：
 - Dashboard 新增 `Maintenance 维护巡检` 区块，支持手动运行、查看运行记录和筛选问题列表。
 - 巡检规则基于现有 `source_contents`、`personal_records`、`vector_export_jobs` 和 `content_chunks`。
 
-本服务是后续 Maintain Agent 的最小账本基础，不要求本轮引入调度器、LLM、真实向量库或办公室视图。
+R6-3.1 处理闭环范围：
+
+- Core Service 新增 `PATCH /api/v1/maintenance-items/{itemUid}/status`。
+- `knowledge_maintenance_items` 增加 `resolution_note`、`resolved_by`、`resolved_at`。
+- Dashboard 问题列表增加 `已解决`、`忽略`、`重新打开` 操作。
+- 重新打开将状态恢复为 `open`，并清空本次处理字段。
+
+本服务是后续 Maintain Agent 的最小账本基础，不要求本轮引入调度器、LLM、真实向量库、自动修复或办公室视图。
 
 ### 3.11 MCP Service
 

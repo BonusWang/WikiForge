@@ -22,7 +22,7 @@ Flyway 不在第一个 migration 中创建全部长期规划表。
 | MVP 5 | `mcp_tool_calls`、`personal_records` | Core Service，后续可拆 MCP / Record Service | 轻量 MCP HTTP Preview、调用日志、个人记录最小写入 |
 | V1 | `personal_records` 扩展归档字段，复用 `sources/source_files/source_contents` | Core Service，后续可拆 Link / Record Service | 链接资料收集、个人记录 REST API、个人记录 Obsidian 归档 |
 | V2 / R6-1 | `vector_export_jobs`、`content_chunks` | Core Service，后续可拆 Vector Service | JSONL chunk 导出契约、embedding 状态预留 |
-| V2 / R6-3 | `knowledge_maintenance_runs`、`knowledge_maintenance_items` | Core Service，后续可拆 Agent / Maintain Service | 知识维护巡检运行账本和问题列表 |
+| V2 / R6-3.1 | `knowledge_maintenance_runs`、`knowledge_maintenance_items` | Core Service，后续可拆 Agent / Maintain Service | 知识维护巡检运行账本、问题列表和人工处理闭环 |
 | V2 后续 | `mcp_servers`、`embedding_jobs`、办公室视图相关表 | MCP / Vector / Agent Service | 完整 MCP 配置、真实向量库、混合检索和运行层 |
 
 ### 0.1.1 服务归属原则
@@ -657,7 +657,14 @@ V20260524_003__create_knowledge_maintenance_tables.sql
 
 ## 20.2 knowledge_maintenance_items
 
-记录每次知识维护巡检发现的问题。首版问题只读展示，后续再扩展忽略、修复建议和自动修复。
+记录每次知识维护巡检发现的问题。R6-3.1 增加人工处理闭环，支持已解决、忽略和重新打开；后续再扩展修复建议、自动修复和完整事件历史表。
+
+对应 migration：
+
+```text
+V20260524_003__create_knowledge_maintenance_tables.sql
+V20260524_004__extend_maintenance_items_workflow.sql
+```
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
@@ -675,7 +682,10 @@ V20260524_003__create_knowledge_maintenance_tables.sql
 | title | varchar(512) null | 便于 UI 展示的标题 |
 | summary | text | 问题摘要 |
 | evidence_json | json null | 证据 JSON，例如 hash、数量、目标 collection、创建时间 |
-| status | varchar(64) | open、resolved、ignored；首版只写 open |
+| status | varchar(64) | open、resolved、ignored；重新打开时恢复 open |
+| resolution_note | text null | 本次处理备注 |
+| resolved_by | varchar(128) null | 本次处理人，Web UI 默认 web-ui |
+| resolved_at | datetime null | 本次处理时间；重新打开时清空 |
 | created_at | datetime | 创建时间 |
 | updated_at | datetime | 更新时间 |
 
