@@ -2,10 +2,45 @@
 
 ## 版本索引 Version Index
 
-- 最新版本：v5.6
-- 最新小节：`2026-05-24 R6-UI-1 / Console 暗色开发者控制台主题`
+- 最新版本：v5.7
+- 最新小节：`2026-05-24 wo-wikiforge-version-release-8 / WikiForge 版本 API 小版本`
 - 推荐阅读：新 AI 开始工作时，先读本索引和最新小节，再按任务需要阅读历史小节。
 - 历史范围：v0.1-v0.9 记录需求发掘、架构评审、MVP0 骨架、微服务拆分和同日滚动归档规则；仅在追溯需求来源或架构决策时阅读。
+
+## 2026-05-24 wo-wikiforge-version-release-8 / WikiForge 版本 API 小版本
+
+本轮执行 ForgeOps 工单 `wo-wikiforge-version-release-8`：为 WikiForge 增加版本 API，并发布一个项目内小版本记录。用户明确要求本轮不提交、不推送、不创建 PR、不创建 tag 或 GitHub Release，因此本轮只完成代码、文档和本地验证，后续交由 ForgeOps Bridge 收口。
+
+实现内容：
+
+- Core Service 新增 `GET /api/v1/version`。
+- 响应继续使用统一 `ApiResponse<T>`。
+- 返回 `product`、`service`、`version`、`stage`、`releaseDate` 和 `apiBasePath`。
+- 新增 `VersionInfoResponse`、`VersionService` 和 `VersionController`。
+- `application.yml` 增加 `wikiforge.release.*` 默认配置，当前版本为 `2.0-v2-preview.4`。
+- 根 `README.md` 和版本更新记录同步到 `2.0-v2-preview.4`。
+
+TDD 验证记录：
+
+```text
+RED: mvn -s %TEMP%\wikiforge-maven-settings.xml -gs %TEMP%\wikiforge-maven-settings.xml "-Dmaven.repo.local=E:\repository" -pl wikiforge-core-service -am "-Dtest=WikiForgeCoreApplicationTests" "-Dsurefire.failIfNoSpecifiedTests=false" test
+Result: expected fail, /api/v1/version returned 404 NOT_FOUND
+
+GREEN: mvn -s %TEMP%\wikiforge-maven-settings.xml -gs %TEMP%\wikiforge-maven-settings.xml "-Dmaven.repo.local=E:\repository" -pl wikiforge-core-service -am "-Dtest=WikiForgeCoreApplicationTests" "-Dsurefire.failIfNoSpecifiedTests=false" test
+Result: pass, Tests run: 2, Failures: 0, Errors: 0, Skipped: 0
+
+mvn -s %TEMP%\wikiforge-maven-settings.xml -gs %TEMP%\wikiforge-maven-settings.xml "-Dmaven.repo.local=E:\repository" -pl wikiforge-core-service -am test
+Result: pass, wikiforge-common + wikiforge-core-service, Tests run: 46, Failures: 0, Errors: 0, Skipped: 0
+
+echo wikiforge-test-ok
+Result: wikiforge-test-ok
+```
+
+当前状态：
+
+- 版本 API 小版本代码完成。
+- 本轮不涉及 Flyway migration、Docker Compose、前端页面或数据库结构。
+- 不创建 Git tag / GitHub Release；交由 ForgeOps Bridge 处理。
 
 ## 2026-05-24 R6-UI-1 / Console 暗色开发者控制台主题
 

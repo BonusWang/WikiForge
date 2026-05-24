@@ -8,9 +8,9 @@
 
 ## 当前阶段
 
-- 当前版本：`2.0-v2-preview.3`
-- 当前阶段：R6-3.1 / V2 知识维护处理闭环
-- 已完成：本地源文件归集、Obsidian Source Note、正文解析、AI 审核、MCP Preview、LifeOS 个人记录、JSONL chunk 导出、知识维护巡检、维护问题处理闭环
+- 当前版本：`2.0-v2-preview.4`
+- 当前阶段：R6-version-api / WikiForge 版本 API 小版本
+- 已完成：本地源文件归集、Obsidian Source Note、正文解析、AI 审核、MCP Preview、LifeOS 个人记录、JSONL chunk 导出、知识维护巡检、维护问题处理闭环、Core 版本 API
 - 未完成：真实向量库接入、Hybrid Search、办公室视图、定时总结和长期记忆
 
 ## 产品闭环
@@ -24,6 +24,7 @@
   -> MCP / UI / JSONL chunks 复用
   -> 维护巡检发现空正文、重复内容和未归档记录
   -> 人工标记已解决、忽略或重新打开维护问题
+  -> 版本 API 暴露当前 WikiForge 小版本
   -> 后续导入真实向量库
 ```
 
@@ -53,4 +54,4 @@
 
 ## 当前状态
 
-R6-3.1 已完成维护问题处理闭环。R6-2 Hybrid Search 仍等待向量库选型和部署方式；下一步可继续做 R6-3.2 修复建议模板、R6-4 办公室视图或 R6-5 定时总结。
+R6-version-api 已完成 Core 版本 API 小版本。R6-2 Hybrid Search 仍等待向量库选型和部署方式；下一步可继续做 R6-3.2 修复建议模板、R6-4 办公室视图或 R6-5 定时总结。

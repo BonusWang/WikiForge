@@ -194,6 +194,18 @@ Console 视图视觉标准：
 
 Core Service 是 MVP 对外业务 API 入口。UI 不直接调用 Worker 内部接口。
 
+基础版本 API：
+
+```text
+GET /api/v1/version
+```
+
+用途：
+
+- 返回当前 WikiForge 产品名、服务名、小版本、阶段、发布日期和 API 基础路径。
+- 默认版本由 `wikiforge.release.*` 配置提供，可通过环境变量覆盖。
+- 供 ForgeOps Bridge、运维脚本、后续 UI 和外部 Agent 判断当前实例版本。
+
 ### 3.2.1 Worker Service
 
 职责：
