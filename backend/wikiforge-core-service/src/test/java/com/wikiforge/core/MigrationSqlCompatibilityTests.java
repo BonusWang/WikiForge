@@ -124,4 +124,19 @@ class MigrationSqlCompatibilityTests {
             assertThat(migrationSql).contains("KEY idx_maintenance_items_resolved_at (resolved_at)");
         }
     }
+
+    @Test
+    void wikiCompileMigrationCreatesPageAndIntegrationTables() throws Exception {
+        try (var inputStream = getClass().getResourceAsStream(
+                "/db/migration/V20260524_005__create_wiki_compile_tables.sql"
+        )) {
+            assertThat(inputStream).isNotNull();
+            String migrationSql = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+            assertThat(migrationSql).contains("CREATE TABLE wiki_pages");
+            assertThat(migrationSql).contains("CREATE TABLE wiki_integrations");
+            assertThat(migrationSql).contains("page_type VARCHAR(64) NOT NULL");
+            assertThat(migrationSql).contains("confidence_score DECIMAL(5,4) NOT NULL DEFAULT 0");
+            assertThat(migrationSql).contains("KEY idx_wiki_integrations_status_created (status, created_at)");
+        }
+    }
 }

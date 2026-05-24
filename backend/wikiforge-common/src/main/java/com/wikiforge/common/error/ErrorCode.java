@@ -29,6 +29,9 @@ public enum ErrorCode {
     MAINTENANCE_RUN_NOT_FOUND("MAINTENANCE_002", "maintenance run not found"),
     MAINTENANCE_FAILED("MAINTENANCE_003", "maintenance scan failed"),
     MAINTENANCE_ITEM_NOT_FOUND("MAINTENANCE_004", "maintenance item not found"),
+    WIKI_INVALID_INPUT("WIKI_001", "invalid wiki input"),
+    WIKI_PAGE_NOT_FOUND("WIKI_002", "wiki page not found"),
+    WIKI_INTEGRATION_NOT_FOUND("WIKI_003", "wiki integration not found"),
     ORCHESTRATION_TASK_NOT_FOUND("ORCHESTRATION_001", "orchestration task not found"),
     WORKER_REJECTED_IMPORT_TASK("WORKER_001", "worker rejected import task"),
     VALIDATION_FAILED("COMMON_001", "validation failed");

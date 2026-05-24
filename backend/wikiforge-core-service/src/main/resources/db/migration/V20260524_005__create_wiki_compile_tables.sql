@@ -1,0 +1,42 @@
+CREATE TABLE wiki_pages (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    page_uid VARCHAR(64) NOT NULL,
+    page_type VARCHAR(64) NOT NULL,
+    title VARCHAR(512) NOT NULL,
+    slug VARCHAR(255) NOT NULL,
+    vault_path VARCHAR(1024) NOT NULL,
+    status VARCHAR(64) NOT NULL DEFAULT 'active',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_wiki_pages_page_uid (page_uid),
+    UNIQUE KEY uk_wiki_pages_slug (slug),
+    KEY idx_wiki_pages_type_status (page_type, status),
+    KEY idx_wiki_pages_vault_path (vault_path(255))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE wiki_integrations (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    integration_uid VARCHAR(64) NOT NULL,
+    source_id BIGINT NOT NULL,
+    source_file_id BIGINT NULL,
+    wiki_page_id BIGINT NULL,
+    run_id BIGINT NOT NULL,
+    status VARCHAR(64) NOT NULL,
+    risk_level VARCHAR(32) NOT NULL,
+    confidence_score DECIMAL(5,4) NOT NULL DEFAULT 0,
+    change_summary TEXT NULL,
+    proposed_markdown LONGTEXT NULL,
+    applied_at DATETIME NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_wiki_integrations_uid (integration_uid),
+    KEY idx_wiki_integrations_status_created (status, created_at),
+    KEY idx_wiki_integrations_page_status (wiki_page_id, status),
+    KEY idx_wiki_integrations_source (source_id),
+    CONSTRAINT fk_wiki_integrations_source FOREIGN KEY (source_id) REFERENCES sources(id),
+    CONSTRAINT fk_wiki_integrations_source_file FOREIGN KEY (source_file_id) REFERENCES source_files(id),
+    CONSTRAINT fk_wiki_integrations_page FOREIGN KEY (wiki_page_id) REFERENCES wiki_pages(id),
+    CONSTRAINT fk_wiki_integrations_run FOREIGN KEY (run_id) REFERENCES agent_runs(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

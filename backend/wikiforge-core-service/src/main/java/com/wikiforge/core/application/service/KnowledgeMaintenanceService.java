@@ -60,6 +60,8 @@ public class KnowledgeMaintenanceService {
         addMissingSourceContentIssues(items, runUid, limit, now);
         addDuplicateSourceContentIssues(items, runUid, limit, now);
         addUnarchivedPersonalRecordIssues(items, runUid, cutoff, limit, now);
+        addEmptyVectorExportIssues(items, runUid, limit, now);
+        addStaleVectorChunkIssues(items, runUid, cutoff, limit, now);
 
         jdbcTemplate.update("""
                 INSERT INTO knowledge_maintenance_runs (
@@ -270,7 +272,7 @@ public class KnowledgeMaintenanceService {
                     null,
                     null,
                     candidate.title(),
-                    "Source Content 正文为空，后续摘要和 Wiki 编译会缺少材料。",
+                    "Source Content 正文为空，后续摘要、Wiki 编译和向量导出会缺少材料。",
                     Map.of("contentUid", candidate.contentUid()),
                     now
             ));
@@ -357,6 +359,86 @@ public class KnowledgeMaintenanceService {
                     "Personal Record 尚未归档到 Obsidian，可能还停留在收集层。",
                     Map.of(
                             "recordType", candidate.recordType(),
+                            "createdAt", candidate.createdAt() == null ? "" : candidate.createdAt().toString()
+                    ),
+                    now
+            ));
+        }
+    }
+
+    private void addEmptyVectorExportIssues(
+            List<MaintenanceItemRow> items,
+            String runUid,
+            int limit,
+            LocalDateTime now
+    ) {
+        List<VectorExportCandidate> candidates = jdbcTemplate.query("""
+                SELECT export_uid, scope, target_collection, created_at
+                FROM vector_export_jobs
+                WHERE status = 'completed' AND total_count = 0
+                ORDER BY created_at DESC, id DESC
+                LIMIT ?
+                """,
+                this::mapVectorExportCandidate,
+                limit
+        );
+        for (VectorExportCandidate candidate : candidates) {
+            items.add(newItem(
+                    runUid,
+                    "empty_vector_export",
+                    "low",
+                    "vector_export",
+                    null,
+                    null,
+                    null,
+                    null,
+                    candidate.exportUid(),
+                    firstText(candidate.targetCollection(), "空 Vector Export"),
+                    "Vector Export 已完成但 chunk 数为 0，可能没有可导出的正文。",
+                    Map.of(
+                            "scope", candidate.scope(),
+                            "targetCollection", candidate.targetCollection(),
+                            "createdAt", candidate.createdAt() == null ? "" : candidate.createdAt().toString()
+                    ),
+                    now
+            ));
+        }
+    }
+
+    private void addStaleVectorChunkIssues(
+            List<MaintenanceItemRow> items,
+            String runUid,
+            LocalDateTime cutoff,
+            int limit,
+            LocalDateTime now
+    ) {
+        List<VectorChunkCandidate> candidates = jdbcTemplate.query("""
+                SELECT chunk_uid, export_uid, content_type, source_uid, file_uid, record_uid,
+                    title, target_collection, created_at
+                FROM content_chunks
+                WHERE embedding_status = 'pending' AND created_at < ?
+                ORDER BY created_at ASC, id ASC
+                LIMIT ?
+                """,
+                this::mapVectorChunkCandidate,
+                cutoff,
+                limit
+        );
+        for (VectorChunkCandidate candidate : candidates) {
+            items.add(newItem(
+                    runUid,
+                    "stale_vector_chunk",
+                    "medium",
+                    candidate.contentType(),
+                    candidate.sourceUid(),
+                    candidate.fileUid(),
+                    candidate.recordUid(),
+                    candidate.chunkUid(),
+                    candidate.exportUid(),
+                    firstText(candidate.title(), candidate.chunkUid()),
+                    "Content Chunk 长时间处于 pending，后续接入向量库后需要补偿导入。",
+                    Map.of(
+                            "targetCollection", candidate.targetCollection(),
                             "createdAt", candidate.createdAt() == null ? "" : candidate.createdAt().toString()
                     ),
                     now
@@ -515,6 +597,31 @@ public class KnowledgeMaintenanceService {
         );
     }
 
+    private VectorExportCandidate mapVectorExportCandidate(ResultSet rs, int rowNum) throws SQLException {
+        Timestamp createdAt = rs.getTimestamp("created_at");
+        return new VectorExportCandidate(
+                rs.getString("export_uid"),
+                rs.getString("scope"),
+                rs.getString("target_collection"),
+                createdAt == null ? null : createdAt.toLocalDateTime()
+        );
+    }
+
+    private VectorChunkCandidate mapVectorChunkCandidate(ResultSet rs, int rowNum) throws SQLException {
+        Timestamp createdAt = rs.getTimestamp("created_at");
+        return new VectorChunkCandidate(
+                rs.getString("chunk_uid"),
+                rs.getString("export_uid"),
+                rs.getString("content_type"),
+                rs.getString("source_uid"),
+                rs.getString("file_uid"),
+                rs.getString("record_uid"),
+                rs.getString("title"),
+                rs.getString("target_collection"),
+                createdAt == null ? null : createdAt.toLocalDateTime()
+        );
+    }
+
     private int normalizeStaleDays(Integer value) {
         if (value == null || value <= 0) {
             return DEFAULT_STALE_DAYS;
@@ -632,6 +739,27 @@ public class KnowledgeMaintenanceService {
             String recordUid,
             String recordType,
             String title,
+            LocalDateTime createdAt
+    ) {
+    }
+
+    private record VectorExportCandidate(
+            String exportUid,
+            String scope,
+            String targetCollection,
+            LocalDateTime createdAt
+    ) {
+    }
+
+    private record VectorChunkCandidate(
+            String chunkUid,
+            String exportUid,
+            String contentType,
+            String sourceUid,
+            String fileUid,
+            String recordUid,
+            String title,
+            String targetCollection,
             LocalDateTime createdAt
     ) {
     }

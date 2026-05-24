@@ -463,6 +463,20 @@ h1 {
   align-items: end;
 }
 
+.advanced-import-options {
+  grid-column: 1 / -1;
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  border-radius: 8px;
+  background: rgba(2, 8, 16, 0.28);
+}
+
+.advanced-import-options .el-collapse-item__wrap,
+.advanced-import-options .el-collapse-item__header {
+  border-bottom-color: rgba(148, 163, 184, 0.1);
+  background: transparent;
+  color: var(--wf-muted);
+}
+
 .import-form .el-form-item,
 .maintenance-form .el-form-item,
 .lifeos-form .el-form-item {
@@ -483,11 +497,20 @@ h1 {
   gap: 14px;
 }
 
+.wiki-compile-grid,
+.obsidian-page-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
 .maintenance-pane,
 .mcp-tools-pane,
 .mcp-calls-pane,
 .lifeos-form-pane,
-.review-section {
+.review-section,
+.wiki-panel {
   display: grid;
   gap: 10px;
   min-width: 0;
@@ -566,6 +589,27 @@ h1 {
   display: grid;
   grid-template-columns: minmax(160px, 1fr) minmax(140px, 0.7fr) minmax(160px, 0.8fr);
   gap: 10px;
+}
+
+.wiki-table-block {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.wiki-filter-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.8fr) minmax(170px, 1fr) minmax(170px, 1fr);
+  gap: 10px;
+  width: min(100%, 620px);
+}
+
+.vector-export-form {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.8fr) minmax(180px, 1fr) minmax(150px, 0.7fr) minmax(150px, 0.7fr);
+  gap: 12px 16px;
+  align-items: end;
+  margin-bottom: 14px;
 }
 
 .lifeos-grid {
@@ -1041,11 +1085,15 @@ h1 {
   .maintenance-toolbar,
   .maintenance-toolbar.issue-toolbar,
   .ai-config-strip,
-  .mcp-filter-row {
+  .mcp-filter-row,
+  .wiki-filter-row,
+  .vector-export-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .lifeos-grid {
+  .lifeos-grid,
+  .wiki-compile-grid,
+  .obsidian-page-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1096,6 +1144,8 @@ h1 {
   .maintenance-toolbar.issue-toolbar,
   .ai-config-strip,
   .mcp-filter-row,
+  .wiki-filter-row,
+  .vector-export-form,
   .lifeos-record-toolbar,
   .record-form-row {
     grid-template-columns: 1fr;

@@ -1,6 +1,6 @@
 # 知识熔炉 WikiForge
 
-知识熔炉 WikiForge 是一个本地优先的个人知识与资料整理系统。它先把散落的文件、在线资料和个人记录收集整理起来，再逐步沉淀到 Obsidian、MySQL 运行账本和后续向量库。
+知识熔炉 WikiForge 是一个本地优先的个人知识与资料整理系统。它先把散落的本地文件和手工链接资料收集整理起来，再由 AI 编译为可维护的 Obsidian Topic / Project Wiki 页面；MySQL 负责索引、状态、运行账本和集成记录。
 
 项目当前原则不是一上来做完整 RAG，也不是直接搭复杂多 Agent 平台，而是先解决一个现实问题：
 
@@ -8,23 +8,22 @@
 
 ## 当前阶段
 
-- 当前版本：`2.0-v2-preview.3`
-- 当前阶段：R6-3.1 / V2 知识维护处理闭环
-- 已完成：本地源文件归集、Obsidian Source Note、正文解析、AI 审核、MCP Preview、LifeOS 个人记录、JSONL chunk 导出、知识维护巡检、维护问题处理闭环
+- 当前版本：`2.0-v2-preview.4`
+- 当前阶段：R6-UI-2 / 路线与信息架构纠偏，进入最小 Wiki 编译闭环
+- 已完成：本地源文件归集、链接资料收集、Obsidian Source Note、正文解析、AI 审核、MCP Preview、LifeOS 个人记录、JSONL chunk 导出、知识维护巡检、维护问题处理闭环、最小 Wiki 页面注册与 Wiki 更新审核/自动写入账本
 - 未完成：真实向量库接入、Hybrid Search、办公室视图、定时总结和长期记忆
 
 ## 产品闭环
 
 ```text
-本地文件 / 在线链接 / 个人记录
+本地文件 / 手工链接资料
   -> Raw Sources 和 MySQL 运行账本
-  -> 正文解析和 Source Note
-  -> AI 辅助整理与人工审核
-  -> Obsidian Vault 归档
-  -> MCP / UI / JSONL chunks 复用
-  -> 维护巡检发现空正文、重复内容和未归档记录
-  -> 人工标记已解决、忽略或重新打开维护问题
-  -> 后续导入真实向量库
+  -> 正文解析和 Source Note 溯源层
+  -> AI 编译为 Topic / Project Wiki 更新建议
+  -> 普通资料自动追加 WikiForge Updates 托管区块
+  -> 敏感、低置信度、冲突或缺目标页进入审核队列
+  -> Obsidian Wiki 页面成为长期知识正文
+  -> MCP / UI / JSONL chunks / Knowledge Health 作为高级运行能力复用
 ```
 
 ## 技术方向
@@ -34,7 +33,7 @@
 - 数据库：MySQL 8.x
 - 知识沉淀：Obsidian Markdown Vault
 - 文件归集：本地 Raw Sources 目录
-- 当前运行层：MCP HTTP Preview、JSONL Vector Export、Knowledge Maintenance
+- 当前运行层：Wiki Compile、Review Queue、MCP HTTP Preview、JSONL Vector Export、Knowledge Maintenance
 - 后续拓展：真实向量库、在线文档连接器、办公室视图、长期记忆
 
 ## 文档
@@ -53,4 +52,4 @@
 
 ## 当前状态
 
-R6-3.1 已完成维护问题处理闭环。R6-2 Hybrid Search 仍等待向量库选型和部署方式；下一步可继续做 R6-3.2 修复建议模板、R6-4 办公室视图或 R6-5 定时总结。
+R6-UI-2 已完成路线与信息架构纠偏：主线从 “Source Note 终点” 调整为 “Source Note 溯源层 -> Topic / Project Wiki 页面”。当前实现了最小 `wiki_pages` / `wiki_integrations` 账本、Wiki 编译 API、自动追加托管区块和审核通过/拒绝接口。R6-2 Hybrid Search、完整向量库、办公室视图、长期记忆和个人记录周期总结继续挂起。

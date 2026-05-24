@@ -42,6 +42,7 @@ storage/
 uploads/
 tmp/
 temp/
+.forgeops/
 
 # Secrets / keys
 *.key

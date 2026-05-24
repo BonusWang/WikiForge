@@ -2,10 +2,34 @@
 
 ## 版本索引 Version Index
 
-- 最新版本：v5.7
-- 最新小节：`2026-05-24 R6-UI-2 / Console 信息架构与导入体验纠偏`
+- 最新版本：v5.8
+- 最新小节：`2026-05-24 R6-UI-2 / 路线纠偏与 Wiki 编译闭环`
 - 推荐阅读：新 AI 开始工作时，先读本索引和最新小节，再按任务需要阅读历史小节。
 - 历史范围：v0.1-v0.9 记录需求发掘、架构评审、MVP0 骨架、微服务拆分和同日滚动归档规则；仅在追溯需求来源或架构决策时阅读。
+
+## 2026-05-24 R6-UI-2 / 路线纠偏与 Wiki 编译闭环
+
+本轮作为 R6-UI-2 的需求纠偏实现：确认 `Source Note` 是溯源中间层，不是最终价值终点。主线重定为“本地文件 + 手工链接资料 -> 整理/解析 -> AI 编译 -> Topic / Project Wiki 页面 -> 中等自动写入或审核队列”。
+
+实现内容：
+
+- 后端新增 `wiki_pages` 和 `wiki_integrations` migration，记录用户确认的 Topic / Project 页面和 Source File 到 Wiki 页的更新建议/写入结果。
+- 新增 API：`POST /api/v1/wiki-pages`、`GET /api/v1/wiki-pages`、`POST /api/v1/source-files/{fileUid}/wiki-compile-runs`、`GET /api/v1/wiki-integrations`、`approve`、`reject`。
+- 自动写入只在低风险、高置信度、非重复、目标页存在时追加 `WikiForge Updates` 托管区块；敏感、低置信度、冲突或缺目标页进入 `pending_review`。
+- 恢复 Knowledge Health 的高级向量诊断：`empty_vector_export` 和 `stale_vector_chunk`，但主流程默认聚焦资料质量。
+- Dashboard 改为工作流导航：总览、收集入口、待整理资料、Wiki 编译、审核队列、Obsidian / Wiki 页面、高级能力。
+- 本地导入保留默认归集仓库，高级折叠区可填写 `rawSourcesRoot` 覆盖，后端仍校验配置一致。
+- MCP、Vector Export、Knowledge Health 放入高级能力区，不再抢资料整理主流程。
+
+验证记录：
+
+```text
+RED: WikiCompileApiIntegrationTests -> expected 404 before API implementation
+GREEN: WikiCompileApiIntegrationTests -> 4 tests passed
+RED: KnowledgeMaintenanceApiIntegrationTests -> expected 3 vs 5 before restoring vector diagnostics
+GREEN: KnowledgeMaintenanceApiIntegrationTests -> 5 tests passed
+npm --prefix frontend run build -> pass, existing VueUse PURE annotation and chunk warnings only
+```
 
 ## 2026-05-24 R6-UI-2 / Console 信息架构与导入体验纠偏
 
@@ -24,7 +48,7 @@
 - Dashboard 增加左侧导航：系统概览、文件导入、LifeOS 收集、审核队列、MCP Preview、知识库体检。
 - 本地导入表单移除 `rawSourcesRoot` 输入项，后端 `CreateLocalImportJobRequest.rawSourcesRoot` 改为可选，默认读取 `wikiforge.storage.raw-sources-root`。
 - 后端会把配置中的相对 Raw Sources 路径解析为服务工作目录下的绝对路径，避免本地 jar 默认 `./data/raw-sources` 导致导入接口误报路径非法。
-- 前端移除 Vector Export 入口，文档说明向量导出后续仅作为内部管道或高级能力评估。
+- 前端将 Vector Export 移出主流程，改放高级能力区，文档说明向量导出后续仅作为内部管道或高级能力评估。
 - Knowledge Maintenance 默认体检规则收敛为：空正文、重复正文、长期未归档个人记录。
 - 维护页改名为 `知识库体检 Knowledge Health`，并增加“不自动删除、移动或改写资料”的说明。
 - 导入任务状态 badge 增加 pending、running、completed、failed、cancelled 的颜色区分。

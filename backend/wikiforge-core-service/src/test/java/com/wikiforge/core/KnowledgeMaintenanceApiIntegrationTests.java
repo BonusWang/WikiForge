@@ -39,6 +39,8 @@ class KnowledgeMaintenanceApiIntegrationTests {
         restTemplate.getRestTemplate().setRequestFactory(new JdkClientHttpRequestFactory());
         jdbcTemplate.execute("DROP TABLE IF EXISTS knowledge_maintenance_items");
         jdbcTemplate.execute("DROP TABLE IF EXISTS knowledge_maintenance_runs");
+        jdbcTemplate.execute("DROP TABLE IF EXISTS content_chunks");
+        jdbcTemplate.execute("DROP TABLE IF EXISTS vector_export_jobs");
         jdbcTemplate.execute("DROP TABLE IF EXISTS personal_records");
         jdbcTemplate.execute("DROP TABLE IF EXISTS source_contents");
         jdbcTemplate.execute("DROP TABLE IF EXISTS source_files");
@@ -148,6 +150,48 @@ class KnowledgeMaintenanceApiIntegrationTests {
                 )
                 """);
         jdbcTemplate.execute("""
+                CREATE TABLE vector_export_jobs (
+                    id BIGINT NOT NULL AUTO_INCREMENT,
+                    export_uid VARCHAR(64) NOT NULL,
+                    scope VARCHAR(64) NOT NULL,
+                    target_collection VARCHAR(128) NOT NULL,
+                    export_format VARCHAR(32) NOT NULL DEFAULT 'jsonl',
+                    status VARCHAR(64) NOT NULL DEFAULT 'completed',
+                    total_count INT NOT NULL DEFAULT 0,
+                    export_file_name VARCHAR(255) NULL,
+                    export_relative_path CLOB NULL,
+                    error_message CLOB NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    finished_at TIMESTAMP NULL,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY uk_vector_export_jobs_export_uid (export_uid)
+                )
+                """);
+        jdbcTemplate.execute("""
+                CREATE TABLE content_chunks (
+                    id BIGINT NOT NULL AUTO_INCREMENT,
+                    chunk_uid VARCHAR(64) NOT NULL,
+                    export_uid VARCHAR(64) NOT NULL,
+                    content_type VARCHAR(64) NOT NULL,
+                    source_uid VARCHAR(64) NULL,
+                    file_uid VARCHAR(64) NULL,
+                    record_uid VARCHAR(64) NULL,
+                    title VARCHAR(512) NULL,
+                    chunk_index INT NOT NULL DEFAULT 0,
+                    chunk_text CLOB NOT NULL,
+                    text_hash VARCHAR(128) NOT NULL,
+                    char_count INT NOT NULL DEFAULT 0,
+                    token_estimate INT NOT NULL DEFAULT 0,
+                    metadata_json CLOB NULL,
+                    embedding_status VARCHAR(64) NOT NULL DEFAULT 'pending',
+                    target_collection VARCHAR(128) NOT NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY uk_content_chunks_chunk_uid (chunk_uid)
+                )
+                """);
+        jdbcTemplate.execute("""
                 CREATE TABLE knowledge_maintenance_runs (
                     id BIGINT NOT NULL AUTO_INCREMENT,
                     run_uid VARCHAR(64) NOT NULL,
@@ -206,14 +250,14 @@ class KnowledgeMaintenanceApiIntegrationTests {
         assertThat(data.path("runUid").asText()).startsWith("maint_");
         assertThat(data.path("status").asText()).isEqualTo("completed");
         assertThat(data.path("staleDays").asInt()).isEqualTo(1);
-        assertThat(data.path("issueCount").asInt()).isEqualTo(3);
+        assertThat(data.path("issueCount").asInt()).isEqualTo(5);
 
         Integer itemRows = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM knowledge_maintenance_items WHERE run_uid = ? AND status = 'open'",
                 Integer.class,
                 data.path("runUid").asText()
         );
-        assertThat(itemRows).isEqualTo(3);
+        assertThat(itemRows).isEqualTo(5);
     }
 
     @Test
@@ -232,7 +276,7 @@ class KnowledgeMaintenanceApiIntegrationTests {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         JsonNode items = response.getBody().path("data").path("items");
-        assertThat(items).hasSize(3);
+        assertThat(items).hasSize(5);
         Set<String> issueTypes = new HashSet<>();
         for (JsonNode item : items) {
             issueTypes.add(item.path("issueType").asText());
@@ -243,7 +287,9 @@ class KnowledgeMaintenanceApiIntegrationTests {
         assertThat(issueTypes).containsExactlyInAnyOrder(
                 "missing_source_content",
                 "duplicate_source_content",
-                "unarchived_personal_record"
+                "unarchived_personal_record",
+                "empty_vector_export",
+                "stale_vector_chunk"
         );
 
         ResponseEntity<JsonNode> duplicateResponse = restTemplate.getForEntity(
@@ -275,7 +321,7 @@ class KnowledgeMaintenanceApiIntegrationTests {
         JsonNode data = response.getBody().path("data");
         assertThat(data.path("total").asLong()).isEqualTo(1);
         assertThat(data.path("items").get(0).path("runUid").asText()).isEqualTo(runUid);
-        assertThat(data.path("items").get(0).path("issueCount").asInt()).isEqualTo(3);
+        assertThat(data.path("items").get(0).path("issueCount").asInt()).isEqualTo(5);
     }
 
     @Test
@@ -404,6 +450,28 @@ class KnowledgeMaintenanceApiIntegrationTests {
                     (2, 'record_archived', 'note', '已归档记录', CURRENT_TIMESTAMP,
                         'web-ui', 'manual', '已经归档', NULL, 'archived',
                         'medium', 'web-ui', CURRENT_TIMESTAMP, TIMESTAMP '2026-01-01 00:00:00')
+                """);
+        jdbcTemplate.update("""
+                INSERT INTO vector_export_jobs (
+                    id, export_uid, scope, target_collection, export_format, status,
+                    total_count, export_file_name, export_relative_path, created_at, finished_at
+                ) VALUES
+                    (1, 'export_empty', 'all', 'wikiforge-default', 'jsonl', 'completed',
+                        0, 'empty.jsonl', 'exports/empty.jsonl',
+                        TIMESTAMP '2026-01-01 00:00:00', TIMESTAMP '2026-01-01 00:00:01')
+                """);
+        jdbcTemplate.update("""
+                INSERT INTO content_chunks (
+                    id, chunk_uid, export_uid, content_type, source_uid, file_uid,
+                    record_uid, title, chunk_index, chunk_text, text_hash, char_count,
+                    token_estimate, metadata_json, embedding_status, target_collection,
+                    created_at, updated_at
+                ) VALUES
+                    (1, 'chunk_stale_pending', 'export_chunks', 'source_content',
+                        'src_dup_a', 'file_dup_a', NULL, '长期 pending chunk', 0,
+                        '等待导入向量库的正文', 'chunk-hash', 10, 5, '{}', 'pending',
+                        'wikiforge-default', TIMESTAMP '2026-01-01 00:00:00',
+                        TIMESTAMP '2026-01-01 00:00:00')
                 """);
     }
 

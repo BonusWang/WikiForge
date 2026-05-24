@@ -1,5 +1,15 @@
 # 知识熔炉 WikiForge 技术架构 v1.5
 
+## 0. R6-UI-2 架构纠偏：Wiki Compile 优先
+
+当前实现从 “Source Note 作为阶段终点” 调整为 “Source Note 溯源层 + Topic / Project Wiki 页面作为长期知识正文”：
+
+- UI 信息架构按工作流组织：总览、收集入口、待整理资料、Wiki 编译、审核队列、Obsidian / Wiki 页面、高级能力。
+- Core Service 新增最小 Wiki Compile 能力：`wiki_pages` 注册用户确认的 Topic / Project 页，`wiki_integrations` 记录 Source File 到 Wiki 页的 AI 更新建议、自动写入和审核结果。
+- 自动写入只追加 Obsidian Markdown 中的 `WikiForge Updates` 托管区块，不覆盖用户手写正文。
+- MCP、Vector Export、Knowledge Health、Orchestration 保留为高级系统能力；Vector Export 后端和维护诊断不删除，但不出现在主流程入口。
+- 本阶段不接真实向量库、不做 Hybrid Search、不推进办公室视图和长期记忆。
+
 ## 1. 架构目标
 
 本系统需要同时满足：
@@ -48,6 +58,7 @@ Core Service
   +--> Source / SourceFile / ImportJob
   +--> Review Queue
   +--> Obsidian Note Mapping
+  +--> Wiki Compile / Wiki Integration
   +--> Search API
   +--> Worker Task API
   |
@@ -170,7 +181,7 @@ docs/ai-skills/wikiforge-development/SKILL.md
 Web UI 长期采用双视图；MVP 先实现 Console 视图，办公室视图放到 V2：
 
 - 办公室视图：以 6 个 Agent 工位展示状态和任务，可点击查看日志、输出、失败原因，并执行重跑、跳过、进入审核等基础操作。
-- Console 视图：采用左侧导航按“模块 -> 功能 -> 页面”拆分，避免单页堆叠所有能力；当前页面包括系统概览、文件导入、LifeOS 收集、审核队列、MCP Preview 和知识库体检。
+- Console 视图：采用左侧导航按工作流拆分，避免单页堆叠所有能力；当前页面包括总览、收集入口、待整理资料、Wiki 编译、审核队列、Obsidian / Wiki 页面和高级能力。
 
 Console 视图视觉标准：
 
@@ -180,7 +191,7 @@ Console 视图视觉标准：
 - Element Plus 只作为基础交互组件库，必须通过全局 Design Token 覆盖为深色卡片、细边框、Terminal 输入框、mono badge 和暗色表格。
 - 组件圆角控制在 8px 以内，按钮、输入框、表格、抽屉和状态 badge 保持硬朗、克制、面向工作台的视觉。
 - 页面不得退回浅色后台、可爱圆润风、大面积插画或营销型 hero；Dashboard 第一屏必须是可操作控制台。
-- 当前 Web UI 不展示 Vector Export / 向量导出入口；向量库相关能力在确认真实向量库方案前只作为后续内部管道预留。
+- Vector Export / MCP / Knowledge Health 放入高级能力区；主流程不展示向量导出操作，但后端导出契约和维护诊断继续保留。
 - 本轮视觉参考来自本地 `E:\github\claude-agent-examples\ppt\*.html` 的 AI 技术发布会 / 代码编辑器 / Terminal Deck 风格。
 
 ### 3.2 Core Service

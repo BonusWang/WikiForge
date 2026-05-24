@@ -2,10 +2,10 @@
 
 ## 版本信息
 
-- 文档版本：v3.7
+- 文档版本：v3.8
 - 当前分支：`codex/ia-sidebar-import-cleanup`
-- 当前工程阶段：R6-UI-2 / Console 信息架构与导入体验纠偏已完成
-- 当前产品主线：先把杂乱资料收集、整理、归档，再把个人 LifeOS 记录纳入统一系统，后续进入 AI 提炼、向量库和知识运行层
+- 当前工程阶段：R6-UI-2 / 路线与信息架构纠偏，最小 Wiki 编译闭环已落地
+- 当前产品主线：本地文件 + 手工链接资料 -> 收集/解析 -> Source Note 溯源 -> AI 编译 -> Topic / Project Wiki 页面 -> 中等自动写入或审核队列
 
 ## 阅读规则
 
@@ -66,6 +66,16 @@ WikiForge 采用“先整理，再提炼，再运行”的节奏。
   -> MVP5 Orchestration 辅助工程 + 轻量 MCP 预览
   -> V1 在线资料与个人记录
   -> V2 向量库与知识运行层
+```
+
+R6-UI-2 后的当前主线细化为：
+
+```text
+本地文件 + 手工链接资料
+  -> 待整理资料
+  -> Wiki 编译
+  -> 自动追加 WikiForge Updates 或审核队列
+  -> Obsidian Topic / Project Wiki 页面
 ```
 
 ## 阶段一览
@@ -381,7 +391,7 @@ R6 当前执行指针：
 - [x] ( ) R6-UI-2-0 接收用户反馈并确认五个纠偏点。
 - [x] ( ) R6-UI-2-1 Dashboard 增加左侧模块菜单和页面级拆分。
 - [x] ( ) R6-UI-2-2 本地导入移除 `rawSourcesRoot` 必填输入，后端改为配置默认。
-- [x] ( ) R6-UI-2-3 移除当前 Web UI 向量导出入口。
+- [x] ( ) R6-UI-2-3 将 Vector Export 移出资料整理主流程，放入高级能力区。
 - [x] ( ) R6-UI-2-4 `Maintenance` 更名为知识库体检并收敛默认检查项。
 - [x] ( ) R6-UI-2-5 执行后端定向测试、前端构建和 Git 检查。
 
@@ -391,7 +401,7 @@ R6-1 完成记录：
 - 新增 `vector_export_jobs` 和 `content_chunks`，`total_count` 代表 chunk 数量。
 - `content_chunks.embedding_status` 首版固定为 `pending`，为后续真实向量库导入保留状态。
 - 导出文件写入 `WIKIFORGE_VECTOR_EXPORT_ROOT`，API 只返回相对路径，不暴露宿主机绝对路径。
-- R6-UI-2 已根据用户反馈移除当前 Web UI 的向量导出入口；该能力后续仅作为内部管道或高级功能评估。
+- R6-UI-2 已根据用户反馈将当前 Web UI 的向量导出移出主流程；该能力保留在高级能力区并作为后续内部管道或高级功能评估。
 - 本轮不接真实向量库、不生成 embedding、不做 Hybrid Search、不做办公室视图和定时总结。
 - 验证完成：后端全量 58 个测试、前端构建、生产/开发 Compose config、Git 卫生、密钥扫描和禁止路径扫描均通过。
 
@@ -428,7 +438,7 @@ R6-UI-2 当前执行记录：
 - [x] 将 Dashboard 从单页堆叠改为左侧菜单工作台，按“模块 -> 功能 -> 页面”拆分为系统概览、文件导入、LifeOS 收集、审核队列、MCP Preview 和知识库体检。
 - [x] 本地文件导入入口只要求填写“知识来源地址 sourcePath”，`rawSourcesRoot` 改为后台配置默认值，不再要求用户手工填写归集目标。
 - [x] 后端支持将配置中的相对 Raw Sources 路径解析为绝对路径，避免本地 jar 默认配置导致导入接口误报路径非法。
-- [x] 当前 Web UI 移除 Vector Export / 向量导出入口；后续向量库接入确认前，不作为用户主流程展示。
+- [x] 当前 Web UI 将 Vector Export / 向量导出移出主流程，改放高级能力区；后续向量库接入确认前，不作为资料整理主线展示。
 - [x] `Maintenance 维护巡检` 重新命名和解释为 `知识库体检 Knowledge Health`，当前仅检查空正文、重复正文和长期未归档个人记录。
 - [x] 导入任务列表和任务详情状态 badge 增加 pending、running、completed、failed、cancelled 的视觉区分。
 - [x] 验证前端构建、后端定向测试、Git whitespace、密钥扫描和禁止路径扫描。

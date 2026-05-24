@@ -1,5 +1,24 @@
 # 2026-05-24 WikiForge 版本更新记录 Release Notes
 
+## 2.0-v2-preview.4 - R6-UI-2 路线与信息架构纠偏 / Wiki 编译闭环
+
+本版本把主线从 `Source Note` 阶段终点纠偏为 Topic / Project Wiki 页面闭环。Source Note 保留为溯源层，最终可维护知识正文回到 Obsidian Wiki 页面。
+
+### 更新内容
+
+- 新增 `wiki_pages` 和 `wiki_integrations` 表。
+- 新增 Wiki 页面注册、Wiki 编译运行、更新建议查询、审核通过和拒绝 API。
+- 普通低风险资料可自动追加 `WikiForge Updates` 托管区块；敏感、低置信度、冲突或缺目标页进入审核队列。
+- Dashboard 导航改为总览、收集入口、待整理资料、Wiki 编译、审核队列、Obsidian / Wiki 页面、高级能力。
+- 本地导入默认使用后端配置的 Raw Sources，高级折叠区可覆盖 `rawSourcesRoot` 并继续由后端校验。
+- MCP、Vector Export、Knowledge Health 收入高级能力区；恢复向量导出相关维护诊断但不放入主流程。
+
+### 验证结果
+
+- Wiki 编译 API 定向测试通过：`WikiCompileApiIntegrationTests` 4 个测试，0 失败。
+- Knowledge Health 定向测试通过：`KnowledgeMaintenanceApiIntegrationTests` 5 个测试，0 失败。
+- 前端构建通过，保留既有 VueUse PURE 注释和大 chunk warning。
+
 ## Unreleased - R6-UI-2 Console 信息架构与导入体验纠偏
 
 本轮修正 MVP 控制台可用性问题，聚焦用户当前主线：先整理杂乱资料，再逐步提炼、归档和复用。
@@ -9,7 +28,7 @@
 - Dashboard 增加左侧菜单，按模块拆分为系统概览、文件导入、LifeOS 收集、审核队列、MCP Preview 和知识库体检。
 - 本地导入只需要输入知识来源地址，Raw Sources 归集仓库由后端配置默认。
 - 后端支持将配置中的相对 Raw Sources 路径解析为绝对路径，兼容本地 jar 默认 `./data/raw-sources`。
-- 当前 Web UI 移除 Vector Export / 向量导出入口。
+- 当前 Web UI 将 Vector Export 移出主流程，改放高级能力区。
 - `Maintenance 维护巡检` 更名为 `知识库体检 Knowledge Health`，并说明不会自动删除、移动或改写资料。
 - 知识库体检默认规则收敛为：空正文、重复正文、长期未归档个人记录。
 - 导入任务状态 badge 增加 pending、running、completed、failed、cancelled 的视觉区分。
