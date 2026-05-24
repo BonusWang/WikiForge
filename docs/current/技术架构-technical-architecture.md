@@ -172,6 +172,16 @@ Web UI 长期采用双视图；MVP 先实现 Console 视图，办公室视图放
 - 办公室视图：以 6 个 Agent 工位展示状态和任务，可点击查看日志、输出、失败原因，并执行重跑、跳过、进入审核等基础操作。
 - Console 视图：传统列表、审核、资料库、日志和系统设置。
 
+Console 视图视觉标准：
+
+- 采用暗色开发者控制台风格，底色以 `#050B14` 深黑蓝为主，使用细网格、低透明面板和顶部霓虹状态线建立技术感。
+- 主强调色使用霓虹绿色，辅助色只保留少量紫色和橙色；绿色用于健康、可执行、成功和主按钮，紫色用于系统/Agent/信息态，橙色用于警告、待处理和风险。
+- 字体分层：正文使用 IBM Plex Sans；代码、状态、标签、数字、UID、路径、API 字段和表格关键列使用 JetBrains Mono。
+- Element Plus 只作为基础交互组件库，必须通过全局 Design Token 覆盖为深色卡片、细边框、Terminal 输入框、mono badge 和暗色表格。
+- 组件圆角控制在 8px 以内，按钮、输入框、表格、抽屉和状态 badge 保持硬朗、克制、面向工作台的视觉。
+- 页面不得退回浅色后台、可爱圆润风、大面积插画或营销型 hero；Dashboard 第一屏必须是可操作控制台。
+- 本轮视觉参考来自本地 `E:\github\claude-agent-examples\ppt\*.html` 的 AI 技术发布会 / 代码编辑器 / Terminal Deck 风格。
+
 ### 3.2 Core Service
 
 职责：
@@ -829,6 +839,8 @@ MVP 技术选型原则：
 - HTTP 请求使用 Axios。
 - Markdown 预览使用 markdown-it 或 marked，并配合 DOMPurify 做 HTML 清理。
 - UI 以本地看板、办公室视图、审核队列和资料库为主，不做复杂营销页面。
+- 前端主题采用暗色开发者控制台 Design Token：深黑蓝背景、霓虹绿色主色、少量紫色和橙色辅助状态、IBM Plex Sans 正文、JetBrains Mono 状态/代码/数字。
+- 主题覆盖集中在 `frontend/src/styles/main.css`，业务组件优先复用 Element Plus，不在单个页面中散落大量一次性颜色。
 
 ### 6.2.1 前后端边界
 

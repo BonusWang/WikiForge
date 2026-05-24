@@ -582,6 +582,16 @@ Markdown 是主知识源，HTML 只用于 Web UI 预览和报告导出，不作�
 - Obsidian 文件预览页：在 Web UI 内渲染 Obsidian Markdown，并支持一键通过 `obsidian://open` 打开本地 Obsidian。
 - 系统设置页：配置 Obsidian Vault 路径、MySQL、模型供应商、CC Switch、目录规则。
 
+视觉规范：
+
+- Web UI 采用暗色开发者控制台风格，而不是浅色商务后台或传统 SaaS 营销页。
+- 主背景使用深黑蓝，主强调色为霓虹绿色，辅助强调色只允许少量紫色和橙色，用于状态、风险和流程区分。
+- 整体参考 AI 技术发布会、代码编辑器和 Terminal Deck 视觉；当前本地参考文件为 `E:\github\claude-agent-examples\ppt\*.html`。
+- 正文字体使用 IBM Plex Sans；代码、标签、状态、数字、路径、UID 和 API 字段使用 JetBrains Mono。
+- 页面组件以深色卡片、细边框、低透明背景、代码块、状态 badge、流程节点和网格布局为主。
+- 避免浅色商务后台、圆润可爱风、大面积插画、装饰性营销 hero 和低密度宣传页。
+- Dashboard 首屏应直接呈现系统运行状态、导入任务、Obsidian Vault、维护巡检和核心操作入口。
+
 功能优先级：
 
 1. 收集入口页

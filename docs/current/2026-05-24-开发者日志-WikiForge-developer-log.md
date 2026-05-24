@@ -2,10 +2,48 @@
 
 ## 版本索引 Version Index
 
-- 最新版本：v5.5
-- 最新小节：`2026-05-24 R6-3.1 / V2 知识维护处理闭环完成`
+- 最新版本：v5.6
+- 最新小节：`2026-05-24 R6-UI-1 / Console 暗色开发者控制台主题`
 - 推荐阅读：新 AI 开始工作时，先读本索引和最新小节，再按任务需要阅读历史小节。
 - 历史范围：v0.1-v0.9 记录需求发掘、架构评审、MVP0 骨架、微服务拆分和同日滚动归档规则；仅在追溯需求来源或架构决策时阅读。
+
+## 2026-05-24 R6-UI-1 / Console 暗色开发者控制台主题
+
+本轮根据用户指定的视觉方向，对 WikiForge 主 UI 进行风格重构。目标不是新增业务功能，而是把现有 Dashboard 从浅色后台调整为暗色开发者控制台风格，并把该风格写入需求与技术架构文档，避免后续前端实现跑偏。
+
+设计输入：
+
+- 用户指定：深黑蓝背景、霓虹绿色主强调、少量紫色和橙色辅助。
+- 用户指定：IBM Plex Sans 作为正文，JetBrains Mono 作为代码、标签、状态和数字。
+- 用户指定：参考 AI 技术发布会、代码编辑器、Terminal Deck 视觉。
+- 本地参考：`E:\github\claude-agent-examples\ppt\*.html`。
+
+实现内容：
+
+- 重构 `frontend/src/styles/main.css`。
+- 新增全局暗色 Design Token：背景、面板、边框、绿色、紫色、橙色、字体和 Element Plus 主题变量。
+- 覆盖 Element Plus 的卡片、按钮、输入框、表格、标签、分页、抽屉、弹层和选择器样式。
+- 保持 Dashboard 业务结构不变，不改动 API、状态管理和后端逻辑。
+- 更新 `需求文档-knowledge-base-prd.md` 的 UI 看板视觉规范。
+- 更新 `技术架构-technical-architecture.md` 的 Console 视图视觉标准和前端主题约束。
+
+验证记录：
+
+```text
+npm --prefix frontend run build
+Result: pass, existing VueUse PURE annotation and Rollup chunk warnings only
+
+Invoke-WebRequest http://127.0.0.1:3000/
+Result: HTTP 200, Vue app mount node exists
+
+git diff --check
+Result: pass
+```
+
+当前状态：
+
+- R6-UI-1 已完成。
+- 后续如继续优化 UI，可进入 R6-UI-2：Dashboard 信息密度、流程节点和办公室视图统一视觉语言。
 
 ## 2026-05-24 R6-3.1 / V2 知识维护处理闭环启动
 

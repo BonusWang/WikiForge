@@ -2,8 +2,8 @@
 
 ## 版本信息
 
-- 文档版本：v0.4
-- 最新阶段：R6-3.1 / V2 知识维护处理闭环已完成，R6-2 真实向量库和 Hybrid Search 继续挂起
+- 文档版本：v0.5
+- 最新阶段：R6-UI-1 / Console 暗色开发者控制台主题已完成，R6-2 真实向量库和 Hybrid Search 继续挂起
 - 推荐阅读：新 Agent 先读本索引，再读 `docs/current/2026-05-24-项目整体计划-WikiForge-project-roadmap.md` 和当前 Work Order。
 
 ## 今日最新快照
@@ -22,6 +22,7 @@
 - R6-1 / V2 向量导出契约已落地：`vector_export_jobs`、`content_chunks`、JSONL 导出和 Dashboard 入口完成。
 - R6-3 / V2 知识维护巡检首版已落地：`knowledge_maintenance_runs`、`knowledge_maintenance_items`、维护巡检 API 和 Dashboard 入口完成。
 - R6-3.1 / V2 知识维护处理闭环已完成：维护问题支持已解决、忽略和重新打开，首版仍不自动修复。
+- R6-UI-1 / Console 暗色开发者控制台主题已完成：主 UI 改为深黑蓝背景、霓虹绿色主强调、紫色和橙色辅助状态，并写入 PRD 与技术架构。
 - V1 不直接做真实飞书/腾讯 OAuth 抓取，先落地链接资料统一收集契约。
 - 个人记录使用 `personal_records` 作为第一版统一账本，已支持 REST / UI / MCP 数据互通和 Obsidian 归档。
 - R6-2 真实向量库与 Hybrid Search、R6-4 办公室视图和 R6-5 长期记忆继续挂起到后续节点。
@@ -41,12 +42,21 @@
 - R6-3.1 Docker Compose config：生产与开发配置均通过。
 - R6-3.1 Git 卫生、密钥和禁止路径扫描：通过。
 - R6-3.1 页面检查：Vite preview `http://127.0.0.1:3003/` 返回 200；构建产物包含维护问题状态更新和重新打开操作。
+- R6-UI-1 前端构建：通过，保留既有 Rollup 大 chunk 和 VueUse PURE 注释 warning。
+- R6-UI-1 页面检查：`http://127.0.0.1:3000/` 返回 200 且包含 Vue app 挂载节点。
+- R6-UI-1 Git whitespace 检查：通过。
 - R6-1 后端全量 Maven 测试：通过，5 个模块合计 58 个测试，0 失败。
 - R6-1 Docker Compose config：通过。
 - R6-1 Git 卫生、密钥和禁止路径扫描：通过。
 - 浏览器自动化：当前会话未能加载 Playwright 模块，未完成截图验证。
 
 ## 版本记录 Version History
+
+### v0.5
+
+- 增加 R6-UI-1 Console 暗色开发者控制台主题结论。
+- 记录 PRD、技术架构和 `frontend/src/styles/main.css` 的设计规范同步。
+- 标记前端构建、页面 HTTP 检查和 Git whitespace 检查通过。
 
 ### v0.4
 

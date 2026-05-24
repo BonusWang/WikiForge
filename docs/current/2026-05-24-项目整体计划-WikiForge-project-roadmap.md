@@ -2,9 +2,9 @@
 
 ## 版本信息
 
-- 文档版本：v3.5
-- 当前分支：`codex/r6-maintenance-workflow`
-- 当前工程阶段：R6-3.1 / V2 知识维护处理闭环已完成，准备发布 `2.0-v2-preview.3`
+- 文档版本：v3.6
+- 当前分支：`codex/dark-console-ui-theme`
+- 当前工程阶段：R6-UI-1 / Console 暗色开发者控制台主题已完成
 - 当前产品主线：先把杂乱资料收集、整理、归档，再把个人 LifeOS 记录纳入统一系统，后续进入 AI 提炼、向量库和知识运行层
 
 ## 阅读规则
@@ -12,7 +12,7 @@
 新参与的 AI 或开发者先读：
 
 1. `AGENTS.md`
-2. `docs/archive/2026-05-24/2026-05-24-归档索引-archive-index-v0.4.md`
+2. `docs/archive/2026-05-24/2026-05-24-归档索引-archive-index-v0.5.md`
 3. 本文档
 4. 当前执行节点对应的计划文档或 Work Order
 5. 分支相关操作先读 `docs/current/分支管理策略-branch-strategy.md`
@@ -348,6 +348,7 @@ R5 首版完成记录：
 | R6-2 | Blocked | Hybrid Search：MySQL 条件 + 向量 + rerank | 等待向量库选型和部署方式确认 |
 | R6-3 | Done | Lint / Maintain Agent 首版 | 可发现重复、空正文、未归档和向量导出异常 |
 | R6-3.1 | Done | 维护问题处理闭环 | 问题可标记已解决、忽略或重新打开 |
+| R6-UI-1 | Done | Console 暗色开发者控制台主题 | Dashboard 符合 AI 技术发布会 / 代码编辑器 / Terminal Deck 风格 |
 | R6-4 | Later | 办公室视图 | Agent 状态和任务流可视化 |
 | R6-5 | Later | 定时总结和长期记忆 | 知识可持续演进 |
 
@@ -372,6 +373,10 @@ R6 当前执行指针：
 - [x] ( ) R6-3.1-2 Dashboard 增加已解决、忽略、重新打开操作。
 - [x] ( ) R6-3.1-3 定向测试、前端构建、Compose config 和 Git 卫生验证。
 - [x] ( ) R6-3.1-4 更新开发者日志、归档索引、提交并推送。
+- [x] ( ) R6-UI-1-0 分析本地 `claude-agent-examples/ppt` 参考 HTML 视觉语言。
+- [x] ( ) R6-UI-1-1 重构 `frontend/src/styles/main.css` 为暗色开发者控制台主题。
+- [x] ( ) R6-UI-1-2 更新需求文档和技术架构中的前端视觉规范。
+- [x] ( ) R6-UI-1-3 执行前端构建、页面 HTTP 检查和 Git whitespace 检查。
 
 R6-1 完成记录：
 
@@ -400,6 +405,15 @@ R6-3.1 当前执行记录：
 - 状态流转：`open -> resolved / ignored -> open`；重新打开以恢复 `open` 表示。
 - 本轮不做自动修复、不做完整事件历史表、不接真实向量库、不做办公室视图。
 - 验证完成：后端定向 13 个测试通过；后端全量 65 个测试通过；前端构建通过；生产/开发 Compose config 通过；Git 卫生、密钥扫描和禁止路径扫描通过；Vite preview `http://127.0.0.1:3003/` 返回 200。
+
+R6-UI-1 完成记录：
+
+- 参考 `E:\github\claude-agent-examples\ppt\*.html` 的 AI 技术发布会 / 代码编辑器 / Terminal Deck 风格。
+- 主 UI 主题切换为深黑蓝背景、霓虹绿色主强调、紫色和橙色辅助状态。
+- 正文字体约束为 IBM Plex Sans，代码、标签、状态、数字、路径和 UID 约束为 JetBrains Mono。
+- Element Plus 继续作为组件基础，但通过 `frontend/src/styles/main.css` 统一覆盖为暗色卡片、细边框、Terminal 输入框、mono badge 和暗色表格。
+- 已更新 PRD 和技术架构，作为后续前端页面设计规范。
+- 验证完成：前端构建通过；`http://127.0.0.1:3000/` 返回 200；Git whitespace 检查通过。
 
 ## 近期三轮执行计划
 
