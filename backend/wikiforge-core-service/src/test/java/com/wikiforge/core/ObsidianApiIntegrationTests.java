@@ -60,7 +60,6 @@ class ObsidianApiIntegrationTests {
         jdbcTemplate.execute("DROP TABLE IF EXISTS wiki_ingest_runs");
         jdbcTemplate.execute("DROP TABLE IF EXISTS source_contents");
         jdbcTemplate.execute("DROP TABLE IF EXISTS source_files");
-        jdbcTemplate.execute("DROP TABLE IF EXISTS sources");
         jdbcTemplate.execute("DROP TABLE IF EXISTS import_jobs");
         jdbcTemplate.execute("""
                 CREATE TABLE import_jobs (
@@ -87,35 +86,9 @@ class ObsidianApiIntegrationTests {
                 )
                 """);
         jdbcTemplate.execute("""
-                CREATE TABLE sources (
-                    id BIGINT NOT NULL AUTO_INCREMENT,
-                    source_uid VARCHAR(64) NOT NULL,
-                    title VARCHAR(512) NULL,
-                    source_type VARCHAR(64) NOT NULL DEFAULT 'file',
-                    source_platform VARCHAR(128) NOT NULL DEFAULT 'local',
-                    source_url CLOB NULL,
-                    connector_name VARCHAR(128) NULL,
-                    connector_status VARCHAR(64) NULL,
-                    connector_trace_id VARCHAR(128) NULL,
-                    local_path CLOB NULL,
-                    raw_original_path CLOB NULL,
-                    raw_managed_path CLOB NULL,
-                    raw_organize_status VARCHAR(64) NOT NULL DEFAULT 'pending',
-                    processing_intent VARCHAR(64) NOT NULL DEFAULT 'organize_only',
-                    content_hash VARCHAR(128) NULL,
-                    status VARCHAR(64) NOT NULL DEFAULT 'pending',
-                    collected_at TIMESTAMP NULL,
-                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    PRIMARY KEY (id),
-                    UNIQUE KEY uk_sources_source_uid (source_uid)
-                )
-                """);
-        jdbcTemplate.execute("""
                 CREATE TABLE source_files (
                     id BIGINT NOT NULL AUTO_INCREMENT,
                     file_uid VARCHAR(64) NOT NULL,
-                    source_id BIGINT NULL,
                     import_job_id BIGINT NOT NULL,
                     file_name VARCHAR(512) NOT NULL,
                     file_ext VARCHAR(32) NULL,
@@ -138,7 +111,6 @@ class ObsidianApiIntegrationTests {
                 CREATE TABLE source_contents (
                     id BIGINT NOT NULL AUTO_INCREMENT,
                     content_uid VARCHAR(64) NOT NULL,
-                    source_id BIGINT NOT NULL,
                     source_file_id BIGINT NOT NULL,
                     parser_name VARCHAR(128) NULL,
                     content_type VARCHAR(64) NOT NULL DEFAULT 'plain_text',
@@ -254,11 +226,11 @@ class ObsidianApiIntegrationTests {
     void wikiIngestRunWritesSourcePageIndexAndLog() {
         jdbcTemplate.update("""
                 INSERT INTO source_contents (
-                    id, content_uid, source_id, source_file_id, parser_name, content_type,
+                    id, content_uid, source_file_id, parser_name, content_type,
                     raw_text, text_hash, char_count, raw_text_saved, parse_status,
                     created_at, updated_at
                 ) VALUES (
-                    401, 'content_wiki_ingest', 100, 200, 'markdown-text', 'plain_text',
+                    401, 'content_wiki_ingest', 200, 'markdown-text', 'plain_text',
                     '这是用于 Wiki ingest 的正文。', 'text-hash-wiki', 18, TRUE, 'success',
                     CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
                 )
@@ -309,23 +281,12 @@ class ObsidianApiIntegrationTests {
                 )
                 """, TEST_ROOT.resolve("input").toString(), RAW_SOURCES_ROOT.toString());
         jdbcTemplate.update("""
-                INSERT INTO sources (
-                    id, source_uid, title, source_type, source_platform, raw_original_path,
-                    raw_managed_path, raw_organize_status, processing_intent, content_hash,
-                    status, collected_at, created_at, updated_at
-                ) VALUES (
-                    100, 'src_test', 'example.pdf', 'pdf', 'local', ?,
-                    ?, 'copied', 'organize_only', 'hash-test',
-                    'organized', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-                )
-                """, TEST_ROOT.resolve("input/example.pdf").toString(), RAW_SOURCES_ROOT.resolve("example.pdf").toString());
-        jdbcTemplate.update("""
                 INSERT INTO source_files (
-                    id, file_uid, source_id, import_job_id, file_name, file_ext, original_path,
+                    id, file_uid, import_job_id, file_name, file_ext, original_path,
                     managed_path, file_size, mime_type, content_hash, parse_status,
                     organize_status, created_at
                 ) VALUES (
-                    200, 'file_test', 100, 10, 'example.pdf', 'pdf', ?,
+                    200, 'file_test', 10, 'example.pdf', 'pdf', ?,
                     ?, 1024, 'application/pdf', 'hash-test', 'pending',
                     'copied', CURRENT_TIMESTAMP
                 )

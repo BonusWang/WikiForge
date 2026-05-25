@@ -70,7 +70,6 @@ class ImportJobApiIntegrationTests {
         jdbcTemplate.execute("DROP TABLE IF EXISTS wiki_ingest_runs");
         jdbcTemplate.execute("DROP TABLE IF EXISTS source_contents");
         jdbcTemplate.execute("DROP TABLE IF EXISTS source_files");
-        jdbcTemplate.execute("DROP TABLE IF EXISTS sources");
         jdbcTemplate.execute("DROP TABLE IF EXISTS import_jobs");
         jdbcTemplate.execute("""
                 CREATE TABLE import_jobs (
@@ -101,35 +100,9 @@ class ImportJobApiIntegrationTests {
                 )
                 """);
         jdbcTemplate.execute("""
-                CREATE TABLE sources (
-                    id BIGINT NOT NULL AUTO_INCREMENT,
-                    source_uid VARCHAR(64) NOT NULL,
-                    title VARCHAR(512) NULL,
-                    source_type VARCHAR(64) NOT NULL DEFAULT 'file',
-                    source_platform VARCHAR(128) NOT NULL DEFAULT 'local',
-                    source_url CLOB NULL,
-                    connector_name VARCHAR(128) NULL,
-                    connector_status VARCHAR(64) NULL,
-                    connector_trace_id VARCHAR(128) NULL,
-                    local_path CLOB NULL,
-                    raw_original_path CLOB NULL,
-                    raw_managed_path CLOB NULL,
-                    raw_organize_status VARCHAR(64) NOT NULL DEFAULT 'pending',
-                    processing_intent VARCHAR(64) NOT NULL DEFAULT 'organize_only',
-                    content_hash VARCHAR(128) NULL,
-                    status VARCHAR(64) NOT NULL DEFAULT 'pending',
-                    collected_at TIMESTAMP NULL,
-                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    PRIMARY KEY (id),
-                    UNIQUE KEY uk_sources_source_uid (source_uid)
-                )
-                """);
-        jdbcTemplate.execute("""
                 CREATE TABLE source_files (
                     id BIGINT NOT NULL AUTO_INCREMENT,
                     file_uid VARCHAR(64) NOT NULL,
-                    source_id BIGINT NULL,
                     import_job_id BIGINT NOT NULL,
                     file_name VARCHAR(512) NOT NULL,
                     file_ext VARCHAR(32) NULL,
@@ -152,7 +125,6 @@ class ImportJobApiIntegrationTests {
                 CREATE TABLE source_contents (
                     id BIGINT NOT NULL AUTO_INCREMENT,
                     content_uid VARCHAR(64) NOT NULL,
-                    source_id BIGINT NOT NULL,
                     source_file_id BIGINT NOT NULL,
                     parser_name VARCHAR(128) NULL,
                     content_type VARCHAR(64) NOT NULL DEFAULT 'plain_text',

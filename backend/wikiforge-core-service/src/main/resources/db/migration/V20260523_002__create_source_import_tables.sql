@@ -26,37 +26,9 @@ CREATE TABLE import_jobs (
     KEY idx_import_jobs_status_created (status, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE sources (
-    id BIGINT NOT NULL AUTO_INCREMENT,
-    source_uid VARCHAR(64) NOT NULL,
-    title VARCHAR(512) NULL,
-    source_type VARCHAR(64) NOT NULL DEFAULT 'file',
-    source_platform VARCHAR(128) NOT NULL DEFAULT 'local',
-    source_url TEXT NULL,
-    connector_name VARCHAR(128) NULL,
-    connector_status VARCHAR(64) NULL,
-    connector_trace_id VARCHAR(128) NULL,
-    local_path TEXT NULL,
-    raw_original_path TEXT NULL,
-    raw_managed_path TEXT NULL,
-    raw_organize_status VARCHAR(64) NOT NULL DEFAULT 'pending',
-    processing_intent VARCHAR(64) NOT NULL DEFAULT 'organize_only',
-    content_hash VARCHAR(128) NULL,
-    status VARCHAR(64) NOT NULL DEFAULT 'pending',
-    collected_at DATETIME NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    UNIQUE KEY uk_sources_source_uid (source_uid),
-    KEY idx_sources_status (status),
-    KEY idx_sources_hash (content_hash),
-    KEY idx_sources_collected_at (collected_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 CREATE TABLE source_files (
     id BIGINT NOT NULL AUTO_INCREMENT,
     file_uid VARCHAR(64) NOT NULL,
-    source_id BIGINT NULL,
     import_job_id BIGINT NOT NULL,
     file_name VARCHAR(512) NOT NULL,
     file_ext VARCHAR(32) NULL,
@@ -75,8 +47,6 @@ CREATE TABLE source_files (
     UNIQUE KEY uk_source_files_file_uid (file_uid),
     KEY idx_source_files_job (import_job_id),
     KEY idx_source_files_hash (content_hash),
-    KEY idx_source_files_source (source_id),
-    CONSTRAINT fk_source_files_source FOREIGN KEY (source_id) REFERENCES sources(id),
     CONSTRAINT fk_source_files_import_job FOREIGN KEY (import_job_id) REFERENCES import_jobs(id),
     CONSTRAINT fk_source_files_duplicate FOREIGN KEY (duplicate_of_file_id) REFERENCES source_files(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

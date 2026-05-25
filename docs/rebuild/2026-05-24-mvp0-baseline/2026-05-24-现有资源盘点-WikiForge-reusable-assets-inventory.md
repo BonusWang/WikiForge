@@ -63,7 +63,7 @@
 | `source_contents` | 复用 | MVP0 正文抽取结果 |
 | `wiki_ingest_runs` | 按需新增 | MVP0-4 Obsidian 写入结果账本，实施到 Wiki 写入节点时再新增 |
 | `system_dictionaries` | 按需新增 | MVP0 中文状态字典，实施状态映射时再新增 |
-| `sources` | 退役 | 与 MVP0 SourceFile 主账本语义重叠，后续清理 |
+| `sources` | 退役 | 与 MVP0 SourceFile 主账本语义重叠，迁移和代码依赖已移除 |
 | `obsidian_notes` | 退役 | Source Note 历史语义退出，MVP0 改用 wiki ingest 结果 |
 | `agent_runs` / `agent_steps` / `review_items` | 退役 | 不再复用为 Wiki ingest |
 | `wiki_pages` / `wiki_integrations` | 退役 | 迁移文件已移除，确有页面注册需求时重新设计 |

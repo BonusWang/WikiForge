@@ -171,7 +171,7 @@ MVP0 数据库从减法开始，只保存当前闭环必须的数据：
 
 | 历史资源 | 处理方式 | 原因 |
 | --- | --- | --- |
-| `sources` | 退役 | 与 MVP0 `source_files` 主账本语义重叠 |
+| `sources` | 退役 | 与 MVP0 `source_files` 主账本语义重叠，迁移文件已移除 |
 | `obsidian_notes` | 退役 | 旧 Source Note 语义退出，改用 `wiki_ingest_runs` |
 | `agent_runs` / `agent_steps` / `review_items` | 退役 | 不再承载 Wiki ingest |
 | `wiki_pages` / `wiki_integrations` | 退役 | MVP0 只保留 Obsidian 文件和 `wiki_ingest_runs`，不预建页面注册表 |

@@ -464,7 +464,6 @@ public class ImportJobService {
         StatusDisplay wikiStatus = wikiStatusDisplay(latestWikiIngestRun);
         return new SourceFileResponse(
                 sourceFile.fileUid(),
-                sourceFile.sourceUid(),
                 sourceFile.jobUid(),
                 sourceFile.fileName(),
                 sourceFile.fileExt(),

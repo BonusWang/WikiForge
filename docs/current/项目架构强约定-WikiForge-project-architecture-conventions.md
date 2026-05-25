@@ -163,7 +163,7 @@ MVP0 数据库最小表集合：
 
 - 不为未来能力预建表。
 - 不复用 `agent_runs` / `review_items` 承载 Wiki ingest。
-- MCP、向量、LifeOS、知识体检、AI Review、旧 Source Note、旧 Wiki Compile、Link Source、Orchestration 相关表不进入 MVP0 主流程。
+- `sources`、MCP、向量、LifeOS、知识体检、AI Review、旧 Source Note、旧 Wiki Compile、Link Source、Orchestration 相关表不进入 MVP0 主流程。
 - MVP0 新库不创建历史表；已有本地库如已执行历史迁移，需按单独清理方案重建或迁移。
 - 新表必须说明所属四层能力、归属服务、生命周期和删除策略。
 - 状态码必须先进入 `system_dictionaries`，前端不得硬编码英文状态。
