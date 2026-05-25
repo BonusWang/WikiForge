@@ -320,16 +320,20 @@ docker compose config
 
 仍保留为后续加固：
 
-- Task 8 端到端人工验收：需要在本机真实路径、真实 Raw Sources 和真实 Obsidian Vault 上跑一条完整样例。
+- 暂无。后续按新需求单独登记，不从历史阶段回灌能力。
 
 ## 7. 2026-05-25 执行记录
 
 已完成：
 
 - Task 5 Worker 原子能力继续细拆：新增 `RawSourceFileCollector`、`FileContentHasher`、`FileTypeDetector`，`LocalFileScanner` 保留递归扫描和跳过规则，文件复制、hash、类型识别改为独立可测能力；正文抽取继续复用 `TextContentExtractor`。
+- Task 8 端到端人工验收：使用本机真实路径 `E:\github\WikiForge\data\imports\mvp0-e2e-clean-20260525-114206`、真实 Raw Sources `E:\github\WikiForge\data\raw-sources` 和真实 Obsidian Vault `E:\WikiForgeVault` 跑通路径导入、重复文件、浏览器上传、正文抽取、Wiki ingest、index/log 更新和 Raw Sources 重叠拦截。
 
 验证命令：
 
 ```powershell
+git diff --check
 mvn -f backend/pom.xml test
+npm --prefix frontend run build
+docker compose -f deploy/docker-compose.yml config
 ```
