@@ -6,6 +6,7 @@ import com.wikiforge.core.application.port.WorkerImportJobClient;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -273,6 +274,38 @@ class ImportJobApiIntegrationTests {
         assertThat(managedPath).startsWith(RAW_SOURCES_ROOT);
         assertThat(Files.exists(managedPath)).isTrue();
         assertThat(Files.readString(managedPath, StandardCharsets.UTF_8)).isEqualTo("浏览器上传进入 Raw Sources");
+    }
+
+    @Test
+    void uploadSourcesAcceptsFilesAboveSpringDefaultMultipartLimit() {
+        byte[] content = new byte[2 * 1024 * 1024];
+        Arrays.fill(content, (byte) 'a');
+        ByteArrayResource resource = new ByteArrayResource(content) {
+            @Override
+            public String getFilename() {
+                return "large-upload.bin";
+            }
+        };
+        HttpHeaders fileHeaders = new HttpHeaders();
+        fileHeaders.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        fileHeaders.setContentDispositionFormData("files", resource.getFilename());
+
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("files", new HttpEntity<>(resource, fileHeaders));
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        ResponseEntity<JsonNode> response = restTemplate.postForEntity(
+                "/api/v1/upload-sources",
+                new HttpEntity<>(body, headers),
+                JsonNode.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode data = response.getBody().path("data");
+        assertThat(data.path("uploadedCount").asInt()).isEqualTo(1);
+        Long fileSize = jdbcTemplate.queryForObject("SELECT file_size FROM source_files", Long.class);
+        assertThat(fileSize).isEqualTo(content.length);
     }
 
     @Test
