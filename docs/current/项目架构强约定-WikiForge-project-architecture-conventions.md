@@ -29,7 +29,7 @@
 | CAP-006 | 功能 | Obsidian LLM Wiki 写入 | 决策 / 指令执行 / 原子能力 | Core + Obsidian adapter | 主流程 | 变更 schema、index、log、写入结果时更新 |
 | CAP-007 | 数据表 | MVP0 最小收纳表 | 指令执行 | MySQL | 主流程 | 新增、退役、迁移表时更新 |
 | CAP-008 | 服务 | Gateway | 轻应用入口代理 | 未启用 | 冻结 | 启用前必须补设计和服务准入 |
-| CAP-009 | 服务 | Orchestration 辅助工程 | 非 MVP0 主线 | orchestration service / ui | 退役 | 清理构建、入口或表结构时更新 |
+| CAP-009 | 服务 | Orchestration 辅助工程 | 非 MVP0 主线 | 已删除 | 退役 | 源码、Dockerfile、`agentteam/` 工作区和配置样例已从 MVP0 移除 |
 | CAP-010 | 约定 | 前端样式基线 | 轻应用层 | Frontend styles | 主流程 | 新页面、新组件、状态标签变化时更新 |
 | CAP-011 | 约定 | 后端服务边界 | 决策 / 指令执行 | Core / Worker / Common | 主流程 | 新 API、新任务、新包边界时更新 |
 | CAP-012 | 数据表 | 状态字典表 | 指令执行 | MySQL `system_dictionaries` | 主流程 | 新状态、颜色、中文说明变化时更新 |
@@ -43,7 +43,7 @@
 - 主流程：当前阶段主流程能力。
 - 复用：可直接复用的基础能力。
 - 冻结：保留但当前阶段不进入主流程。
-- 退役：已清理或正在清理出入口、构建、API 或数据库。
+- 退役：已清理出入口、构建、API 或数据库；历史材料仅在归档中留存。
 
 ## 4. 四层登记规则
 
@@ -195,13 +195,12 @@ docs/rebuild/2026-05-24-mvp0-baseline/2026-05-24-Obsidian-LLM-Wiki设计-WikiFor
 | 主流程 | 当前主流程能力 |
 | 复用 | 可直接复用的基础能力 |
 | 冻结 | 保留但不进入当前阶段 |
-| 退役 | 后续清理出入口、构建或数据库 |
+| 退役 | 已清理出入口、构建或数据库，或仅在归档中留存 |
 
 当前退役能力必须登记在台账中：
 
-- Orchestration Service
-- Orchestration UI
-- 并行 Agent 团队制度
+- Orchestration Service / UI（源码和 Dockerfile 已删除）
+- 并行 Agent 团队制度（`agentteam/` 已删除）
 - 历史 Work Order 启动路径
 - AI Review / Review Items
 - MCP Preview

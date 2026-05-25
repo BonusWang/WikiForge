@@ -129,7 +129,7 @@ npm --prefix frontend run build
 目标：
 
 - MCP、向量、LifeOS、知识体检不出现在主导航。
-- Orchestration 辅助开发工程标记退役，后续从构建和文档入口移除。
+- Orchestration 辅助开发工程退役，源码、Dockerfile 和 `agentteam/` 工作区从主线移除。
 - 旧 Work Order、开发者日志、历史 Roadmap 不再作为启动入口。
 - 历史数据库表结构输出退役清单；删除或迁移前必须有备份和回滚方案。
 

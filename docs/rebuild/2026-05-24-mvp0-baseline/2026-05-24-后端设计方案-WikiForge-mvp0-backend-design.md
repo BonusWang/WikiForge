@@ -221,7 +221,7 @@ Worker 不拥有业务数据表。
 
 | 能力 | MVP0 处理 |
 | --- | --- |
-| Orchestration Service / UI | 退役，后续从构建和入口清理 |
+| Orchestration Service / UI | 退役，源码、Dockerfile 和独立 UI 已删除 |
 | Agent Review | 退役，不作为 Wiki ingest 承载 |
 | MCP Preview | 退役，MVP0 代码已删除 |
 | Vector Export | 退役，MVP0 代码已删除 |
@@ -242,7 +242,7 @@ Worker 不拥有业务数据表。
 - 新状态先进入 `system_dictionaries`，再进入 API 和前端。
 - 新表先通过数据库设计准入，再写 migration。
 - Obsidian 写入不得越过 Vault 内 `WikiForge/` 托管目录。
-- Orchestration 不在 Maven 主构建、Compose 主流程和前端主入口中继续扩展。
+- Orchestration 不在 Maven 主构建、Compose 主流程和前端主入口中继续扩展；相关源码和 Dockerfile 已删除。
 
 验证命令：
 

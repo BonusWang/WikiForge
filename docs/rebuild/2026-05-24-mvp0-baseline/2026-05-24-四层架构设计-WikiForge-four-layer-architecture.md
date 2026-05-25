@@ -134,8 +134,8 @@ worker.infrastructure.extractor.TextContentExtractor
 - `KnowledgeMaintenanceService`：退役，MVP0 代码已删除。
 - `AiReviewService`：退役，MVP0 代码已删除。
 - `WikiCompileService` / 旧 Source Note / Link Source：退役，MVP0 代码已删除。
-- `wikiforge-orchestration-service`：退役。
-- `orchestration-ui`：退役。
+- `wikiforge-orchestration-service`：退役，源码已删除。
+- `orchestration-ui`：退役，源码已删除。
 
 退役能力后续必须重新出需求、API、表设计和验证方案，不能直接回到主流程。
 
@@ -233,7 +233,7 @@ MVP0 数据库以最小可用为目标，不继承历史阶段的完整表集合
 - `agent_runs`、`agent_steps`、`review_items` 不再复用为 Wiki ingest，迁移文件已从 MVP0 移除。
 - `obsidian_notes`、`wiki_pages`、`wiki_integrations` 不进入 MVP0 新库。
 - `mcp_tool_calls`、`personal_records`、`vector_export_jobs`、`content_chunks`、`knowledge_maintenance_*` 不进入 MVP0 新库。
-- Orchestration 相关表或配置退役，后续清理节点处理。
+- Orchestration 相关配置退役，服务源码、独立 UI、Dockerfile 和 `agentteam/` 已删除。
 
 ### 7.3 建表规则
 
