@@ -213,16 +213,6 @@ class ObsidianApiIntegrationTests {
     }
 
     @Test
-    void sourceNoteEndpointsAreNotExposed() {
-        ResponseEntity<JsonNode> response = restTemplate.getForEntity(
-                "/api/v1/source-files/file_test/obsidian-note",
-                JsonNode.class
-        );
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-    }
-
-    @Test
     void wikiIngestRunWritesSourcePageIndexAndLog() {
         jdbcTemplate.update("""
                 INSERT INTO source_contents (

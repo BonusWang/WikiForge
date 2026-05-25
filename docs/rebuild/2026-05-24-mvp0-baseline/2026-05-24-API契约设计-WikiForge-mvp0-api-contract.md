@@ -110,19 +110,7 @@
 | `POST` | `/api/v1/obsidian/init` | 设置 | 初始化 Vault 托管目录 | 保留并收敛 |
 | `GET` | `/api/v1/obsidian/status` | 设置 | 查询 Vault 状态 | 保留并收敛 |
 
-已退出 MVP0 代码，不进入 MVP0 主契约：
-
-- `/api/v1/mcp/**`
-- `/api/v1/vector-exports/**`
-- `/api/v1/personal-records/**`
-- `/api/v1/maintenance-*`
-- `/api/v1/*/ai-review-*`
-- `/api/v1/wiki-compile-*`
-- `/api/v1/wiki-pages/**`
-- `/api/v1/wiki-integrations/**`
-- `/api/v1/link-sources/**`
-- `/api/v1/source-files/{fileUid}/obsidian-note/**`
-- Orchestration 相关接口
+历史高级能力接口集合已退出 MVP0 代码，不进入 MVP0 主契约。恢复任一历史接口必须重新提交需求、API 契约、数据归属和验证方案。
 
 ## 6. 收纳接口
 
