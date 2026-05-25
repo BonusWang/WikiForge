@@ -34,10 +34,10 @@ MVP0 初始化 Vault 时创建：
 WikiForge/
   index.md
   log.md
-  00_规则/
+  00_Rules_规则/
     LLM-Wiki写入规则.md
     来源页模板.md
-  10_来源/
+  10_Sources_来源/
     YYYY/
       MM/
         {fileUid}-{安全标题}.md
@@ -47,8 +47,8 @@ WikiForge/
 | --- | --- |
 | `index.md` | 总目录，展示来源页和最近写入 |
 | `log.md` | 追加式演进日志 |
-| `00_规则/` | LLM Wiki 写作规则和页面模板 |
-| `10_来源/` | 每个 SourceFile 对应一个来源页 |
+| `00_Rules_规则/` | LLM Wiki 写作规则和页面模板 |
+| `10_Sources_来源/` | 每个 SourceFile 对应一个来源页 |
 
 ## 4. 页面类型
 
@@ -59,7 +59,7 @@ WikiForge/
 路径：
 
 ```text
-WikiForge/10_来源/YYYY/MM/{fileUid}-{安全标题}.md
+WikiForge/10_Sources_来源/YYYY/MM/{fileUid}-{安全标题}.md
 ```
 
 来源页包含：

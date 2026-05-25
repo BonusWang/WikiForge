@@ -60,7 +60,7 @@ E:\WikiForgeVault\WikiForge\
 
 当前会生成：
 
-- `WikiForge/10_来源/yyyy/MM/*.md`
+- `WikiForge/10_Sources_来源/yyyy/MM/*.md`
 - `WikiForge/index.md`
 - `WikiForge/log.md`
 
@@ -79,7 +79,7 @@ E:\github\WikiForge\data\raw-sources
 - 路径导入 Windows 本机路径成功。
 - 浏览器上传成功。
 - 浏览器上传后正文抽取成功写入 `source_contents`。
-- Wiki 写入成功落盘到 `E:\WikiForgeVault\WikiForge\10_来源\2026\05\`。
+- Wiki 写入成功落盘到 `E:\WikiForgeVault\WikiForge\10_Sources_来源\2026\05\`。
 - `E:\WikiForgeVault\WikiForge\index.md` 已更新。
 - `E:\WikiForgeVault\WikiForge\log.md` 已更新。
 - Core 集成测试通过：`ImportJobApiIntegrationTests`、`ObsidianApiIntegrationTests`，共 16 个测试。
@@ -88,14 +88,14 @@ E:\github\WikiForge\data\raw-sources
 真实资料补写验证：
 
 ```text
-E:\WikiForgeVault\WikiForge\10_来源\2026\05\file_23acdf843da7434bb376a2cd6a34cf47-LLM Wiki 与 GBrain：AI 知识库的两条技术路线.md.md
+E:\WikiForgeVault\WikiForge\10_Sources_来源\2026\05\file_23acdf843da7434bb376a2cd6a34cf47-LLM Wiki 与 GBrain：AI 知识库的两条技术路线.md.md
 ```
 
 2026-05-25 Task 8 补充验收：
 
 - 路径导入样例：`job_20260525_b3acc664f2c2`，状态 `已完成`，共 2 个文件，1 个复制收纳，1 个 hash 重复。
 - 浏览器上传样例：`job_20260525_238af8a8e035`，状态 `已完成`，上传文件 `file_7726a38d4c2a47b59faca05802099080` 已复制收纳并完成正文抽取。
-- Wiki ingest 样例：`wir_20260525_a6886a87da66`，状态 `已写入`，来源页写入 `WikiForge/10_来源/2026/05/file_f39634dd13e34b208e9d9a145e7347b9-mvp0-e2e-clean-20260525-114206-duplicate.md.md`。
+- Wiki ingest 样例：`wir_20260525_a6886a87da66`，状态 `已写入`，来源页写入 `WikiForge/10_Sources_来源/2026/05/file_f39634dd13e34b208e9d9a145e7347b9-mvp0-e2e-clean-20260525-114206-duplicate.md.md`。
 - `WikiForge/index.md` 已包含本次 `fileUid`，`WikiForge/log.md` 已包含本次 `runUid`。
 - Raw Sources 作为输入路径时被拦截，验证输入路径不得与 Raw Sources 重叠。
 - `source_contents` 中可查到本次路径导入文件和上传文件对应的 2 条正文抽取记录。
