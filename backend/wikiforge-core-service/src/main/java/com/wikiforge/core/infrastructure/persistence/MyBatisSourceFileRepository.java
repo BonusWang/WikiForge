@@ -7,11 +7,9 @@ import com.wikiforge.core.domain.model.RawOrganizeStatus;
 import com.wikiforge.core.domain.model.SourceFilePage;
 import com.wikiforge.core.domain.model.SourceFileRecord;
 import com.wikiforge.core.domain.model.SourceFileSubmission;
-import com.wikiforge.core.domain.model.SourceStatus;
 import com.wikiforge.core.domain.repository.SourceFileRepository;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
@@ -19,18 +17,15 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class MyBatisSourceFileRepository implements SourceFileRepository {
 
-    private final SourceMapper sourceMapper;
     private final SourceFileMapper sourceFileMapper;
     private final SourceContentMapper sourceContentMapper;
     private final ImportJobMapper importJobMapper;
 
     public MyBatisSourceFileRepository(
-            SourceMapper sourceMapper,
             SourceFileMapper sourceFileMapper,
             SourceContentMapper sourceContentMapper,
             ImportJobMapper importJobMapper
     ) {
-        this.sourceMapper = sourceMapper;
         this.sourceFileMapper = sourceFileMapper;
         this.sourceContentMapper = sourceContentMapper;
         this.importJobMapper = importJobMapper;
@@ -49,24 +44,8 @@ public class MyBatisSourceFileRepository implements SourceFileRepository {
                     ? file.organizeStatus()
                     : RawOrganizeStatus.DUPLICATE.value();
 
-            SourceEntity source = new SourceEntity();
-            source.setSourceUid(newUid("src"));
-            source.setTitle(file.fileName());
-            source.setSourceType(sourceType(file.fileExt()));
-            source.setSourcePlatform("local");
-            source.setRawOriginalPath(file.originalPath());
-            source.setRawManagedPath(file.managedPath());
-            source.setRawOrganizeStatus(organizeStatus);
-            source.setContentHash(file.contentHash());
-            source.setStatus(sourceStatus(organizeStatus));
-            source.setCollectedAt(now);
-            source.setCreatedAt(now);
-            source.setUpdatedAt(now);
-            sourceMapper.insert(source);
-
             SourceFileEntity sourceFile = new SourceFileEntity();
             sourceFile.setFileUid(newUid("file"));
-            sourceFile.setSourceId(source.getId());
             sourceFile.setImportJobId(importJob.getId());
             sourceFile.setFileName(file.fileName());
             sourceFile.setFileExt(file.fileExt());
@@ -82,7 +61,7 @@ public class MyBatisSourceFileRepository implements SourceFileRepository {
             sourceFile.setParseError(file.parseError());
             sourceFile.setCreatedAt(now);
             sourceFileMapper.insert(sourceFile);
-            saveSourceContent(source, sourceFile, file, now);
+            saveSourceContent(sourceFile, file, now);
         }
     }
 
@@ -112,25 +91,21 @@ public class MyBatisSourceFileRepository implements SourceFileRepository {
         if (sourceFile == null) {
             return Optional.empty();
         }
-        SourceEntity source = sourceMapper.selectById(sourceFile.getSourceId());
         ImportJobEntity importJob = importJobMapper.selectById(sourceFile.getImportJobId());
-        if (source == null || importJob == null) {
+        if (importJob == null) {
             return Optional.empty();
         }
-        return Optional.of(toRecord(importJob.getJobUid(), source, sourceFile));
+        return Optional.of(toRecord(importJob.getJobUid(), sourceFile));
     }
 
     private SourceFileRecord toRecord(ImportJob importJob, SourceFileEntity sourceFile) {
-        SourceEntity source = sourceMapper.selectById(sourceFile.getSourceId());
-        return toRecord(importJob.getJobUid(), source, sourceFile);
+        return toRecord(importJob.getJobUid(), sourceFile);
     }
 
-    private SourceFileRecord toRecord(String jobUid, SourceEntity source, SourceFileEntity sourceFile) {
+    private SourceFileRecord toRecord(String jobUid, SourceFileEntity sourceFile) {
         return new SourceFileRecord(
                 sourceFile.getId(),
-                source.getId(),
                 sourceFile.getFileUid(),
-                source.getSourceUid(),
                 jobUid,
                 sourceFile.getFileName(),
                 sourceFile.getFileExt(),
@@ -173,7 +148,6 @@ public class MyBatisSourceFileRepository implements SourceFileRepository {
     }
 
     private void saveSourceContent(
-            SourceEntity source,
             SourceFileEntity sourceFile,
             SourceFileSubmission file,
             LocalDateTime now
@@ -183,7 +157,6 @@ public class MyBatisSourceFileRepository implements SourceFileRepository {
         }
         SourceContentEntity content = new SourceContentEntity();
         content.setContentUid(newUid("content"));
-        content.setSourceId(source.getId());
         content.setSourceFileId(sourceFile.getId());
         content.setParserName(file.parserName());
         content.setContentType(hasText(file.contentType()) ? file.contentType() : "plain_text");
@@ -212,24 +185,6 @@ public class MyBatisSourceFileRepository implements SourceFileRepository {
         }
         SourceFileEntity duplicate = sourceFileMapper.selectById(duplicateOfFileId);
         return duplicate == null ? null : duplicate.getFileUid();
-    }
-
-    private String sourceStatus(String organizeStatus) {
-        if (RawOrganizeStatus.COPIED.value().equals(organizeStatus)
-                || RawOrganizeStatus.DUPLICATE.value().equals(organizeStatus)) {
-            return SourceStatus.ORGANIZED.value();
-        }
-        if (RawOrganizeStatus.FAILED.value().equals(organizeStatus)) {
-            return SourceStatus.FAILED.value();
-        }
-        return SourceStatus.PENDING.value();
-    }
-
-    private String sourceType(String fileExt) {
-        if (fileExt == null || fileExt.isBlank()) {
-            return "file";
-        }
-        return fileExt.toLowerCase(Locale.ROOT);
     }
 
     private String newUid(String prefix) {

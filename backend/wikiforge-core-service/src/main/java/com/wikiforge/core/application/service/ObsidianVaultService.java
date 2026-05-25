@@ -189,7 +189,6 @@ public class ObsidianVaultService {
 
                 ## 来源
 
-                - Source UID: `%s`
                 - Source File UID: `%s`
                 - 文件名: `%s`
                 - 文件类型: `%s`
@@ -208,7 +207,6 @@ public class ObsidianVaultService {
                 """.formatted(
                 managedBlockStart(sourceFile),
                 title(sourceFile),
-                sourceFile.sourceUid(),
                 sourceFile.fileUid(),
                 value(sourceFile.fileName()),
                 value(sourceFile.fileExt()),
@@ -379,7 +377,7 @@ public class ObsidianVaultService {
 
     private String title(SourceFileRecord sourceFile) {
         if (sourceFile.fileName() == null || sourceFile.fileName().isBlank()) {
-            return sourceFile.sourceUid();
+            return sourceFile.fileUid();
         }
         return sourceFile.fileName();
     }

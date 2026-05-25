@@ -4,9 +4,7 @@ import java.time.LocalDateTime;
 
 public record SourceFileRecord(
         Long sourceFileId,
-        Long sourceId,
         String fileUid,
-        String sourceUid,
         String jobUid,
         String fileName,
         String fileExt,

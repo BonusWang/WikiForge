@@ -11,7 +11,6 @@ public class SourceFileEntity {
     @TableId(type = IdType.AUTO)
     private Long id;
     private String fileUid;
-    private Long sourceId;
     private Long importJobId;
     private String fileName;
     private String fileExt;
@@ -41,14 +40,6 @@ public class SourceFileEntity {
 
     public void setFileUid(String fileUid) {
         this.fileUid = fileUid;
-    }
-
-    public Long getSourceId() {
-        return sourceId;
-    }
-
-    public void setSourceId(Long sourceId) {
-        this.sourceId = sourceId;
     }
 
     public Long getImportJobId() {

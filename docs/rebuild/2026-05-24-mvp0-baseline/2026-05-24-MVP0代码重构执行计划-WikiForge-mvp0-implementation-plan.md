@@ -331,6 +331,7 @@ docker compose config
 - Task 8 端到端人工验收：使用本机真实路径 `E:\github\WikiForge\data\imports\mvp0-e2e-clean-20260525-114206`、真实 Raw Sources `E:\github\WikiForge\data\raw-sources` 和真实 Obsidian Vault `E:\WikiForgeVault` 跑通路径导入、重复文件、浏览器上传、正文抽取、Wiki ingest、index/log 更新和 Raw Sources 重叠拦截。
 - 历史高级能力物理清理：删除 AI Review、MCP Preview、Vector Export、LifeOS、Knowledge Maintenance、旧 Wiki Compile、旧 Source Note、Link Source 的后端代码、前端 API/类型、Flyway 迁移和专项集成测试；Obsidian API 收敛为 init/status，Wiki 写入状态改由 `wiki_ingest_runs` 驱动。
 - Orchestration 辅助工程物理清理：删除 `backend/wikiforge-orchestration-service/`、`orchestration-ui/`、`deploy/docker/orchestration-*.Dockerfile`、`agentteam/`、Orchestration 错误码和 `.env.example` 中的旧辅助工程/向量/模型变量。
+- 历史 `sources` 账本物理清理：fresh schema 不再创建 `sources`，`source_files` 成为唯一资料文件账本，`source_contents` 只通过 `source_file_id` 关联正文抽取结果。
 
 验证命令：
 

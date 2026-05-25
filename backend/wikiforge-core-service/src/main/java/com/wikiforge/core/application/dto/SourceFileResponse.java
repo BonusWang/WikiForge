@@ -6,7 +6,6 @@ import java.time.OffsetDateTime;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record SourceFileResponse(
         String fileUid,
-        String sourceUid,
         String jobUid,
         String fileName,
         String fileExt,

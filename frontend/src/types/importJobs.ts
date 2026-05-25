@@ -81,7 +81,6 @@ export interface SourceFileLatestWikiIngestRun {
 
 export interface SourceFile {
   fileUid: string;
-  sourceUid: string;
   jobUid: string;
   fileName: string;
   originalName?: string | null;

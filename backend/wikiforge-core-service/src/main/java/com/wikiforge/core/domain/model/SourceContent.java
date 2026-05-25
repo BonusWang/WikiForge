@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 public record SourceContent(
         Long id,
         String contentUid,
-        Long sourceId,
         Long sourceFileId,
         String parserName,
         String contentType,

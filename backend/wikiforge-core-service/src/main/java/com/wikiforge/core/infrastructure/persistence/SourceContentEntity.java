@@ -11,7 +11,6 @@ public class SourceContentEntity {
     @TableId(type = IdType.AUTO)
     private Long id;
     private String contentUid;
-    private Long sourceId;
     private Long sourceFileId;
     private String parserName;
     private String contentType;
@@ -38,14 +37,6 @@ public class SourceContentEntity {
 
     public void setContentUid(String contentUid) {
         this.contentUid = contentUid;
-    }
-
-    public Long getSourceId() {
-        return sourceId;
-    }
-
-    public void setSourceId(Long sourceId) {
-        this.sourceId = sourceId;
     }
 
     public Long getSourceFileId() {

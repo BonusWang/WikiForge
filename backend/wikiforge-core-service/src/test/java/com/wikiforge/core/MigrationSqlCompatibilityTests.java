@@ -16,13 +16,18 @@ class MigrationSqlCompatibilityTests {
     }
 
     @Test
-    void sourceContentsMigrationKeepsRawTextOutOfSourcesTable() throws Exception {
-        String migrationSql = migrationSql("/db/migration/V20260523_004__create_source_contents.sql");
-        assertThat(migrationSql).contains("CREATE TABLE source_contents");
-        assertThat(migrationSql).contains("source_file_id BIGINT NOT NULL");
-        assertThat(migrationSql).contains("raw_text LONGTEXT NULL");
-        assertThat(migrationSql).contains("UNIQUE KEY uk_source_contents_source_file (source_file_id)");
-        assertThat(migrationSql).doesNotContain("ALTER TABLE sources ADD raw_text");
+    void sourceContentsMigrationUsesSourceFileAsOnlySourceLedger() throws Exception {
+        String importMigrationSql = migrationSql("/db/migration/V20260523_002__create_source_import_tables.sql");
+        String contentsMigrationSql = migrationSql("/db/migration/V20260523_004__create_source_contents.sql");
+        assertThat(importMigrationSql).contains("CREATE TABLE source_files");
+        assertThat(importMigrationSql).doesNotContain("CREATE TABLE sources");
+        assertThat(importMigrationSql).doesNotContain("source_id BIGINT");
+        assertThat(contentsMigrationSql).contains("CREATE TABLE source_contents");
+        assertThat(contentsMigrationSql).contains("source_file_id BIGINT NOT NULL");
+        assertThat(contentsMigrationSql).contains("raw_text LONGTEXT NULL");
+        assertThat(contentsMigrationSql).contains("UNIQUE KEY uk_source_contents_source_file (source_file_id)");
+        assertThat(contentsMigrationSql).doesNotContain("source_id BIGINT");
+        assertThat(contentsMigrationSql).doesNotContain("REFERENCES sources");
     }
 
     @Test

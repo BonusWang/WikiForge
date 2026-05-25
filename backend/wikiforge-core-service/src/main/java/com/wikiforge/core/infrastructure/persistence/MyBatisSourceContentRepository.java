@@ -40,7 +40,6 @@ public class MyBatisSourceContentRepository implements SourceContentRepository {
         return new SourceContent(
                 entity.getId(),
                 entity.getContentUid(),
-                entity.getSourceId(),
                 entity.getSourceFileId(),
                 entity.getParserName(),
                 entity.getContentType(),
