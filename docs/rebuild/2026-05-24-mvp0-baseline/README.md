@@ -57,6 +57,7 @@ MVP0 不继承旧阶段路线，不沿用 R 系列编号。旧文档只作为参
 - Orchestration 辅助工程已退出默认 Maven、Docker Compose 和 CI 路径，源码与独立前端已删除。
 - 浏览器上传后的 `md/txt/pdf/docx` 已接入正文抽取。
 - 本机验收 Vault 固定为 `E:\WikiForgeVault`。
+- 设置页保留为五入口之一；未接通的持久化设置 API 和模型配置预建表已移除。
 
 ## 交付物
 

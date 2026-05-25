@@ -33,6 +33,7 @@
 - 历史高级能力代码已物理清理：AI Review、MCP Preview、Vector Export、LifeOS、Knowledge Maintenance、旧 Wiki Compile、旧 Source Note、Link Source 不再随 MVP0 后端、前端 API 或迁移发布。
 - Orchestration 辅助工程已物理清理：服务源码、独立 UI、Dockerfile、`agentteam/` 工作区和配置样例中的旧变量已删除。
 - 历史 `sources` 表已物理清理，MVP0 新库只以 `source_files` 作为资料文件主账本。
+- 未接通的持久化设置 API 和 `system_settings` / `model_providers` 预建表已清理；设置页只保留 MVP0 运行口径和 Vault 操作入口。
 
 ## 4. 当前运行端口
 

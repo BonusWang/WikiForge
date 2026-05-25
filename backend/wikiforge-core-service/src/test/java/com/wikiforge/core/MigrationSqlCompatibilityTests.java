@@ -52,6 +52,8 @@ class MigrationSqlCompatibilityTests {
         assertThat(migrationSql).doesNotContain("CREATE TABLE knowledge_maintenance_runs");
         assertThat(migrationSql).doesNotContain("CREATE TABLE wiki_pages");
         assertThat(migrationSql).doesNotContain("CREATE TABLE wiki_integrations");
+        assertThat(migrationSql).doesNotContain("CREATE TABLE system_settings");
+        assertThat(migrationSql).doesNotContain("CREATE TABLE model_providers");
     }
 
     @Test
@@ -64,6 +66,7 @@ class MigrationSqlCompatibilityTests {
         assertThat(migrationSource("V20260524_003__create_knowledge_maintenance_tables.sql")).doesNotExist();
         assertThat(migrationSource("V20260524_004__extend_maintenance_items_workflow.sql")).doesNotExist();
         assertThat(migrationSource("V20260524_005__create_wiki_compile_tables.sql")).doesNotExist();
+        assertThat(migrationSource("V20260523_001__create_mvp0_tables.sql")).doesNotExist();
     }
 
     private String migrationSql(String path) throws Exception {

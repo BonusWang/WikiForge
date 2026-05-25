@@ -332,6 +332,7 @@ docker compose config
 - 历史高级能力物理清理：删除 AI Review、MCP Preview、Vector Export、LifeOS、Knowledge Maintenance、旧 Wiki Compile、旧 Source Note、Link Source 的后端代码、前端 API/类型、Flyway 迁移和专项集成测试；Obsidian API 收敛为 init/status，Wiki 写入状态改由 `wiki_ingest_runs` 驱动。
 - Orchestration 辅助工程物理清理：删除 `backend/wikiforge-orchestration-service/`、`orchestration-ui/`、`deploy/docker/orchestration-*.Dockerfile`、`agentteam/`、Orchestration 错误码和 `.env.example` 中的旧辅助工程/向量/模型变量。
 - 历史 `sources` 账本物理清理：fresh schema 不再创建 `sources`，`source_files` 成为唯一资料文件账本，`source_contents` 只通过 `source_file_id` 关联正文抽取结果。
+- 设置持久化预建能力清理：删除未接通的 `/settings` 前端 API 封装、`system_settings` / `model_providers` 预建迁移；设置页保留为五入口之一，但 MVP0 不提供持久化设置 API。
 
 验证命令：
 

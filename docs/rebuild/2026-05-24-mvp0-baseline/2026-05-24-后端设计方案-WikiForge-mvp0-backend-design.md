@@ -38,12 +38,10 @@ com.wikiforge.core
   interfaces.web.capture
   interfaces.web.source
   interfaces.web.wiki
-  interfaces.web.settings
   interfaces.web.dictionary
   application.capture
   application.source
   application.wiki
-  application.settings
   application.dictionary
   domain.job
   domain.source
@@ -143,7 +141,8 @@ docs/rebuild/2026-05-24-mvp0-baseline/2026-05-24-API契约设计-WikiForge-mvp0-
 | `POST` | `/api/v1/source-files/{fileUid}/wiki-ingest-runs` | 单文件整理到 Wiki | 已接入 |
 | `GET` | `/api/v1/wiki-ingest-runs` | 查询 Wiki 写入记录 | 已接入 |
 | `GET` | `/api/v1/dictionaries` | 查询状态字典 | 已接入 |
-| `GET` / `PUT` | `/api/v1/settings` | 基础设置 | 规划，优先环境变量兜底 |
+
+设置页当前只使用 Obsidian 初始化和状态查询接口；MVP0 不提供持久化 `/api/v1/settings` API。
 
 ### 6.2 Core 内部开放给 Worker
 
