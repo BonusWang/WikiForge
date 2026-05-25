@@ -22,7 +22,7 @@ MVP0 数据库从减法开始，只保存当前闭环必须的数据：
 | `wiki_ingest_runs` | 主流程 | Core | Obsidian LLM Wiki 写入运行结果 |
 | `system_dictionaries` | 主流程 | Core | 状态码、中文名称、说明和颜色映射 |
 
-`wiki_ingest_runs` 和 `system_dictionaries` 在对应开发节点再新增 migration，本轮只固定设计。
+`wiki_ingest_runs` 和 `system_dictionaries` 已进入 MVP0 fresh schema；不为设置、模型配置或未来连接器预建额外表。
 
 ## 3. 表设计草案
 
@@ -172,6 +172,7 @@ MVP0 数据库从减法开始，只保存当前闭环必须的数据：
 | 历史资源 | 处理方式 | 原因 |
 | --- | --- | --- |
 | `sources` | 退役 | 与 MVP0 `source_files` 主账本语义重叠，迁移文件已移除 |
+| `system_settings` / `model_providers` | 退役 | 设置持久化和模型配置不进入 MVP0，预建迁移已移除 |
 | `obsidian_notes` | 退役 | 旧 Source Note 语义退出，改用 `wiki_ingest_runs` |
 | `agent_runs` / `agent_steps` / `review_items` | 退役 | 不再承载 Wiki ingest |
 | `wiki_pages` / `wiki_integrations` | 退役 | MVP0 只保留 Obsidian 文件和 `wiki_ingest_runs`，不预建页面注册表 |

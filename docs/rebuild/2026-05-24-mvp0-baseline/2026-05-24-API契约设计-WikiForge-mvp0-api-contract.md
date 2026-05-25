@@ -105,10 +105,10 @@
 | `GET` | `/api/v1/wiki-ingest-runs` | Wiki / 日志 | 查询 Wiki 写入记录 | 已接入 |
 | `GET` | `/api/v1/wiki-ingest-runs/{runUid}` | Wiki / 日志 | 查询 Wiki 写入详情 | 已接入 |
 | `GET` | `/api/v1/dictionaries` | 全局 | 查询中文字典 | 已接入 |
-| `GET` | `/api/v1/settings` | 设置 | 查询基础配置 | 新增规划 |
-| `PUT` | `/api/v1/settings` | 设置 | 保存基础配置 | 新增规划 |
 | `POST` | `/api/v1/obsidian/init` | 设置 | 初始化 Vault 托管目录 | 保留并收敛 |
 | `GET` | `/api/v1/obsidian/status` | 设置 | 查询 Vault 状态 | 保留并收敛 |
+
+设置页在 MVP0 只保留运行口径展示、Vault 初始化和 Vault 状态查询，不提供持久化 `/settings` API。
 
 历史高级能力接口集合已退出 MVP0 代码，不进入 MVP0 主契约。恢复任一历史接口必须重新提交需求、API 契约、数据归属和验证方案。
 
@@ -397,55 +397,9 @@
 - 写入模式。
 - 处理意图。
 
-## 11. 设置接口
+## 11. Obsidian 接口
 
-### 11.1 查询设置
-
-`GET /api/v1/settings`
-
-响应：
-
-```json
-{
-  "rawSourcesRootMasked": "E:\\WikiForgeData\\RawSources",
-  "obsidianVaultPathMasked": "E:\\WikiForgeVault",
-  "obsidianManagedRoot": "WikiForge/",
-  "allowedScanRoots": [
-    "E:\\资料"
-  ],
-  "maxUploadFileSizeMb": 100,
-  "autoWikiWriteback": true,
-  "modelProviderConfigured": false
-}
-```
-
-### 11.2 保存设置
-
-`PUT /api/v1/settings`
-
-请求：
-
-```json
-{
-  "rawSourcesRoot": "E:\\WikiForgeData\\RawSources",
-  "obsidianVaultPath": "E:\\WikiForgeVault",
-  "allowedScanRoots": [
-    "E:\\资料"
-  ],
-  "autoWikiWriteback": true
-}
-```
-
-规则：
-
-- Raw Sources 与 Obsidian Vault 不得重叠。
-- Raw Sources 与输入路径不得重叠。
-- 保存后返回脱敏路径。
-- 密钥不通过本接口明文返回。
-
-## 12. Obsidian 接口
-
-### 12.1 初始化 Vault 托管目录
+### 11.1 初始化 Vault 托管目录
 
 `POST /api/v1/obsidian/init`
 
@@ -467,7 +421,7 @@
 }
 ```
 
-### 12.2 查询 Vault 状态
+### 11.2 查询 Vault 状态
 
 `GET /api/v1/obsidian/status`
 
@@ -486,7 +440,7 @@
 }
 ```
 
-## 13. Core 内部 API
+## 12. Core 内部 API
 
 内部 API 只允许 Worker 调用，必须带内部令牌。
 
@@ -546,7 +500,7 @@ SourceFile 批量回写请求：
 }
 ```
 
-## 14. 错误码范围
+## 13. 错误码范围
 
 MVP0 主流程只新增或使用以下错误码前缀：
 
@@ -564,7 +518,7 @@ MVP0 主流程只新增或使用以下错误码前缀：
 
 AI Review、MCP、向量、LifeOS、知识体检、旧 Wiki Compile、旧 Source Note、Link Source、Orchestration 错误码不进入 MVP0 主流程新增使用点。
 
-## 15. 验收规则
+## 14. 验收规则
 
 后续实现必须满足：
 
