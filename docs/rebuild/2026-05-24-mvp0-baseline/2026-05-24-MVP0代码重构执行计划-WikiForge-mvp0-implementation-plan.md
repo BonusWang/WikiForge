@@ -244,6 +244,7 @@ mvn -f backend/pom.xml test
 - 后端主构建默认不再启用 Orchestration 辅助工程。
 - Docker Compose 默认不启动 Orchestration。
 - MCP、向量、LifeOS、知识体检、AI Review、旧 Wiki Compile、旧 Source Note、Link Source 的代码入口、前端封装、迁移和测试从 MVP0 删除。
+- Orchestration 服务源码、独立 UI、Dockerfile、`agentteam/` 工作区和 `.env.example` 旧变量从 MVP0 删除。
 
 验证命令：
 
@@ -329,6 +330,7 @@ docker compose config
 - Task 5 Worker 原子能力继续细拆：新增 `RawSourceFileCollector`、`FileContentHasher`、`FileTypeDetector`，`LocalFileScanner` 保留递归扫描和跳过规则，文件复制、hash、类型识别改为独立可测能力；正文抽取继续复用 `TextContentExtractor`。
 - Task 8 端到端人工验收：使用本机真实路径 `E:\github\WikiForge\data\imports\mvp0-e2e-clean-20260525-114206`、真实 Raw Sources `E:\github\WikiForge\data\raw-sources` 和真实 Obsidian Vault `E:\WikiForgeVault` 跑通路径导入、重复文件、浏览器上传、正文抽取、Wiki ingest、index/log 更新和 Raw Sources 重叠拦截。
 - 历史高级能力物理清理：删除 AI Review、MCP Preview、Vector Export、LifeOS、Knowledge Maintenance、旧 Wiki Compile、旧 Source Note、Link Source 的后端代码、前端 API/类型、Flyway 迁移和专项集成测试；Obsidian API 收敛为 init/status，Wiki 写入状态改由 `wiki_ingest_runs` 驱动。
+- Orchestration 辅助工程物理清理：删除 `backend/wikiforge-orchestration-service/`、`orchestration-ui/`、`deploy/docker/orchestration-*.Dockerfile`、`agentteam/`、Orchestration 错误码和 `.env.example` 中的旧辅助工程/向量/模型变量。
 
 验证命令：
 

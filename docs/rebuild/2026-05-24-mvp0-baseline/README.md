@@ -43,7 +43,7 @@ MVP0 不继承旧阶段路线，不沿用 R 系列编号。旧文档只作为参
 - 蓝图阶段已完成；代码实现阶段只允许在本节点基线和强约定基础上推进。
 - 后续新功能、新服务、新原子能力、新 API、新表结构必须先登记到项目架构强约定。
 - 旧归档文档与本节点冲突时，以本节点为准。
-- Orchestration 辅助开发工程不进入 MVP0，后续作为退役清理对象。
+- Orchestration 辅助开发工程不进入 MVP0，源码、Dockerfile 和 `agentteam/` 工作区已退役删除。
 
 ## 当前代码落地进度
 
@@ -54,7 +54,7 @@ MVP0 不继承旧阶段路线，不沿用 R 系列编号。旧文档只作为参
 - Core API 补齐中文状态字段、字典查询、Wiki ingest 运行记录。
 - `system_dictionaries`、`wiki_ingest_runs` 进入 MVP0 最小表集合。
 - Wiki ingest 已能写入 Obsidian `WikiForge/` 来源页、`index.md` 和 `log.md`。
-- Orchestration 辅助工程已退出默认 Maven、Docker Compose 和 CI 路径。
+- Orchestration 辅助工程已退出默认 Maven、Docker Compose 和 CI 路径，源码与独立前端已删除。
 - 浏览器上传后的 `md/txt/pdf/docx` 已接入正文抽取。
 - 本机验收 Vault 固定为 `E:\WikiForgeVault`。
 

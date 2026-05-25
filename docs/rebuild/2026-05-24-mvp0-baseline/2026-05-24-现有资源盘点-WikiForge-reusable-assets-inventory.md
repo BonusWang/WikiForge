@@ -35,7 +35,7 @@
 | McpPreviewService | `core.application.service.McpPreviewService` | 退役 | 已删除 | MCP 不进入 MVP0 |
 | VectorExportService | `core.application.service.VectorExportService` | 退役 | 已删除 | 向量不进入 MVP0 |
 | KnowledgeMaintenanceService | `core.application.service.KnowledgeMaintenanceService` | 退役 | 已删除 | 知识体检不进入 MVP0 |
-| Orchestration Service | `backend/wikiforge-orchestration-service` | 退役 | 后续清理出构建和文档入口 | 辅助开发工程多余，不承载知识库业务 |
+| Orchestration Service | `backend/wikiforge-orchestration-service` | 退役 | 已删除 | 辅助开发工程多余，不承载知识库业务 |
 
 ## 3. 前端资源
 
@@ -50,7 +50,7 @@
 | Vector API | `frontend/src/api/vector-exports` | 退役 | 已删除 | 向量不进入 MVP0 |
 | LifeOS API | `frontend/src/api/lifeos` | 退役 | 已删除 | LifeOS 不进入 MVP0 |
 | Knowledge Maintenance API | `frontend/src/api/knowledge-maintenance` | 退役 | 已删除 | 知识体检不进入 MVP0 |
-| Orchestration UI | `orchestration-ui` | 退役 | 后续清理出构建和文档入口 | 辅助开发工程多余 |
+| Orchestration UI | `orchestration-ui` | 退役 | 已删除 | 辅助开发工程多余 |
 | 主样式 | `frontend/src/styles/main.css` | 适配 | `styles/base.css`、`styles/layout.css`、`styles/components.css` | 可保留视觉基调，按页面拆分 |
 | 类型定义 | `frontend/src/types/*` | 适配 | 按 feature 拆分或保留统一 types | 优先避免大规模重命名 |
 
@@ -71,7 +71,7 @@
 | `personal_records` | 退役 | 迁移文件已移除 |
 | `vector_export_jobs` / `content_chunks` | 退役 | 迁移文件已移除 |
 | `knowledge_maintenance_*` | 退役 | 迁移文件已移除 |
-| Orchestration 相关表或配置 | 退役 | 后续确认依赖后清理 |
+| Orchestration 相关配置 | 退役 | 服务源码、独立 UI、Dockerfile、`agentteam/` 和 `.env.example` 变量已删除 |
 
 规则：
 
