@@ -103,16 +103,13 @@
 backend/wikiforge-core-service/src/main/java/com/wikiforge/core/
   interfaces/web/capture/
   interfaces/web/wiki/
-  interfaces/web/settings/
   application/capture/
   application/wiki/
-  application/settings/
   domain/source/
   domain/wiki/
   domain/job/
   infrastructure/persistence/source/
   infrastructure/filesystem/obsidian/
-  infrastructure/integration/model/
 
 backend/wikiforge-worker-service/src/main/java/com/wikiforge/worker/
   application/ingest/

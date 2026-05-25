@@ -53,7 +53,6 @@ com.wikiforge.core
   infrastructure.persistence.dictionary
   infrastructure.filesystem.obsidian
   infrastructure.integration.worker
-  infrastructure.integration.model
 ```
 
 ### 3.2 Core 保留职责
