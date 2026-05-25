@@ -320,5 +320,16 @@ docker compose config
 
 仍保留为后续加固：
 
-- Task 5 Worker 原子能力继续细拆：当前复用既有扫描、复制、hash、抽取能力，后续再做更细粒度类拆分。
 - Task 8 端到端人工验收：需要在本机真实路径、真实 Raw Sources 和真实 Obsidian Vault 上跑一条完整样例。
+
+## 7. 2026-05-25 执行记录
+
+已完成：
+
+- Task 5 Worker 原子能力继续细拆：新增 `RawSourceFileCollector`、`FileContentHasher`、`FileTypeDetector`，`LocalFileScanner` 保留递归扫描和跳过规则，文件复制、hash、类型识别改为独立可测能力；正文抽取继续复用 `TextContentExtractor`。
+
+验证命令：
+
+```powershell
+mvn -f backend/pom.xml test
+```
