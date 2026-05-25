@@ -26,7 +26,7 @@
         <mxCell id="l4c" value="类型识别 / 分类" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#16A34A;fontSize=14;" vertex="1" parent="1"><mxGeometry x="560" y="740" width="190" height="60" as="geometry" /></mxCell>
         <mxCell id="l4d" value="文本抽取" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#16A34A;fontSize=14;" vertex="1" parent="1"><mxGeometry x="780" y="740" width="190" height="60" as="geometry" /></mxCell>
         <mxCell id="l4e" value="Markdown 写入" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#16A34A;fontSize=14;" vertex="1" parent="1"><mxGeometry x="1000" y="740" width="190" height="60" as="geometry" /></mxCell>
-        <mxCell id="l4f" value="Markdown 写入 / 兜底" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#16A34A;fontSize=14;" vertex="1" parent="1"><mxGeometry x="1220" y="740" width="190" height="60" as="geometry" /></mxCell>
+        <mxCell id="l4f" value="失败记录" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#16A34A;fontSize=14;" vertex="1" parent="1"><mxGeometry x="1220" y="740" width="190" height="60" as="geometry" /></mxCell>
       </root>
     </mxGraphModel>
   </diagram>
@@ -66,7 +66,7 @@
         <mxCell id="n4" value="Raw Sources&#xa;分类收纳" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF3;strokeColor=#16A34A;fontSize=15;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="900" y="160" width="210" height="80" as="geometry" /></mxCell>
         <mxCell id="n5" value="Core 账本&#xa;Source / SourceFile" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF3;strokeColor=#16A34A;fontSize=15;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1190" y="160" width="230" height="80" as="geometry" /></mxCell>
         <mxCell id="n6" value="正文抽取&#xa;SourceContent" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E8FF;strokeColor=#7C3AED;fontSize=15;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="320" y="380" width="210" height="80" as="geometry" /></mxCell>
-        <mxCell id="n7" value="Wiki 写入规则&#xa;schema / fallback" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF7E6;strokeColor=#D97706;fontSize=15;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="610" y="380" width="210" height="80" as="geometry" /></mxCell>
+        <mxCell id="n7" value="Wiki 写入规则&#xa;schema / 失败处理" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF7E6;strokeColor=#D97706;fontSize=15;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="610" y="380" width="210" height="80" as="geometry" /></mxCell>
         <mxCell id="n8" value="Obsidian 写入&#xa;来源 / 主题 / 项目&#xa;托管区块" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF3;strokeColor=#16A34A;fontSize=15;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="900" y="380" width="240" height="80" as="geometry" /></mxCell>
         <mxCell id="n9" value="index.md / log.md&#xa;目录与演进记录" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECFDF3;strokeColor=#16A34A;fontSize=15;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1220" y="380" width="230" height="80" as="geometry" /></mxCell>
         <mxCell id="n10" value="UI 展示&#xa;状态 / 结果 / 重跑" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F2FF;strokeColor=#2563EB;fontSize=15;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="680" y="620" width="240" height="80" as="geometry" /></mxCell>

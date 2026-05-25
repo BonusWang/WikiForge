@@ -75,7 +75,6 @@ public class WikiIngestRunService {
             entity.setLogEntryAppended(false);
             entity.setWriteStatusCode("失败");
             entity.setWriteStatusLabel("失败");
-            entity.setFallbackReason("请检查 Obsidian Vault 设置后重试");
             entity.setFailureReason(exception.getMessage());
             entity.setRetryable(true);
             entity.setCompletedAt(now);
@@ -134,7 +133,6 @@ public class WikiIngestRunService {
                 Boolean.TRUE.equals(entity.getLogEntryAppended()),
                 entity.getWriteStatusCode(),
                 entity.getWriteStatusLabel(),
-                entity.getFallbackReason(),
                 entity.getFailureReason(),
                 entity.getManagedBlockPreview(),
                 entity.getLogEntryPreview(),

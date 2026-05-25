@@ -503,7 +503,6 @@ public class ImportJobService {
                 Boolean.TRUE.equals(entity.getLogEntryAppended()),
                 entity.getWriteStatusCode(),
                 entity.getWriteStatusLabel(),
-                entity.getFallbackReason(),
                 entity.getFailureReason(),
                 entity.getManagedBlockPreview(),
                 entity.getLogEntryPreview(),
@@ -578,8 +577,7 @@ public class ImportJobService {
         if (latestWikiIngestRun == null) {
             return new StatusDisplay("待整理到 Wiki", "待整理到 Wiki", "等待整理写入 Obsidian Wiki", "info", false);
         }
-        if ("已写入".equals(latestWikiIngestRun.getStatusCode())
-                || "兜底写入".equals(latestWikiIngestRun.getStatusCode())) {
+        if ("已写入".equals(latestWikiIngestRun.getStatusCode())) {
             return new StatusDisplay("已写入 Wiki", "已写入 Wiki", "资料已写入 Obsidian Wiki", "success", true);
         }
         if ("失败".equals(latestWikiIngestRun.getStatusCode())) {

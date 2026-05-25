@@ -117,7 +117,7 @@ onMounted(refreshRuns);
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="fallbackReason" label="兜底原因" min-width="220" show-overflow-tooltip />
+        <el-table-column prop="failureReason" label="失败原因" min-width="220" show-overflow-tooltip />
       </el-table>
 
       <div class="pagination-row">

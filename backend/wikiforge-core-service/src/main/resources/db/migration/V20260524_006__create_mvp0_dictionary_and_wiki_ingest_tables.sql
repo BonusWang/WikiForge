@@ -49,8 +49,7 @@ INSERT INTO system_dictionaries (
 ('Wiki 写入状态', '已创建', '已创建', 'Wiki 写入运行已创建', 10, 'neutral', 0, 0),
 ('Wiki 写入状态', '写入中', '写入中', '正在写入 Obsidian Wiki', 20, 'info', 0, 0),
 ('Wiki 写入状态', '已写入', '已写入', '已完成 Obsidian Wiki 写入', 30, 'success', 1, 1),
-('Wiki 写入状态', '兜底写入', '兜底写入', '已按兜底规则写入', 40, 'warning', 1, 1),
-('Wiki 写入状态', '失败', '失败', 'Obsidian Wiki 写入失败', 50, 'danger', 1, 0)
+('Wiki 写入状态', '失败', '失败', 'Obsidian Wiki 写入失败', 40, 'danger', 1, 0)
 ON DUPLICATE KEY UPDATE
     label_zh = VALUES(label_zh),
     description_zh = VALUES(description_zh),
@@ -75,7 +74,6 @@ CREATE TABLE wiki_ingest_runs (
     log_entry_appended TINYINT(1) NOT NULL DEFAULT 0,
     write_status_code VARCHAR(128) NOT NULL DEFAULT '已创建',
     write_status_label VARCHAR(128) NOT NULL DEFAULT '已创建',
-    fallback_reason TEXT NULL,
     failure_reason TEXT NULL,
     managed_block_preview TEXT NULL,
     log_entry_preview TEXT NULL,

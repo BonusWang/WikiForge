@@ -217,7 +217,7 @@ mvn -f backend/pom.xml test
 - 写入来源页、index、log。
 - 使用托管区块，避免覆盖用户手写内容。
 - 写入结果记录到 `wiki_ingest_runs`。
-- 失败时记录中文 fallback reason。
+- 失败时记录中文失败原因。
 
 验证命令：
 
@@ -334,6 +334,7 @@ docker compose config
 - 历史 `sources` 账本物理清理：fresh schema 不再创建 `sources`，`source_files` 成为唯一资料文件账本，`source_contents` 只通过 `source_file_id` 关联正文抽取结果。
 - 设置持久化预建能力清理：删除未接通的 `/settings` 前端 API 封装、`system_settings` / `model_providers` 预建迁移；设置页保留为五入口之一，但 MVP0 不提供持久化设置 API。
 - 当前能力参数清理：删除尚无执行语义的 Wiki 写入请求参数、上传写回模式和路径收纳意图参数暴露口径；Wiki ingest 当前固定为来源页、index、log 规则式写入。
+- 当前能力状态清理：删除未产生的备用 Wiki 写入状态和原因字段；规则式写入成功记为“已写入”，失败统一记录 `failureReason`。
 
 验证命令：
 
