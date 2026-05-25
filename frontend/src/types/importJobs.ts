@@ -1,10 +1,11 @@
 export type ImportJobStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+export type OrganizeMode = 'copy' | 'move' | 'reference';
 
 export interface CreateLocalImportJobRequest {
   inputPath: string;
   rawSourcesRoot?: string;
   recursive: boolean;
-  organizeMode: 'copy';
+  organizeMode: OrganizeMode;
   maxCopyFileSizeMb: number;
 }
 
@@ -14,7 +15,7 @@ export interface ImportJob {
   inputPath?: string;
   rawSourcesRoot?: string;
   recursive: boolean;
-  organizeMode: 'copy';
+  organizeMode: OrganizeMode;
   status: ImportJobStatus;
   statusCode?: string;
   statusLabel?: string;

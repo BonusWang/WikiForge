@@ -27,7 +27,7 @@ const router = createRouter({
       component: SourceInboxPage,
       meta: {
         title: '资料箱',
-        subtitle: '查看 Raw Sources 账本、收纳任务和正文抽取状态。'
+        subtitle: '查看资料仓库账本、收纳任务和正文抽取状态。'
       }
     },
     {

@@ -88,14 +88,15 @@ public class ImportJobService {
         if (!Files.exists(inputPath)) {
             throw new BusinessException(ErrorCode.SOURCE_PATH_NOT_FOUND);
         }
-        if (!Files.isDirectory(inputPath, LinkOption.NOFOLLOW_LINKS)) {
+        if (!Files.isDirectory(inputPath, LinkOption.NOFOLLOW_LINKS)
+                && !Files.isRegularFile(inputPath, LinkOption.NOFOLLOW_LINKS)) {
             throw new BusinessException(ErrorCode.SOURCE_UNSUPPORTED_INPUT_TYPE);
         }
         ensureInputPathAllowed(inputPath);
         PathSafety.ensureNoOverlap(inputPath, rawSourcesRoot);
 
         OrganizeMode organizeMode = request.organizeMode() == null || request.organizeMode().isBlank()
-                ? OrganizeMode.COPY
+                ? OrganizeMode.MOVE
                 : OrganizeMode.fromValue(request.organizeMode());
 
         LocalDateTime now = LocalDateTime.now();
@@ -543,8 +544,10 @@ public class ImportJobService {
     private StatusDisplay collectStatusDisplay(String status) {
         RawOrganizeStatus organizeStatus = RawOrganizeStatus.fromValue(status);
         return switch (organizeStatus) {
-            case PENDING -> new StatusDisplay("待收纳", "待收纳", "文件等待复制到 Raw Sources", "info", false);
-            case COPIED -> new StatusDisplay("已收纳", "已收纳", "文件已复制到 Raw Sources", "success", true);
+            case PENDING -> new StatusDisplay("待收纳", "待收纳", "文件等待进入资料仓库", "info", false);
+            case COPIED -> new StatusDisplay("已收纳", "已收纳", "文件已复制到资料仓库", "success", true);
+            case MOVED -> new StatusDisplay("已归仓", "已归仓", "文件已移动到资料仓库", "success", true);
+            case REFERENCED -> new StatusDisplay("已引用", "已引用", "文件已按原路径登记引用", "success", true);
             case DUPLICATE -> new StatusDisplay("重复文件", "重复文件", "文件内容已存在，已按 hash 去重", "warning", true);
             case NEED_CONFIRM -> new StatusDisplay("待确认", "待确认", "文件需要人工确认后继续", "warning", false);
             case FAILED -> new StatusDisplay("收纳失败", "收纳失败", "文件收纳失败", "danger", true);

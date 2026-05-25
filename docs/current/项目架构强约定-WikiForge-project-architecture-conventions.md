@@ -23,7 +23,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | CAP-001 | 功能 | 文件收纳入口 | 轻应用 / 决策 / 指令执行 / 原子能力 | Frontend Capture + Core + Worker | 主流程 | 变更入口、任务字段或状态时更新 |
 | CAP-002 | 原子能力 | 路径安全校验 | 原子能力 | Common | 复用 | 变更路径规则、Vault 逃逸规则时更新 |
-| CAP-003 | 原子能力 | Raw Sources 复制收纳 | 原子能力 | Worker | 主流程 | 变更复制、命名、去重规则时更新 |
+| CAP-003 | 原子能力 | 资料仓库入库策略 | 原子能力 | Worker | 主流程 | 变更复制、移动、引用、命名或去重规则时更新 |
 | CAP-004 | 原子能力 | hash 去重 | 原子能力 | Worker | 主流程 | 变更 hash 算法或重复策略时更新 |
 | CAP-005 | 原子能力 | 正文抽取 | 原子能力 | Worker；浏览器上传同步抽取由 Core 复用同一抽取策略 | 主流程 | 新增文件类型或抽取策略时更新 |
 | CAP-006 | 功能 | Obsidian LLM Wiki 写入 | 决策 / 指令执行 / 原子能力 | Core + Obsidian adapter | 主流程 | 变更 schema、index、log、写入结果时更新 |
@@ -35,7 +35,7 @@
 | CAP-012 | 数据表 | 状态字典表 | 指令执行 | MySQL `system_dictionaries` | 主流程 | 新状态、颜色、中文说明变化时更新 |
 | CAP-013 | 约定 | Obsidian LLM Wiki 结构 | 决策 / 指令执行 / 原子能力 | Obsidian Vault `WikiForge/` | 主流程 | Vault 目录、页面模板、index/log 或托管区块规则变化时更新 |
 | CAP-014 | 约定 | MVP0 API 契约 | 轻应用 / 指令执行 | Core API / Worker Internal API | 主流程 | 新增、修改、退役 API 或响应字段时更新 |
-| CAP-015 | API | 浏览器上传收纳接口 | 轻应用 / 指令执行 / 原子能力 | Frontend Capture + Core `/api/v1/upload-sources` + Raw Sources | 主流程 | 上传字段、文件命名、落盘状态或大小限制变化时更新 |
+| CAP-015 | API | 浏览器上传收纳接口 | 轻应用 / 指令执行 / 原子能力 | Frontend Capture + Core `/api/v1/upload-sources` + 资料仓库 | 主流程 | 上传字段、文件命名、落盘状态或大小限制变化时更新 |
 | CAP-016 | 历史能力 | 高级能力历史接口集合 | 非 MVP0 主线 | AI Review / MCP Preview / Vector Export / LifeOS / Knowledge Maintenance / Wiki Compile / Source Note / Link Source | 退役 | MVP0 代码、前端封装、迁移和测试已移除；恢复必须重新出需求、API、表设计和验证 |
 
 状态说明：
@@ -154,7 +154,7 @@ MVP0 数据库最小表集合：
 | 表 | 用途 |
 | --- | --- |
 | `import_jobs` | 收纳任务账本 |
-| `source_files` | Raw Sources 文件账本 |
+| `source_files` | 资料仓库文件账本 |
 | `source_contents` | 正文抽取结果 |
 | `wiki_ingest_runs` | Obsidian LLM Wiki 写入结果 |
 | `system_dictionaries` | 中文状态码、中文说明和颜色映射 |
@@ -175,7 +175,7 @@ MVP0 Obsidian 写入只允许落在 Vault 内 `WikiForge/` 托管目录。
 规则：
 
 - 不写、不改、不删 `WikiForge/` 之外的用户笔记。
-- Raw Sources 不放入 Obsidian Vault。
+- MVP0 正式资料仓库放入 Vault 内 `WikiForge/30_Resources_资源/`；开发测试可继续使用 `data/raw-sources`。
 - 来源页、`index.md`、`log.md` 的目录结构以 Obsidian LLM Wiki 设计为准。
 - 用户手写内容必须放在托管区块外，系统不得覆盖托管区块外内容。
 - 修改 Vault 目录、页面模板、index/log 或托管区块规则时，必须同步维护架构登记台账。

@@ -4,13 +4,13 @@
 
 本次交付作为 WikiForge 新起点进入 `main`。
 
-项目方向从历史阶段重新收束为 MVP0：个人私有知识库工具，优先解决文件统一收纳、Raw Sources 规整、正文抽取、Obsidian LLM Wiki 写入。历史的 R7、MCP、向量检索、LifeOS、知识体检、Orchestration、多 Agent 并行和辅助开发工程不再作为当前主线。
+项目方向从历史阶段重新收束为 MVP0：个人私有知识库工具，优先解决文件统一收纳、资料仓库规整、正文抽取、Obsidian LLM Wiki 写入。历史的 R7、MCP、向量检索、LifeOS、知识体检、Orchestration、多 Agent 并行和辅助开发工程不再作为当前主线。
 
 ## 2. 当前主流程
 
 ```text
 本地路径扫描 / 浏览器上传
-  -> Raw Sources 复制收纳
+  -> 资料仓库入库
   -> hash 去重和类型识别
   -> SourceFile 账本
   -> 正文抽取
@@ -61,14 +61,17 @@ E:\WikiForgeVault\WikiForge\
 当前会生成：
 
 - `WikiForge/10_Sources_来源/yyyy/MM/*.md`
+- `WikiForge/30_Resources_资源/`
 - `WikiForge/index.md`
 - `WikiForge/log.md`
 
-Raw Sources 不进入 Obsidian Vault，仍位于项目数据目录：
+2026-05-25 收纳验收计划确认后，正式资料仓库调整为：
 
 ```text
-E:\github\WikiForge\data\raw-sources
+E:\WikiForgeVault\WikiForge\30_Resources_资源
 ```
+
+`E:\github\WikiForge\data\raw-sources` 仅保留为开发测试目录口径。
 
 ## 6. 验证记录
 
@@ -97,7 +100,7 @@ E:\WikiForgeVault\WikiForge\10_Sources_来源\2026\05\file_23acdf843da7434bb376a
 - 浏览器上传样例：`job_20260525_238af8a8e035`，状态 `已完成`，上传文件 `file_7726a38d4c2a47b59faca05802099080` 已复制收纳并完成正文抽取。
 - Wiki ingest 样例：`wir_20260525_a6886a87da66`，状态 `已写入`，来源页写入 `WikiForge/10_Sources_来源/2026/05/file_f39634dd13e34b208e9d9a145e7347b9-mvp0-e2e-clean-20260525-114206-duplicate.md.md`。
 - `WikiForge/index.md` 已包含本次 `fileUid`，`WikiForge/log.md` 已包含本次 `runUid`。
-- Raw Sources 作为输入路径时被拦截，验证输入路径不得与 Raw Sources 重叠。
+- 资料仓库作为输入路径时应被拦截，验证输入路径不得与资料仓库重叠。
 - `source_contents` 中可查到本次路径导入文件和上传文件对应的 2 条正文抽取记录。
 
 ## 7. 后续开发强约定

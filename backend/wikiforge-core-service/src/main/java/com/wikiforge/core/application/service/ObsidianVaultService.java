@@ -38,12 +38,14 @@ public class ObsidianVaultService {
     private static final String MANAGED_ROOT_DISPLAY = MANAGED_ROOT + "/";
     private static final String WIKI_RULES_DIRECTORY = MANAGED_ROOT + "/00_Rules_规则";
     private static final String WIKI_SOURCE_DIRECTORY = MANAGED_ROOT + "/10_Sources_来源";
+    private static final String WIKI_RESOURCES_DIRECTORY = MANAGED_ROOT + "/30_Resources_资源";
     private static final String WIKI_INDEX_PATH = MANAGED_ROOT + "/index.md";
     private static final String WIKI_LOG_PATH = MANAGED_ROOT + "/log.md";
     private static final List<String> VAULT_DIRECTORIES = List.of(
             MANAGED_ROOT,
             WIKI_RULES_DIRECTORY,
-            WIKI_SOURCE_DIRECTORY
+            WIKI_SOURCE_DIRECTORY,
+            WIKI_RESOURCES_DIRECTORY
     );
     private static final Map<String, String> VAULT_FILES = vaultFiles();
 
@@ -188,7 +190,7 @@ public class ObsidianVaultService {
                 - Source File UID: `%s`
                 - 文件名: `%s`
                 - 文件类型: `%s`
-                - Raw Sources: `%s`
+                - 资料路径: `%s`
                 - 内容哈希: `%s`
                 - 写入运行: `%s`
 
@@ -411,7 +413,7 @@ public class ObsidianVaultService {
         files.put(WIKI_LOG_PATH, "# WikiForge Log\n\n");
         files.put(WIKI_RULES_DIRECTORY + "/LLM-Wiki写入规则.md",
                 "# LLM Wiki 写入规则\n\nWikiForge 只维护带 `wikiforge:managed` 标记的托管区块。\n");
-        files.put(WIKI_RULES_DIRECTORY + "/来源页模板.md", "# 来源页模板\n\n用于 Raw Sources 对应来源页。\n");
+        files.put(WIKI_RULES_DIRECTORY + "/来源页模板.md", "# 来源页模板\n\n用于资料仓库或引用资料对应来源页。\n");
         return files;
     }
 

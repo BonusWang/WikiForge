@@ -41,7 +41,8 @@ public class LocalFileScanner {
         if (!Files.exists(inputPath)) {
             throw new BusinessException(ErrorCode.SOURCE_PATH_NOT_FOUND);
         }
-        if (!Files.isDirectory(inputPath, LinkOption.NOFOLLOW_LINKS)) {
+        if (!Files.isDirectory(inputPath, LinkOption.NOFOLLOW_LINKS)
+                && !Files.isRegularFile(inputPath, LinkOption.NOFOLLOW_LINKS)) {
             throw new BusinessException(ErrorCode.SOURCE_UNSUPPORTED_INPUT_TYPE);
         }
         if (request.followSymlinks()) {
@@ -55,7 +56,11 @@ public class LocalFileScanner {
         }
 
         ScanAccumulator accumulator = new ScanAccumulator(request);
-        scanDirectory(inputPath, rawSourcesRoot, request, accumulator, true);
+        if (Files.isRegularFile(inputPath, LinkOption.NOFOLLOW_LINKS)) {
+            scanChildFile(inputPath, rawSourcesRoot, request, accumulator);
+        } else {
+            scanDirectory(inputPath, rawSourcesRoot, request, accumulator, true);
+        }
         return new LocalScanResult(
                 accumulator.totalCount,
                 accumulator.successCount,
@@ -120,9 +125,14 @@ public class LocalFileScanner {
                 accumulator.skippedCount++;
                 return;
             }
-            LocalScanFile scannedFile = rawSourceFileCollector.collect(file, rawSourcesRoot, accumulator.copiedByHash);
+            LocalScanFile scannedFile = rawSourceFileCollector.collect(
+                    file,
+                    rawSourcesRoot,
+                    accumulator.collectedByHash,
+                    accumulator.request.organizeMode()
+            );
             accumulator.files.add(scannedFile);
-            if (RawSourceFileCollector.ORGANIZE_STATUS_COPIED.equals(scannedFile.organizeStatus())) {
+            if (isSuccessfulCollection(scannedFile.organizeStatus())) {
                 accumulator.successCount++;
             }
         } catch (IOException exception) {
@@ -171,9 +181,15 @@ public class LocalFileScanner {
         return request.maxCopyFileSizeMb() * 1024L * 1024L;
     }
 
+    private boolean isSuccessfulCollection(String organizeStatus) {
+        return RawSourceFileCollector.ORGANIZE_STATUS_COPIED.equals(organizeStatus)
+                || RawSourceFileCollector.ORGANIZE_STATUS_MOVED.equals(organizeStatus)
+                || RawSourceFileCollector.ORGANIZE_STATUS_REFERENCED.equals(organizeStatus);
+    }
+
     private static final class ScanAccumulator {
         private final List<LocalScanFile> files = new ArrayList<>();
-        private final Map<String, LocalScanFile> copiedByHash = new HashMap<>();
+        private final Map<String, LocalScanFile> collectedByHash = new HashMap<>();
         private final LocalScanRequest request;
         private int totalCount;
         private int successCount;

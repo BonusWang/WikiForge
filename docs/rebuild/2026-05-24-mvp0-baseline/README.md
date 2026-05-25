@@ -12,7 +12,7 @@ MVP0 不继承旧阶段路线，不沿用 R 系列编号。旧文档只作为参
 
 ```text
 文件入口
-  -> Raw Sources 收纳
+  -> 资料仓库入库
   -> SourceFile 账本
   -> 正文抽取
   -> Obsidian LLM Wiki 写入
@@ -35,6 +35,7 @@ MVP0 不继承旧阶段路线，不沿用 R 系列编号。旧文档只作为参
 12. [MVP0 路线图 Roadmap](2026-05-24-整体重构路线-WikiForge-refactor-roadmap.md)
 13. [MVP0 代码重构执行计划 Implementation Plan](2026-05-24-MVP0代码重构执行计划-WikiForge-mvp0-implementation-plan.md)
 14. [MVP0 新起点交付记录 Starting Point](2026-05-25-MVP0新起点交付记录-WikiForge-mvp0-starting-point.md)
+15. [收纳验收计划 Intake Acceptance Plan](2026-05-25-收纳验收计划-WikiForge-intake-acceptance-plan.md)
 
 ## 执行规则
 
@@ -50,7 +51,7 @@ MVP0 不继承旧阶段路线，不沿用 R 系列编号。旧文档只作为参
 2026-05-24 已完成 MVP0 第一轮代码落地，2026-05-25 已作为新起点完成运行验收：
 
 - 前端主入口收敛为“收纳 / 资料箱 / Wiki / 日志 / 设置”。
-- 浏览器上传入口已接入 Raw Sources 收纳和 SourceFile 账本登记。
+- 浏览器上传入口已接入资料仓库复制入库和 SourceFile 账本登记。
 - Core API 补齐中文状态字段、字典查询、Wiki ingest 运行记录。
 - `system_dictionaries`、`wiki_ingest_runs` 进入 MVP0 最小表集合。
 - Wiki ingest 已能写入 Obsidian `WikiForge/` 来源页、`index.md` 和 `log.md`。
@@ -76,3 +77,4 @@ MVP0 不继承旧阶段路线，不沿用 R 系列编号。旧文档只作为参
 | MVP0 路线图 | 将后续开发拆成小步验证节点 |
 | MVP0 代码重构执行计划 | 将代码重构拆成可执行、可验证任务 |
 | MVP0 新起点交付记录 | 固定本次合入 main 的运行口径、验收结果和后续边界 |
+| 收纳验收计划 | 固定资料仓库、复制/移动/引用入库策略和人工验收用例 |

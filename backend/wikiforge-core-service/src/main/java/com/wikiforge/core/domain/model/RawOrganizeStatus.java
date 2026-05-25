@@ -6,6 +6,8 @@ import com.wikiforge.common.error.ErrorCode;
 public enum RawOrganizeStatus {
     PENDING("pending"),
     COPIED("copied"),
+    MOVED("moved"),
+    REFERENCED("referenced"),
     DUPLICATE("duplicate"),
     NEED_CONFIRM("need_confirm"),
     FAILED("failed");

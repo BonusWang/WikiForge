@@ -81,7 +81,7 @@ class ImportJobApiIntegrationTests {
                     input_url CLOB NULL,
                     raw_sources_root CLOB NULL,
                     recursive_scan BOOLEAN NOT NULL DEFAULT TRUE,
-                    organize_mode VARCHAR(64) NOT NULL DEFAULT 'copy',
+                    organize_mode VARCHAR(64) NOT NULL DEFAULT 'move',
                     max_copy_file_size_mb INT NOT NULL DEFAULT 100,
                     source_platform VARCHAR(128) NULL,
                     connector_name VARCHAR(128) NULL,
@@ -191,7 +191,7 @@ class ImportJobApiIntegrationTests {
         assertThat(data.path("inputPath").asText()).isEqualTo(inputPath.toString());
         assertThat(data.path("rawSourcesRoot").asText()).isEqualTo(RAW_SOURCES_ROOT.toString());
         assertThat(data.path("recursive").asBoolean()).isTrue();
-        assertThat(data.path("organizeMode").asText()).isEqualTo("copy");
+        assertThat(data.path("organizeMode").asText()).isEqualTo("move");
         assertThat(data.path("maxCopyFileSizeMb").asInt()).isEqualTo(100);
         assertThat(data.path("status").asText()).isEqualTo("pending");
         assertThat(data.path("totalCount").asInt()).isZero();
@@ -202,7 +202,7 @@ class ImportJobApiIntegrationTests {
                 inputPath.toString(),
                 RAW_SOURCES_ROOT.toString(),
                 true,
-                "copy",
+                "move",
                 100,
                 true,
                 true,
@@ -218,8 +218,62 @@ class ImportJobApiIntegrationTests {
     }
 
     @Test
+    void createLocalImportJobAcceptsMoveModeForLocalDirectory() throws Exception {
+        Path inputPath = createInputDirectory("messy-sources-to-move");
+
+        ResponseEntity<JsonNode> response = restTemplate.postForEntity(
+                "/api/v1/import-jobs/local",
+                Map.of("inputPath", inputPath.toString(), "organizeMode", "move"),
+                JsonNode.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode data = response.getBody().path("data");
+        assertThat(data.path("organizeMode").asText()).isEqualTo("move");
+
+        verify(workerImportJobClient).startLocalImportJob(new RunLocalImportJobRequest(
+                data.path("jobUid").asText(),
+                inputPath.toString(),
+                RAW_SOURCES_ROOT.toString(),
+                true,
+                "move",
+                100,
+                true,
+                true,
+                false
+        ));
+    }
+
+    @Test
+    void createLocalImportJobAcceptsReferenceModeForSingleFile() throws Exception {
+        Path inputFile = createInputFile("stable-vault/profile.md", "profile");
+
+        ResponseEntity<JsonNode> response = restTemplate.postForEntity(
+                "/api/v1/import-jobs/local",
+                Map.of("inputPath", inputFile.toString(), "organizeMode", "reference"),
+                JsonNode.class
+        );
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode data = response.getBody().path("data");
+        assertThat(data.path("organizeMode").asText()).isEqualTo("reference");
+
+        verify(workerImportJobClient).startLocalImportJob(new RunLocalImportJobRequest(
+                data.path("jobUid").asText(),
+                inputFile.toString(),
+                RAW_SOURCES_ROOT.toString(),
+                true,
+                "reference",
+                100,
+                true,
+                true,
+                false
+        ));
+    }
+
+    @Test
     void uploadSourcesCopiesFilesToRawSourcesAndRegistersSourceFile() throws Exception {
-        byte[] content = "浏览器上传进入 Raw Sources".getBytes(StandardCharsets.UTF_8);
+        byte[] content = "浏览器上传进入资料仓库".getBytes(StandardCharsets.UTF_8);
         ByteArrayResource resource = new ByteArrayResource(content) {
             @Override
             public String getFilename() {
@@ -267,13 +321,13 @@ class ImportJobApiIntegrationTests {
                 "SELECT parser_name, raw_text, parse_status FROM source_contents"
         );
         assertThat(sourceContent.get("parser_name")).isEqualTo("markdown-text");
-        assertThat(sourceContent.get("raw_text")).isEqualTo("浏览器上传进入 Raw Sources");
+        assertThat(sourceContent.get("raw_text")).isEqualTo("浏览器上传进入资料仓库");
         assertThat(sourceContent.get("parse_status")).isEqualTo("success");
 
         Path managedPath = Path.of(sourceFile.get("managed_path").toString());
         assertThat(managedPath).startsWith(RAW_SOURCES_ROOT);
         assertThat(Files.exists(managedPath)).isTrue();
-        assertThat(Files.readString(managedPath, StandardCharsets.UTF_8)).isEqualTo("浏览器上传进入 Raw Sources");
+        assertThat(Files.readString(managedPath, StandardCharsets.UTF_8)).isEqualTo("浏览器上传进入资料仓库");
     }
 
     @Test
@@ -525,6 +579,13 @@ class ImportJobApiIntegrationTests {
         Path inputPath = ALLOWED_ROOT.resolve(name).normalize();
         Files.createDirectories(inputPath);
         return inputPath.toRealPath();
+    }
+
+    private Path createInputFile(String name, String content) throws Exception {
+        Path inputFile = ALLOWED_ROOT.resolve(name).normalize();
+        Files.createDirectories(inputFile.getParent());
+        Files.writeString(inputFile, content, StandardCharsets.UTF_8);
+        return inputFile.toRealPath();
     }
 
     private HttpHeaders internalHeaders() {

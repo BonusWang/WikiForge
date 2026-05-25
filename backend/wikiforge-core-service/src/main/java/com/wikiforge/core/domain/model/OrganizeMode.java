@@ -5,6 +5,8 @@ import com.wikiforge.common.error.ErrorCode;
 
 public enum OrganizeMode {
     COPY("copy"),
+    MOVE("move"),
+    REFERENCE("reference"),
     INDEX_ONLY("index_only");
 
     private final String value;

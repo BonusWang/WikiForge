@@ -63,7 +63,7 @@ frontend/src/
 - Source Inbox：导入任务、SourceFile 列表、重复文件、解析状态。
 - Wiki Workspace：Wiki 写入结果、Source page、index/log、重跑入口。
 - Run Log：ImportJob、WikiIngestRun、index/log 更新记录。
-- Settings：MVP0 运行口径、Raw Sources、Obsidian Vault 托管目录、路径安全提示。
+- Settings：MVP0 运行口径、资料仓库、Obsidian Vault 托管目录、路径安全提示。
 
 ### 3.3 单页拆分原则
 
@@ -104,7 +104,7 @@ com.wikiforge.core
 Worker Service 负责耗时文件任务，不承载 UI 查询：
 
 - 本机路径扫描。
-- Raw Sources 复制。
+- 资料仓库复制、移动和引用登记。
 - hash 和文件类型识别。
 - 文本抽取。
 - 将结果回写 Core。
@@ -116,7 +116,7 @@ worker.application.ingest.LocalImportJobRunner
 worker.application.upload.UploadSourceRunner
 worker.domain.scan.FileScanPolicy
 worker.infrastructure.filesystem.LocalDirectoryScanner
-worker.infrastructure.filesystem.RawSourceCopier
+worker.infrastructure.filesystem.RawSourceFileCollector
 worker.infrastructure.filesystem.ContentHasher
 worker.infrastructure.extractor.TextContentExtractor
 ```
@@ -156,7 +156,7 @@ UI Capture
 ```text
 UI Capture
   -> Core: upload multipart file
-  -> Core/Worker: store into Raw Sources
+  -> Core/Worker: store into resource library
   -> Core: register SourceFile
   -> Core: create Wiki ingest run
   -> Obsidian: write source/index/log
@@ -186,14 +186,14 @@ Obsidian 写入只进入 Vault 内 `WikiForge/` 托管目录。来源页、`inde
 
 规划补充字段：
 
-- `rawSourcesRoot`: 可选 Raw Sources 根目录；为空时使用运行配置
-- `organizeMode`: 当前仅支持 `copy`
+- `rawSourcesRoot`: 可选资料仓库根目录；为空时使用运行配置
+- `organizeMode`: 支持 `copy`、`move`、`reference`；本地路径默认 `move`
 
 ### 6.2 已接入主流程
 
 `POST /api/v1/upload-sources`
 
-用途：浏览器上传文件进入 Raw Sources 和 Wiki ingest 主流程。
+用途：浏览器上传文件复制进入资料仓库和 Wiki ingest 主流程。
 
 `POST /api/v1/source-files/{fileUid}/wiki-ingest-runs`
 
@@ -218,7 +218,7 @@ MVP0 数据库以最小可用为目标，不继承历史阶段的完整表集合
 | 表 | 归属 | 用途 |
 | --- | --- | --- |
 | `import_jobs` | Core / capture | 路径扫描和上传任务账本 |
-| `source_files` | Core / source | Raw Sources 文件账本、hash、类型、状态 |
+| `source_files` | Core / source | 资料仓库文件账本、hash、类型、状态 |
 | `source_contents` | Core / source | 文本抽取结果和抽取状态 |
 | `wiki_ingest_runs` | Core / wiki | Obsidian LLM Wiki 写入运行结果 |
 | `system_dictionaries` | Core / dictionary | 中文状态码、中文说明和颜色映射 |
@@ -240,7 +240,7 @@ MVP0 数据库以最小可用为目标，不继承历史阶段的完整表集合
 
 ## 8. 安全规则
 
-- 输入路径与 Raw Sources 不得重叠。
+- 输入路径与资料仓库不得重叠。
 - 上传文件不得覆盖已有文件。
 - 文件名必须安全化。
 - Obsidian 写入必须限制在 Vault 内。

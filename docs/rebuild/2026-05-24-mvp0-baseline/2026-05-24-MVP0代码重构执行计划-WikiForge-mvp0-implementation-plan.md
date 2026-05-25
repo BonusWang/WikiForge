@@ -19,7 +19,7 @@ MVP0 完成后，系统只呈现并支撑一条主流程：
 ```text
 收纳入口
   -> 路径扫描 / 浏览器上传
-  -> Raw Sources 规整收纳
+  -> 资料仓库规整入库
   -> SourceFile 账本
   -> 正文抽取
   -> Obsidian LLM Wiki 写入
@@ -35,7 +35,7 @@ MVP0 完成后，系统只呈现并支撑一条主流程：
 | 后端 | Core 对前端提供 MVP0 API，Worker 只做内部扫描、复制、hash、抽取任务 |
 | 数据库 | 主流程只依赖 `import_jobs`、`source_files`、`source_contents`、`wiki_ingest_runs`、`system_dictionaries` |
 | 状态 | 用户可见状态统一使用中文码值和字典映射 |
-| Obsidian | 只写入 Vault 内 `WikiForge/` 托管目录，Raw Sources 不进入 Vault |
+| Obsidian | 只写入 Vault 内 `WikiForge/` 托管目录，资料仓库位于 `WikiForge/30_Resources_资源/` |
 | 历史功能 | MCP、向量、LifeOS、知识体检、AI Review、Orchestration 均退出 MVP0 主流程 |
 
 ## 3. 执行任务
@@ -262,12 +262,12 @@ npm --prefix frontend run build
 
 | 场景 | 预期 |
 | --- | --- |
-| 本地路径收纳 | 创建 import job，复制 Raw Sources，生成 SourceFile |
-| 浏览器上传 | 上传文件进入同一 Raw Sources 流程，不覆盖同名文件 |
+| 本地路径收纳 | 创建 import job，按策略入库资料仓库，生成 SourceFile |
+| 浏览器上传 | 上传文件复制进入同一资料仓库流程，不覆盖同名文件 |
 | 重复文件 | hash 去重，前端中文提示 |
 | 正文抽取 | 生成或更新 SourceContent |
 | Wiki ingest | 写入 Obsidian 来源页、index、log |
-| 安全边界 | 输入路径不得与 Raw Sources 重叠，Obsidian 写入不得逃逸 Vault |
+| 安全边界 | 输入路径不得与资料仓库重叠，Obsidian 写入不得逃逸 Vault |
 
 验证命令：
 
@@ -317,7 +317,7 @@ docker compose config
 - Task 4 数据库最小主流程表落地：新增 `system_dictionaries`、`wiki_ingest_runs`。
 - Task 6 Obsidian LLM Wiki 写入闭环：Wiki ingest 已写入来源页、index 和 log 的最小规则版本。
 - Task 7 退役入口清理：Orchestration 退出默认 Maven、Compose 和 CI 路径。
-- Task 8 上传入口验收项：浏览器上传已进入 Raw Sources，并登记 SourceFile 账本。
+- Task 8 上传入口验收项：浏览器上传已进入资料仓库，并登记 SourceFile 账本。
 
 仍保留为后续加固：
 
@@ -327,8 +327,8 @@ docker compose config
 
 已完成：
 
-- Task 5 Worker 原子能力继续细拆：新增 `RawSourceFileCollector`、`FileContentHasher`、`FileTypeDetector`，`LocalFileScanner` 保留递归扫描和跳过规则，文件复制、hash、类型识别改为独立可测能力；正文抽取继续复用 `TextContentExtractor`。
-- Task 8 端到端人工验收：使用本机真实路径 `E:\github\WikiForge\data\imports\mvp0-e2e-clean-20260525-114206`、真实 Raw Sources `E:\github\WikiForge\data\raw-sources` 和真实 Obsidian Vault `E:\WikiForgeVault` 跑通路径导入、重复文件、浏览器上传、正文抽取、Wiki ingest、index/log 更新和 Raw Sources 重叠拦截。
+- Task 5 Worker 原子能力继续细拆：新增 `RawSourceFileCollector`、`FileContentHasher`、`FileTypeDetector`，`LocalFileScanner` 保留递归扫描和跳过规则，文件复制/移动/引用登记、hash、类型识别改为独立可测能力；正文抽取继续复用 `TextContentExtractor`。
+- Task 8 端到端人工验收：使用本机真实路径 `E:\github\WikiForge\data\imports\mvp0-e2e-clean-20260525-114206`、真实资料仓库 `E:\WikiForgeVault\WikiForge\30_Resources_资源` 和真实 Obsidian Vault `E:\WikiForgeVault` 跑通路径导入、重复文件、浏览器上传、正文抽取、Wiki ingest、index/log 更新和资料仓库重叠拦截。
 - 历史高级能力物理清理：删除 AI Review、MCP Preview、Vector Export、LifeOS、Knowledge Maintenance、旧 Wiki Compile、旧 Source Note、Link Source 的后端代码、前端 API/类型、Flyway 迁移和专项集成测试；Obsidian API 收敛为 init/status，Wiki 写入状态改由 `wiki_ingest_runs` 驱动。
 - Orchestration 辅助工程物理清理：删除 `backend/wikiforge-orchestration-service/`、`orchestration-ui/`、`deploy/docker/orchestration-*.Dockerfile`、`agentteam/`、Orchestration 错误码和 `.env.example` 中的旧辅助工程/向量/模型变量。
 - 历史 `sources` 账本物理清理：fresh schema 不再创建 `sources`，`source_files` 成为唯一资料文件账本，`source_contents` 只通过 `source_file_id` 关联正文抽取结果。

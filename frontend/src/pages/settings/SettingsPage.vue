@@ -25,8 +25,8 @@ import { Setting } from '@element-plus/icons-vue';
           <strong>中文字典映射</strong>
         </div>
         <div class="setting-row">
-          <span>Raw Sources</span>
-          <strong>Vault 外不可变事实源</strong>
+          <span>资料仓库</span>
+          <strong>WikiForge/30_Resources_资源</strong>
         </div>
         <div class="setting-row">
           <span>Obsidian</span>

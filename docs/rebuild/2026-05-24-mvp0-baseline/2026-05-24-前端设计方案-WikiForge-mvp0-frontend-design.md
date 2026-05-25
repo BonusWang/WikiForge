@@ -21,7 +21,7 @@ MVP0 只保留五个一级入口：
 | 资料箱 | Source Inbox | 查看文件列表、重复文件、解析状态、失败原因 |
 | Wiki | Wiki Workspace | 查看 Obsidian 写入结果、重跑 Wiki 整理 |
 | 日志 | Run Log | 查看收纳、解析、Wiki 写入、index/log 更新记录 |
-| 设置 | Settings | MVP0 运行口径、Raw Sources、Vault 托管目录、路径安全提示 |
+| 设置 | Settings | MVP0 运行口径、资料仓库、Vault 托管目录、路径安全提示 |
 
 默认首屏进入“收纳”。
 
@@ -69,7 +69,7 @@ MVP0 只保留五个一级入口：
 
 ### 3.5 设置
 
-- Raw Sources 根目录。
+- 资料仓库根目录。
 - Obsidian Vault 路径。
 - 托管目录和写入边界。
 - 扫描安全根提示。
@@ -148,7 +148,7 @@ frontend/src/styles/
 错误提示必须说人话，例如：
 
 ```text
-该路径与 Raw Sources 重叠，请选择其他目录。
+该路径与资料仓库重叠，请选择其他目录。
 ```
 
 ## 7. 状态字典
@@ -177,7 +177,7 @@ API 返回建议：
 {
   "statusCode": "已收纳",
   "statusLabel": "已收纳",
-  "statusDescription": "文件已复制到 Raw Sources"
+  "statusDescription": "文件已进入资料仓库"
 }
 ```
 

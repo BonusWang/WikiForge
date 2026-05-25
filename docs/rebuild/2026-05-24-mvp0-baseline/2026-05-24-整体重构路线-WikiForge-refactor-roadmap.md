@@ -15,7 +15,7 @@
 | MVP0-0 基座整理 | 建立当前事实来源 | PRD、四层架构、资源盘点、路线图、文档隔离 | `git diff --check` |
 | MVP0-1 设计对齐 | 固定前端、后端、四层架构、数据流和最小数据库 | 设计确认稿 | 文档互链通过 |
 | MVP0-2 前端主流程骨架 | 建立收纳、资料箱、Wiki、日志、设置 | 页面骨架和导航 | 前端构建通过 |
-| MVP0-3 收纳链路 | 路径扫描、Raw Sources、SourceFile 账本、最小收纳表 | Core / Worker 最小链路 | 后端测试通过 |
+| MVP0-3 收纳链路 | 路径扫描、资料仓库、SourceFile 账本、最小收纳表 | Core / Worker 最小链路 | 后端测试通过 |
 | MVP0-4 Obsidian Wiki | Source page、Wiki page、index、log | Wiki ingest 最小闭环 | Obsidian 写入测试通过 |
 | MVP0-5 上传入口 | 浏览器上传进入同一收纳流程 | 上传 API 和 UI | 上传回归通过 |
 | MVP0-6 清理历史包袱 | 高级能力退主线，辅助工程退役，历史表结构退场 | 导航、模块、数据库清单收敛 | 主入口无历史能力 |
@@ -79,7 +79,7 @@ npm --prefix frontend run build
 目标：
 
 - 保留并收敛 `POST /api/v1/import-jobs/local`。
-- 路径扫描复制到 Raw Sources。
+- 路径扫描按策略复制、移动或引用登记到资料仓库。
 - hash 去重、类型识别、SourceFile 账本可用。
 - MVP0 只使用 `import_jobs`、`source_files`、`source_contents` 作为收纳表。
 - 状态展示使用 `system_dictionaries`，不让前端硬编码英文状态。
@@ -113,9 +113,9 @@ npm --prefix frontend run build
 目标：
 
 - 新增 `POST /api/v1/upload-sources`。
-- 上传文件进入 Raw Sources。
+- 上传文件复制进入资料仓库。
 - 上传和路径扫描复用同一 SourceFile / Wiki ingest 流程。
-- 2026-05-24 已接入最小实现：Core 负责 multipart 上传、hash 命名、Raw Sources 落盘和 SourceFile 登记；前端收纳页提供选择/拖入文件入口。
+- 2026-05-24 已接入最小实现：Core 负责 multipart 上传、hash 命名、资料仓库落盘和 SourceFile 登记；前端收纳页提供选择/拖入文件入口。
 
 验收：
 

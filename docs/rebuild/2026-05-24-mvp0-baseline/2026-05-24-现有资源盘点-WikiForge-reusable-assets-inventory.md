@@ -24,7 +24,7 @@
 | API 包装 | `ApiResponse` / `PageResult` | 复用 | `common.web` 或现路径 | REST 统一响应继续使用 |
 | ImportJob 账本 | `ImportJobService`、Repository、DTO | 适配 | `core.application.capture` / `domain.job` | 保留路径导入能力，拆出状态机和 Worker 调度 |
 | SourceFile 账本 | `SourceFileRepository`、Entity、DTO | 适配 | `domain.source` / `infrastructure.persistence.source` | 作为收纳主账本继续保留 |
-| LocalFileScanner | `worker.infrastructure.filesystem.LocalFileScanner` | 适配 | `LocalDirectoryScanner` + `RawSourceCopier` + `ContentHasher` | 当前类混合扫描、复制、hash、分类，需要拆原子能力 |
+| LocalFileScanner | `worker.infrastructure.filesystem.LocalFileScanner` | 适配 | `LocalDirectoryScanner` + `RawSourceFileCollector` + `ContentHasher` | 当前类混合扫描、入库、hash、分类，需要拆原子能力 |
 | LocalImportJobRunner | `worker.application.service.LocalImportJobRunner` | 适配 | `worker.application.ingest.LocalImportJobRunner` | 保留编排骨架，拆出原子依赖 |
 | TextContentExtractor | `worker.application.service.TextContentExtractor` | 复用 | `worker.infrastructure.extractor.TextContentExtractor` | Markdown/TXT/PDF/DOCX 抽取可复用 |
 | ObsidianVaultService | `core.application.service.ObsidianVaultService` | 适配 | `core.application.wiki` + `infrastructure.filesystem.obsidian` | 路径校验、原子写入和 URI 生成可复用，写入范围改为 `WikiForge/` 托管目录 |
@@ -59,7 +59,7 @@
 | 资源 | 状态 | 处理策略 |
 | --- | --- | --- |
 | `import_jobs` | 复用 | MVP0 收纳任务账本 |
-| `source_files` | 复用 | MVP0 Raw Sources 文件账本 |
+| `source_files` | 复用 | MVP0 资料仓库文件账本 |
 | `source_contents` | 复用 | MVP0 正文抽取结果 |
 | `wiki_ingest_runs` | 已落地 | MVP0 Obsidian 写入结果账本 |
 | `system_dictionaries` | 已落地 | MVP0 中文状态字典 |
@@ -85,7 +85,7 @@
 
 | 测试 | 状态 | 后续用途 |
 | --- | --- | --- |
-| `ImportJobApiIntegrationTests` | 复用 | 路径导入和 Raw Sources 回归 |
+| `ImportJobApiIntegrationTests` | 复用 | 路径导入和资料仓库回归 |
 | `ObsidianApiIntegrationTests` | 适配 | LLM Wiki 写入和 Vault 安全回归 |
 | `WikiCompileApiIntegrationTests` | 退役 | 已删除 |
 | `AiReviewApiIntegrationTests` | 退役 | 已删除 |
