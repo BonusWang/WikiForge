@@ -148,7 +148,7 @@ npm --prefix frontend run build
 - 增加 SourceFile 详情和列表响应的中文状态字段。
 - 增加 Wiki ingest run 创建与结果查询接口。
 - 增加字典查询接口。
-- 不删除历史 Controller 的代码资产，但从 MVP0 前端主流程和导航中断开。
+- 删除已明确不进入 MVP0 且无复用价值的历史 Controller / Service / DTO，保留 MVP0 主流程接口。
 
 验证命令：
 
@@ -171,7 +171,7 @@ mvn -f backend/pom.xml test
 - 确认 `import_jobs`、`source_files`、`source_contents` 字段可承载 MVP0。
 - 新增 `wiki_ingest_runs`。
 - 新增 `system_dictionaries`，写入中文状态码、中文名称、中文说明和 UI 样式键。
-- 历史表不在本任务直接删除，先从主流程断开；后续单独执行清理迁移。
+- MVP0 fresh schema 不再创建历史高级能力表；已有本地库如已执行旧迁移，单独重建或迁移。
 
 验证命令：
 
@@ -243,7 +243,7 @@ mvn -f backend/pom.xml test
 - 前端不再暴露高级能力入口。
 - 后端主构建默认不再启用 Orchestration 辅助工程。
 - Docker Compose 默认不启动 Orchestration。
-- MCP、向量、LifeOS、知识体检保留归档说明，不作为 MVP0 主流程能力。
+- MCP、向量、LifeOS、知识体检、AI Review、旧 Wiki Compile、旧 Source Note、Link Source 的代码入口、前端封装、迁移和测试从 MVP0 删除。
 
 验证命令：
 
@@ -328,6 +328,7 @@ docker compose config
 
 - Task 5 Worker 原子能力继续细拆：新增 `RawSourceFileCollector`、`FileContentHasher`、`FileTypeDetector`，`LocalFileScanner` 保留递归扫描和跳过规则，文件复制、hash、类型识别改为独立可测能力；正文抽取继续复用 `TextContentExtractor`。
 - Task 8 端到端人工验收：使用本机真实路径 `E:\github\WikiForge\data\imports\mvp0-e2e-clean-20260525-114206`、真实 Raw Sources `E:\github\WikiForge\data\raw-sources` 和真实 Obsidian Vault `E:\WikiForgeVault` 跑通路径导入、重复文件、浏览器上传、正文抽取、Wiki ingest、index/log 更新和 Raw Sources 重叠拦截。
+- 历史高级能力物理清理：删除 AI Review、MCP Preview、Vector Export、LifeOS、Knowledge Maintenance、旧 Wiki Compile、旧 Source Note、Link Source 的后端代码、前端 API/类型、Flyway 迁移和专项集成测试；Obsidian API 收敛为 init/status，Wiki 写入状态改由 `wiki_ingest_runs` 驱动。
 
 验证命令：
 

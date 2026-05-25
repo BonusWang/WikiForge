@@ -29,12 +29,7 @@ public record SourceFileResponse(
         String duplicateOfFileUid,
         String extractFailureReason,
         String wikiFailureReason,
-        String obsidianNoteUid,
-        String obsidianNoteStatus,
-        String obsidianNoteTitle,
-        String obsidianVaultPath,
-        String obsidianUri,
-        OffsetDateTime obsidianNoteCreatedAt,
+        WikiIngestRunResponse latestWikiIngestRun,
         OffsetDateTime createdAt
 ) {
 }

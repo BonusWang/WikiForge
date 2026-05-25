@@ -128,14 +128,16 @@ worker.infrastructure.extractor.TextContentExtractor
 
 以下能力不进入 MVP0 主流程：
 
-- `McpPreviewService`：冻结。
-- `VectorExportService`：冻结。
-- `PersonalRecordService`：冻结。
-- `KnowledgeMaintenanceService`：冻结。
+- `McpPreviewService`：退役，MVP0 代码已删除。
+- `VectorExportService`：退役，MVP0 代码已删除。
+- `PersonalRecordService`：退役，MVP0 代码已删除。
+- `KnowledgeMaintenanceService`：退役，MVP0 代码已删除。
+- `AiReviewService`：退役，MVP0 代码已删除。
+- `WikiCompileService` / 旧 Source Note / Link Source：退役，MVP0 代码已删除。
 - `wikiforge-orchestration-service`：退役。
 - `orchestration-ui`：退役。
 
-冻结能力后续必须单独评估；退役能力后续从构建、导航和文档入口清理。
+退役能力后续必须重新出需求、API、表设计和验证方案，不能直接回到主流程。
 
 ## 5. 数据流
 
@@ -228,8 +230,9 @@ MVP0 数据库以最小可用为目标，不继承历史阶段的完整表集合
 
 ### 7.2 暂不进入 MVP0 的表
 
-- `agent_runs`、`agent_steps`、`review_items` 不再复用为 Wiki ingest。
-- `mcp_tool_calls`、`personal_records`、`vector_export_jobs`、`content_chunks`、`knowledge_maintenance_*` 不进入 MVP0 主流程。
+- `agent_runs`、`agent_steps`、`review_items` 不再复用为 Wiki ingest，迁移文件已从 MVP0 移除。
+- `obsidian_notes`、`wiki_pages`、`wiki_integrations` 不进入 MVP0 新库。
+- `mcp_tool_calls`、`personal_records`、`vector_export_jobs`、`content_chunks`、`knowledge_maintenance_*` 不进入 MVP0 新库。
 - Orchestration 相关表或配置退役，后续清理节点处理。
 
 ### 7.3 建表规则
@@ -237,7 +240,7 @@ MVP0 数据库以最小可用为目标，不继承历史阶段的完整表集合
 - 不为未来能力提前建表。
 - 新表必须先说明所属四层能力、归属服务和生命周期。
 - Worker 不直接暴露用户查询表，只回写 Core 需要的结果。
-- 历史 migration 清理单独成节点执行；MVP0-0 不直接修改数据库。
+- MVP0 fresh schema 不创建历史高级能力表；已有本地库如已执行旧迁移，需单独重建或迁移。
 - 用户可见状态必须由 `system_dictionaries` 映射为中文码值和中文说明。
 
 ## 8. 安全规则

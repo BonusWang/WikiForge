@@ -6,12 +6,12 @@ import java.time.OffsetDateTime;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ObsidianVaultStatusResponse(
         String vaultName,
-        String vaultPath,
+        String vaultPathMasked,
+        String managedRoot,
         Boolean exists,
         Boolean writable,
-        Boolean sourceNoteDirectoryExists,
-        String lastNoteUid,
-        OffsetDateTime lastWrittenAt,
-        String errorMessage
+        Boolean managedRootExists,
+        OffsetDateTime lastWriteAt,
+        String failureReason
 ) {
 }

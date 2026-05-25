@@ -526,58 +526,8 @@ h1 {
   color: var(--wf-muted);
 }
 
-.import-form .el-form-item,
-.maintenance-form .el-form-item,
-.lifeos-form .el-form-item {
+.import-form .el-form-item {
   margin-bottom: 0;
-}
-
-.maintenance-form {
-  display: grid;
-  grid-template-columns: minmax(150px, 0.5fr) minmax(150px, 0.5fr) minmax(220px, 1fr);
-  gap: 12px 16px;
-  align-items: end;
-  margin-bottom: 14px;
-}
-
-.maintenance-board {
-  display: grid;
-  grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.4fr);
-  gap: 14px;
-}
-
-.wiki-compile-grid,
-.obsidian-page-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  margin-bottom: 14px;
-}
-
-.maintenance-pane,
-.mcp-tools-pane,
-.mcp-calls-pane,
-.lifeos-form-pane,
-.review-section,
-.wiki-panel {
-  display: grid;
-  gap: 10px;
-  min-width: 0;
-  padding: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.1);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.015);
-}
-
-.maintenance-toolbar {
-  display: grid;
-  grid-template-columns: minmax(150px, 1fr) minmax(140px, 0.7fr);
-  gap: 10px;
-  align-items: center;
-}
-
-.maintenance-toolbar.issue-toolbar {
-  grid-template-columns: minmax(160px, 1fr) minmax(210px, 1.2fr) minmax(120px, 0.6fr);
 }
 
 .form-actions {
@@ -706,158 +656,10 @@ h1 {
   font-size: 12px;
 }
 
-.mcp-board {
-  display: grid;
-  gap: 14px;
-}
-
-.mcp-filter-row {
-  display: grid;
-  grid-template-columns: minmax(160px, 1fr) minmax(140px, 0.7fr) minmax(160px, 0.8fr);
-  gap: 10px;
-}
-
-.wiki-table-block {
-  display: grid;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.wiki-filter-row {
-  display: grid;
-  grid-template-columns: minmax(150px, 0.8fr) minmax(170px, 1fr) minmax(170px, 1fr);
-  gap: 10px;
-  width: min(100%, 620px);
-}
-
-.vector-export-form {
-  display: grid;
-  grid-template-columns: minmax(150px, 0.8fr) minmax(180px, 1fr) minmax(150px, 0.7fr) minmax(150px, 0.7fr);
-  gap: 12px 16px;
-  align-items: end;
-  margin-bottom: 14px;
-}
-
-.lifeos-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  margin-bottom: 14px;
-}
-
-.lifeos-form {
-  display: grid;
-  gap: 10px;
-}
-
-.record-form-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.lifeos-summary {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin: 8px 0 14px;
-}
-
-.summary-pill {
-  display: grid;
-  grid-template-columns: auto auto;
-  align-items: center;
-  gap: 8px;
-  min-height: 32px;
-  padding: 6px 10px;
-  border: 1px solid rgba(34, 197, 94, 0.16);
-  border-radius: 6px;
-  background: rgba(34, 197, 94, 0.045);
-  color: var(--wf-muted);
-  font-family: var(--wf-mono);
-  font-size: 12px;
-}
-
-.summary-pill strong {
-  color: var(--wf-green-soft);
-  font-size: 17px;
-  text-shadow: 0 0 10px rgba(34, 197, 94, 0.18);
-}
-
-.lifeos-record-toolbar {
-  display: grid;
-  grid-template-columns: minmax(150px, 0.8fr) minmax(120px, 0.6fr) minmax(160px, 1fr);
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.ai-config-strip {
-  display: grid;
-  grid-template-columns: minmax(120px, 0.8fr) minmax(150px, 0.8fr) minmax(150px, 1fr) minmax(220px, 1.4fr) auto;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.row-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 8px;
-}
-
-.source-note-panel {
-  display: grid;
-  gap: 14px;
-}
-
-.source-note-mode-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.source-note-meta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  color: var(--wf-muted);
-  font-family: var(--wf-mono);
-  font-size: 12px;
-}
-
-.source-note-meta span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.note-alert {
-  margin: 0;
-}
-
-.note-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
 .markdown-editor textarea,
 .el-textarea__inner {
   font-family: var(--wf-mono);
   line-height: 1.62;
-}
-
-.review-panel {
-  display: grid;
-  gap: 16px;
-}
-
-.review-actions {
-  display: flex;
-  justify-content: flex-end;
 }
 
 .el-card {
@@ -1206,26 +1008,7 @@ h1 {
   }
 
   .import-form,
-  .toolbar-inline,
-  .maintenance-form,
-  .maintenance-board,
-  .maintenance-toolbar,
-  .maintenance-toolbar.issue-toolbar,
-  .ai-config-strip,
-  .mcp-filter-row,
-  .wiki-filter-row,
-  .vector-export-form {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .lifeos-grid,
-  .wiki-compile-grid,
-  .obsidian-page-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .lifeos-record-toolbar,
-  .record-form-row {
+  .toolbar-inline {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -1264,17 +1047,7 @@ h1 {
   }
 
   .status-grid,
-  .import-form,
-  .maintenance-form,
-  .maintenance-board,
-  .maintenance-toolbar,
-  .maintenance-toolbar.issue-toolbar,
-  .ai-config-strip,
-  .mcp-filter-row,
-  .wiki-filter-row,
-  .vector-export-form,
-  .lifeos-record-toolbar,
-  .record-form-row {
+  .import-form {
     grid-template-columns: 1fr;
   }
 

@@ -59,6 +59,26 @@ export interface PageResult<T> {
   total: number;
 }
 
+export interface SourceFileLatestWikiIngestRun {
+  runUid: string;
+  fileUid: string;
+  fileName?: string | null;
+  statusCode: string;
+  statusLabel: string;
+  sourcePagePath?: string | null;
+  wikiPagePaths: string[];
+  indexUpdated: boolean;
+  logEntryAppended: boolean;
+  writeStatusCode?: string | null;
+  writeStatusLabel?: string | null;
+  fallbackReason?: string | null;
+  failureReason?: string | null;
+  obsidianUri?: string | null;
+  retryable?: boolean;
+  createdAt: string;
+  completedAt?: string | null;
+}
+
 export interface SourceFile {
   fileUid: string;
   sourceUid: string;
@@ -86,11 +106,6 @@ export interface SourceFile {
   duplicateOfFileUid?: string | null;
   extractFailureReason?: string | null;
   wikiFailureReason?: string | null;
-  obsidianNoteUid?: string | null;
-  obsidianNoteStatus?: string | null;
-  obsidianNoteTitle?: string | null;
-  obsidianVaultPath?: string | null;
-  obsidianUri?: string | null;
-  obsidianNoteCreatedAt?: string | null;
+  latestWikiIngestRun?: SourceFileLatestWikiIngestRun | null;
   createdAt: string;
 }

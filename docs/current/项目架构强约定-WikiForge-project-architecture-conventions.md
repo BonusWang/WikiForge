@@ -36,13 +36,14 @@
 | CAP-013 | 约定 | Obsidian LLM Wiki 结构 | 决策 / 指令执行 / 原子能力 | Obsidian Vault `WikiForge/` | 主流程 | Vault 目录、页面模板、index/log 或托管区块规则变化时更新 |
 | CAP-014 | 约定 | MVP0 API 契约 | 轻应用 / 指令执行 | Core API / Worker Internal API | 主流程 | 新增、修改、退役 API 或响应字段时更新 |
 | CAP-015 | API | 浏览器上传收纳接口 | 轻应用 / 指令执行 / 原子能力 | Frontend Capture + Core `/api/v1/upload-sources` + Raw Sources | 主流程 | 上传字段、文件命名、落盘状态或大小限制变化时更新 |
+| CAP-016 | 历史能力 | 高级能力历史接口集合 | 非 MVP0 主线 | AI Review / MCP Preview / Vector Export / LifeOS / Knowledge Maintenance / Wiki Compile / Source Note / Link Source | 退役 | MVP0 代码、前端封装、迁移和测试已移除；恢复必须重新出需求、API、表设计和验证 |
 
 状态说明：
 
 - 主流程：当前阶段主流程能力。
 - 复用：可直接复用的基础能力。
 - 冻结：保留但当前阶段不进入主流程。
-- 退役：后续清理出入口、构建或数据库。
+- 退役：已清理或正在清理出入口、构建、API 或数据库。
 
 ## 4. 四层登记规则
 
@@ -162,8 +163,8 @@ MVP0 数据库最小表集合：
 
 - 不为未来能力预建表。
 - 不复用 `agent_runs` / `review_items` 承载 Wiki ingest。
-- MCP、向量、LifeOS、知识体检、Orchestration 相关表不进入 MVP0 主流程。
-- 历史表清理必须单独出迁移方案、备份方案和回滚方案。
+- MCP、向量、LifeOS、知识体检、AI Review、旧 Source Note、旧 Wiki Compile、Link Source、Orchestration 相关表不进入 MVP0 主流程。
+- MVP0 新库不创建历史表；已有本地库如已执行历史迁移，需按单独清理方案重建或迁移。
 - 新表必须说明所属四层能力、归属服务、生命周期和删除策略。
 - 状态码必须先进入 `system_dictionaries`，前端不得硬编码英文状态。
 
@@ -202,6 +203,14 @@ docs/rebuild/2026-05-24-mvp0-baseline/2026-05-24-Obsidian-LLM-Wiki设计-WikiFor
 - Orchestration UI
 - 并行 Agent 团队制度
 - 历史 Work Order 启动路径
+- AI Review / Review Items
+- MCP Preview
+- Vector Export
+- LifeOS / Personal Records
+- Knowledge Maintenance
+- 旧 Source Note / `obsidian_notes`
+- 旧 Wiki Compile / Wiki Integrations
+- Link Source
 
 ## 12. 设计准入清单
 

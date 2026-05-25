@@ -223,12 +223,13 @@ Worker 不拥有业务数据表。
 | --- | --- |
 | Orchestration Service / UI | 退役，后续从构建和入口清理 |
 | Agent Review | 退役，不作为 Wiki ingest 承载 |
-| MCP Preview | 冻结，不进入主流程 |
-| Vector Export | 冻结，不进入主流程 |
-| Personal Record / LifeOS | 冻结，不进入主流程 |
-| Knowledge Maintenance | 冻结，不进入主流程 |
+| MCP Preview | 退役，MVP0 代码已删除 |
+| Vector Export | 退役，MVP0 代码已删除 |
+| Personal Record / LifeOS | 退役，MVP0 代码已删除 |
+| Knowledge Maintenance | 退役，MVP0 代码已删除 |
+| 旧 Wiki Compile / Source Note / Link Source | 退役，MVP0 改用 Wiki ingest 和 Obsidian `WikiForge/` 托管目录 |
 
-冻结能力后续必须单独出原子能力文档，不能直接回到主导航或主流程。
+退役能力后续必须单独出需求、设计、API、数据表和验证方案，不能直接回到主导航或主流程。
 
 ## 10. 验收规则
 

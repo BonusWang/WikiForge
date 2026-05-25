@@ -4,7 +4,7 @@ import java.util.List;
 
 public record ObsidianInitResponse(
         String vaultName,
-        String vaultPath,
-        List<String> createdDirectories
+        String managedRoot,
+        List<String> createdPaths
 ) {
 }
