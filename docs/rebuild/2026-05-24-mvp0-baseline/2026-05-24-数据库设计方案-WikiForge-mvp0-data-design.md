@@ -95,7 +95,6 @@ MVP0 数据库从减法开始，只保存当前闭环必须的数据：
 | `file_uid` | 所属 SourceFile |
 | `status_code` | Wiki 写入状态中文码值 |
 | `source_page_path` | Source page Vault 相对路径 |
-| `wiki_page_paths_json` | Topic / Project 页面路径 |
 | `index_updated` | 是否更新 index |
 | `log_entry_appended` | 是否追加 log |
 | `write_status_code` | 写入状态中文码值 |

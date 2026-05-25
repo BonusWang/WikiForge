@@ -15,8 +15,6 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,7 +55,6 @@ public class WikiIngestRunService {
             entity.setStatusCode("已写入");
             entity.setStatusLabel("已写入");
             entity.setSourcePagePath(writeResult.sourcePagePath());
-            entity.setWikiPagePaths(String.join("\n", writeResult.wikiPagePaths()));
             entity.setIndexUpdated(writeResult.indexUpdated());
             entity.setLogEntryAppended(writeResult.logEntryAppended());
             entity.setWriteStatusCode("已写入");
@@ -70,7 +67,6 @@ public class WikiIngestRunService {
         } catch (BusinessException exception) {
             entity.setStatusCode("失败");
             entity.setStatusLabel("失败");
-            entity.setWikiPagePaths("[]");
             entity.setIndexUpdated(false);
             entity.setLogEntryAppended(false);
             entity.setWriteStatusCode("失败");
@@ -128,7 +124,6 @@ public class WikiIngestRunService {
                 entity.getStatusCode(),
                 entity.getStatusLabel(),
                 entity.getSourcePagePath(),
-                wikiPagePaths(entity.getWikiPagePaths()),
                 Boolean.TRUE.equals(entity.getIndexUpdated()),
                 Boolean.TRUE.equals(entity.getLogEntryAppended()),
                 entity.getWriteStatusCode(),
@@ -141,16 +136,6 @@ public class WikiIngestRunService {
                 toOffset(entity.getCreatedAt()),
                 toOffset(entity.getCompletedAt())
         );
-    }
-
-    private List<String> wikiPagePaths(String value) {
-        if (value == null || value.isBlank() || "[]".equals(value.trim())) {
-            return List.of();
-        }
-        return Arrays.stream(value.split("\\R"))
-                .map(String::trim)
-                .filter(path -> !path.isBlank())
-                .toList();
     }
 
     private OffsetDateTime toOffset(LocalDateTime dateTime) {

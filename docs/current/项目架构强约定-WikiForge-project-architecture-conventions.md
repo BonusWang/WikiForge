@@ -176,7 +176,7 @@ MVP0 Obsidian 写入只允许落在 Vault 内 `WikiForge/` 托管目录。
 
 - 不写、不改、不删 `WikiForge/` 之外的用户笔记。
 - Raw Sources 不放入 Obsidian Vault。
-- 来源页、主题页、项目页、`index.md`、`log.md` 的目录结构以 Obsidian LLM Wiki 设计为准。
+- 来源页、`index.md`、`log.md` 的目录结构以 Obsidian LLM Wiki 设计为准。
 - 用户手写内容必须放在托管区块外，系统不得覆盖托管区块外内容。
 - 修改 Vault 目录、页面模板、index/log 或托管区块规则时，必须同步维护架构登记台账。
 

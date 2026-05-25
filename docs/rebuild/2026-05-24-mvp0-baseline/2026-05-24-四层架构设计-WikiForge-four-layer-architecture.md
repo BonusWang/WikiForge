@@ -61,7 +61,7 @@ frontend/src/
 
 - Capture：路径扫描、文件上传、任务创建。
 - Source Inbox：导入任务、SourceFile 列表、重复文件、解析状态。
-- Wiki Workspace：Wiki 写入结果、Source page、Topic / Project 页面、重跑入口。
+- Wiki Workspace：Wiki 写入结果、Source page、index/log、重跑入口。
 - Run Log：ImportJob、WikiIngestRun、index/log 更新记录。
 - Settings：MVP0 运行口径、Raw Sources、Obsidian Vault 托管目录、路径安全提示。
 
@@ -147,7 +147,7 @@ UI Capture
   -> Worker atoms: scan / copy / hash / classify / extract
   -> Core: submit SourceFile batch
   -> Core: create Wiki ingest run
-  -> Obsidian: write source/wiki/index/log
+  -> Obsidian: write source/index/log
   -> UI: show status
 ```
 
@@ -159,7 +159,7 @@ UI Capture
   -> Core/Worker: store into Raw Sources
   -> Core: register SourceFile
   -> Core: create Wiki ingest run
-  -> Obsidian: write source/wiki/index/log
+  -> Obsidian: write source/index/log
 ```
 
 ### 5.3 LLM Wiki 写入流
@@ -169,13 +169,12 @@ SourceFile + SourceContent
   -> Schema rules
   -> Rule-based managed block
   -> Source page
-  -> Topic / Project page
   -> index.md
   -> log.md
   -> WikiIngestRun result
 ```
 
-Obsidian 写入只进入 Vault 内 `WikiForge/` 托管目录。来源页、主题页、项目页、`index.md` 和 `log.md` 的目录结构以 Obsidian LLM Wiki 设计文档为准。
+Obsidian 写入只进入 Vault 内 `WikiForge/` 托管目录。来源页、`index.md` 和 `log.md` 的目录结构以 Obsidian LLM Wiki 设计文档为准。
 
 ## 6. API 规划
 
@@ -205,7 +204,6 @@ Obsidian 写入只进入 Vault 内 `WikiForge/` 托管目录。来源页、主�
 Wiki ingest 运行结果至少包含：
 
 - `sourcePagePath`
-- `wikiPagePaths`
 - `indexUpdated`
 - `logEntryAppended`
 - `writeStatus`

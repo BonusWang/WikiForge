@@ -93,11 +93,6 @@ onMounted(refreshRuns);
         <el-table-column prop="createdAt" label="创建时间" min-width="180" show-overflow-tooltip />
         <el-table-column prop="fileName" label="资料" min-width="180" show-overflow-tooltip />
         <el-table-column prop="sourcePagePath" label="来源页" min-width="220" show-overflow-tooltip />
-        <el-table-column label="Wiki 页" min-width="220" show-overflow-tooltip>
-          <template #default="scope">
-            {{ scope.row.wikiPagePaths?.join('，') || '-' }}
-          </template>
-        </el-table-column>
         <el-table-column label="index/log" min-width="150">
           <template #default="scope">
             <span class="detail-item">

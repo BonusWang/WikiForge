@@ -65,7 +65,7 @@ MVP0 只追求一个可验证闭环：
   - 文件状态：待处理、已收纳、已解析、已写入 Wiki、失败。
 - Obsidian LLM Wiki：
   - Vault 初始化。
-  - Source page / topic page / project page 写入规则。
+  - Source page 写入规则。
   - `index.md` 内容目录。
   - `log.md` 追加式演进记录。
   - 写入失败不影响 Raw Sources 已收纳结果。
@@ -131,11 +131,10 @@ MVP0 只追求一个可验证闭环：
 
 1. 系统读取 SourceContent 和 SourceFile 元数据。
 2. 系统根据 schema 生成或更新 Source page。
-3. 系统选择或创建 Topic / Project 页面。
-4. 系统写入来源、摘要、关键点、交叉链接和状态。
-5. 系统更新 `index.md`。
-6. 系统追加 `log.md`。
-7. 系统记录写入结果，供 UI 查看和后续重跑。
+3. 系统写入来源、正文摘录和状态。
+4. 系统更新 `index.md`。
+5. 系统追加 `log.md`。
+6. 系统记录写入结果，供 UI 查看和后续重跑。
 
 ## 6. 数据与安全边界
 

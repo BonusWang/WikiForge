@@ -64,7 +64,6 @@ export interface SourceFileLatestWikiIngestRun {
   statusCode: string;
   statusLabel: string;
   sourcePagePath?: string | null;
-  wikiPagePaths: string[];
   indexUpdated: boolean;
   logEntryAppended: boolean;
   writeStatusCode?: string | null;

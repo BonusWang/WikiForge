@@ -151,7 +151,6 @@ class ImportJobApiIntegrationTests {
                     status_code VARCHAR(128) NOT NULL DEFAULT '已创建',
                     status_label VARCHAR(128) NOT NULL DEFAULT '已创建',
                     source_page_path VARCHAR(1024) NULL,
-                    wiki_page_paths CLOB NULL,
                     index_updated BOOLEAN NOT NULL DEFAULT FALSE,
                     log_entry_appended BOOLEAN NOT NULL DEFAULT FALSE,
                     write_status_code VARCHAR(128) NOT NULL DEFAULT '已创建',
