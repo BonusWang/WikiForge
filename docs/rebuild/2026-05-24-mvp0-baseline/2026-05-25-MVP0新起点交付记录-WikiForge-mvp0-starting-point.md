@@ -30,6 +30,7 @@
 - Docker Compose 默认不再启动 Orchestration。
 - 浏览器上传后的 `md/txt/pdf/docx` 会同步生成正文抽取记录，Wiki 写入可以读取正文摘录。
 - 当前运行配置已将 Obsidian Vault 指向 `E:\WikiForgeVault`，不再写入项目内测试 Vault。
+- 历史高级能力代码已物理清理：AI Review、MCP Preview、Vector Export、LifeOS、Knowledge Maintenance、旧 Wiki Compile、旧 Source Note、Link Source 不再随 MVP0 后端、前端 API 或迁移发布。
 
 ## 4. 当前运行端口
 
@@ -117,6 +118,10 @@ docs/current/项目架构强约定-WikiForge-project-architecture-conventions.md
 - 向量检索和 Hybrid Search。
 - LifeOS。
 - 知识体检。
+- AI Review / Review Items。
+- 旧 Wiki Compile / Wiki Integrations。
+- 旧 Source Note / `obsidian_notes`。
+- Link Source 独立入口。
 - 旧 Dashboard。
 
 如后续确实需要恢复某项能力，必须重新作为扩展类原子能力出设计文档，并通过架构强约定登记。

@@ -87,14 +87,16 @@ MVP0 只追求一个可验证闭环：
 - Agent 办公室视图。
 - 辅助开发工程服务。
 
-### 3.3 冻结与退役
+### 3.3 退役
 
 以下现有能力退出主流程：
 
-- MCP Preview：冻结，后续确认需要时再单独评估。
-- Vector Export：冻结，真实向量库方案确认前不继续投入。
-- Personal Record / LifeOS：冻结，不进入 MVP0。
-- Knowledge Maintenance：冻结，不进入 MVP0。
+- MCP Preview：退役，MVP0 代码不保留运行入口。
+- Vector Export：退役，真实向量库方案确认前不继续投入。
+- Personal Record / LifeOS：退役，不进入 MVP0。
+- Knowledge Maintenance：退役，不进入 MVP0。
+- AI Review / Review Items：退役，不承载 Wiki ingest。
+- 旧 Wiki Compile / Source Note / Link Source：退役，MVP0 改用 Wiki ingest 主流程。
 - Orchestration Service / Orchestration UI：退役，不作为 WikiForge 产品能力继续规划。
 
 ## 4. 四层业务能力

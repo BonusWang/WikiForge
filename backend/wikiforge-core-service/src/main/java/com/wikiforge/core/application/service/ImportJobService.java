@@ -1,5 +1,6 @@
 package com.wikiforge.core.application.service;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.wikiforge.common.error.BusinessException;
 import com.wikiforge.common.error.ErrorCode;
 import com.wikiforge.common.filesystem.PathSafety;
@@ -12,12 +13,12 @@ import com.wikiforge.core.application.dto.SubmitSourceFileItem;
 import com.wikiforge.core.application.dto.SubmitSourceFilesBatchRequest;
 import com.wikiforge.core.application.dto.UploadSourcesResponse;
 import com.wikiforge.core.application.dto.UpdateImportJobStatusRequest;
+import com.wikiforge.core.application.dto.WikiIngestRunResponse;
 import com.wikiforge.core.application.port.WorkerImportJobClient;
 import com.wikiforge.core.domain.model.ImportJob;
 import com.wikiforge.core.domain.model.ImportJobPage;
 import com.wikiforge.core.domain.model.ImportJobStatus;
 import com.wikiforge.core.domain.model.ImportType;
-import com.wikiforge.core.domain.model.ObsidianNote;
 import com.wikiforge.core.domain.model.OrganizeMode;
 import com.wikiforge.core.domain.model.ParseStatus;
 import com.wikiforge.core.domain.model.RawOrganizeStatus;
@@ -25,8 +26,9 @@ import com.wikiforge.core.domain.model.SourceFilePage;
 import com.wikiforge.core.domain.model.SourceFileRecord;
 import com.wikiforge.core.domain.model.SourceFileSubmission;
 import com.wikiforge.core.domain.repository.ImportJobRepository;
-import com.wikiforge.core.domain.repository.ObsidianNoteRepository;
 import com.wikiforge.core.domain.repository.SourceFileRepository;
+import com.wikiforge.core.infrastructure.persistence.WikiIngestRunEntity;
+import com.wikiforge.core.infrastructure.persistence.WikiIngestRunMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.StandardCopyOption;
@@ -42,6 +44,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
@@ -58,7 +61,7 @@ public class ImportJobService {
 
     private final ImportJobRepository importJobRepository;
     private final SourceFileRepository sourceFileRepository;
-    private final ObsidianNoteRepository obsidianNoteRepository;
+    private final WikiIngestRunMapper wikiIngestRunMapper;
     private final CoreRuntimeProperties runtimeProperties;
     private final WorkerImportJobClient workerImportJobClient;
     private final UploadedTextContentExtractor uploadedTextContentExtractor;
@@ -66,14 +69,14 @@ public class ImportJobService {
     public ImportJobService(
             ImportJobRepository importJobRepository,
             SourceFileRepository sourceFileRepository,
-            ObsidianNoteRepository obsidianNoteRepository,
+            WikiIngestRunMapper wikiIngestRunMapper,
             CoreRuntimeProperties runtimeProperties,
             WorkerImportJobClient workerImportJobClient,
             UploadedTextContentExtractor uploadedTextContentExtractor
     ) {
         this.importJobRepository = importJobRepository;
         this.sourceFileRepository = sourceFileRepository;
-        this.obsidianNoteRepository = obsidianNoteRepository;
+        this.wikiIngestRunMapper = wikiIngestRunMapper;
         this.runtimeProperties = runtimeProperties;
         this.workerImportJobClient = workerImportJobClient;
         this.uploadedTextContentExtractor = uploadedTextContentExtractor;
@@ -455,10 +458,10 @@ public class ImportJobService {
     }
 
     private SourceFileResponse toResponse(SourceFileRecord sourceFile) {
-        ObsidianNote obsidianNote = obsidianNoteRepository.findBySourceFileUid(sourceFile.fileUid()).orElse(null);
+        WikiIngestRunEntity latestWikiIngestRun = latestWikiIngestRun(sourceFile.fileUid());
         StatusDisplay collectStatus = collectStatusDisplay(sourceFile.organizeStatus());
         StatusDisplay extractStatus = extractStatusDisplay(sourceFile.parseStatus());
-        StatusDisplay wikiStatus = wikiStatusDisplay(obsidianNote);
+        StatusDisplay wikiStatus = wikiStatusDisplay(latestWikiIngestRun);
         return new SourceFileResponse(
                 sourceFile.fileUid(),
                 sourceFile.sourceUid(),
@@ -483,15 +486,53 @@ public class ImportJobService {
                 sourceFile.organizeStatus(),
                 sourceFile.duplicateOfFileUid(),
                 sourceFile.parseError(),
-                null,
-                obsidianNote == null ? null : obsidianNote.noteUid(),
-                obsidianNote == null ? null : obsidianNote.status(),
-                obsidianNote == null ? null : obsidianNote.title(),
-                obsidianNote == null ? null : obsidianNote.vaultPath(),
-                obsidianNote == null ? null : obsidianNote.obsidianUri(),
-                obsidianNote == null ? null : toOffset(obsidianNote.createdAt()),
+                latestWikiIngestRun == null ? null : latestWikiIngestRun.getFailureReason(),
+                latestWikiIngestRun == null ? null : toWikiIngestRunResponse(latestWikiIngestRun),
                 toOffset(sourceFile.createdAt())
         );
+    }
+
+    private WikiIngestRunEntity latestWikiIngestRun(String fileUid) {
+        return wikiIngestRunMapper.selectOne(
+                new LambdaQueryWrapper<WikiIngestRunEntity>()
+                        .eq(WikiIngestRunEntity::getFileUid, fileUid)
+                        .orderByDesc(WikiIngestRunEntity::getCreatedAt)
+                        .last("LIMIT 1")
+        );
+    }
+
+    private WikiIngestRunResponse toWikiIngestRunResponse(WikiIngestRunEntity entity) {
+        return new WikiIngestRunResponse(
+                entity.getRunUid(),
+                entity.getFileUid(),
+                entity.getFileName(),
+                entity.getStatusCode(),
+                entity.getStatusLabel(),
+                entity.getSourcePagePath(),
+                wikiPagePaths(entity.getWikiPagePaths()),
+                Boolean.TRUE.equals(entity.getIndexUpdated()),
+                Boolean.TRUE.equals(entity.getLogEntryAppended()),
+                entity.getWriteStatusCode(),
+                entity.getWriteStatusLabel(),
+                entity.getFallbackReason(),
+                entity.getFailureReason(),
+                entity.getManagedBlockPreview(),
+                entity.getLogEntryPreview(),
+                entity.getObsidianUri(),
+                Boolean.TRUE.equals(entity.getRetryable()),
+                toOffset(entity.getCreatedAt()),
+                toOffset(entity.getCompletedAt())
+        );
+    }
+
+    private List<String> wikiPagePaths(String value) {
+        if (value == null || value.isBlank() || "[]".equals(value.trim())) {
+            return List.of();
+        }
+        return Arrays.stream(value.split("\\R"))
+                .map(String::trim)
+                .filter(path -> !path.isBlank())
+                .toList();
     }
 
     private String resolveImportStatusFilter(String status, String statusCode) {
@@ -544,11 +585,18 @@ public class ImportJobService {
         };
     }
 
-    private StatusDisplay wikiStatusDisplay(ObsidianNote obsidianNote) {
-        if (obsidianNote == null) {
+    private StatusDisplay wikiStatusDisplay(WikiIngestRunEntity latestWikiIngestRun) {
+        if (latestWikiIngestRun == null) {
             return new StatusDisplay("待整理到 Wiki", "待整理到 Wiki", "等待整理写入 Obsidian Wiki", "info", false);
         }
-        return new StatusDisplay("已整理到 Wiki", "已整理到 Wiki", "资料已生成 Obsidian Wiki 页面", "success", true);
+        if ("已写入".equals(latestWikiIngestRun.getStatusCode())
+                || "兜底写入".equals(latestWikiIngestRun.getStatusCode())) {
+            return new StatusDisplay("已写入 Wiki", "已写入 Wiki", "资料已写入 Obsidian Wiki", "success", true);
+        }
+        if ("失败".equals(latestWikiIngestRun.getStatusCode())) {
+            return new StatusDisplay("失败", "失败", "Wiki 写入失败", "danger", true);
+        }
+        return new StatusDisplay("写入中", "写入中", "正在写入 Obsidian Wiki", "primary", false);
     }
 
     private record StatusDisplay(

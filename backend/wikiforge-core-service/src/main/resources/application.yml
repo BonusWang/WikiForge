@@ -41,7 +41,6 @@ wikiforge:
   storage:
     raw-sources-root: ${WIKIFORGE_RAW_SOURCES_ROOT:${WIKIFORGE_RAW_SOURCES_PATH:./data/raw-sources}}
   raw-sources-path: ${WIKIFORGE_RAW_SOURCES_PATH:${WIKIFORGE_RAW_SOURCES_ROOT:./data/raw-sources}}
-  vector-export-root: ${WIKIFORGE_VECTOR_EXPORT_ROOT:./data/vector-exports}
   obsidian-vault-path: ${WIKIFORGE_OBSIDIAN_VAULT_PATH:./data/obsidian-vault}
   obsidian-vault-name: ${WIKIFORGE_OBSIDIAN_VAULT_NAME:WikiForgeVault}
   allowed-scan-roots: ${WIKIFORGE_ALLOWED_SCAN_ROOTS:}
@@ -50,21 +49,3 @@ wikiforge:
   security:
     internal-api-token: ${WIKIFORGE_INTERNAL_API_TOKEN:}
     allowed-scan-roots: ${WIKIFORGE_ALLOWED_SCAN_ROOTS:}
-  model:
-    provider: ${WIKIFORGE_MODEL_PROVIDER:}
-    api-key: ${WIKIFORGE_MODEL_API_KEY:}
-    providers:
-      minimax:
-        type: ${WIKIFORGE_MODEL_MINIMAX_TYPE:openai_compatible}
-        api-key: ${WIKIFORGE_MODEL_MINIMAX_API_KEY:${WIKIFORGE_MINIMAX_API_KEY:${WIKIFORGE_MODEL_API_KEY:}}}
-        base-url: ${WIKIFORGE_MODEL_MINIMAX_BASE_URL:${WIKIFORGE_MINIMAX_BASE_URL:https://api.minimax.io/v1}}
-        model: ${WIKIFORGE_MODEL_MINIMAX_MODEL:${WIKIFORGE_MINIMAX_MODEL:}}
-      deepseek:
-        type: ${WIKIFORGE_MODEL_DEEPSEEK_TYPE:openai_compatible}
-        api-key: ${WIKIFORGE_MODEL_DEEPSEEK_API_KEY:${WIKIFORGE_DEEPSEEK_API_KEY:}}
-        base-url: ${WIKIFORGE_MODEL_DEEPSEEK_BASE_URL:${WIKIFORGE_DEEPSEEK_BASE_URL:}}
-        model: ${WIKIFORGE_MODEL_DEEPSEEK_MODEL:${WIKIFORGE_DEEPSEEK_MODEL:}}
-    minimax:
-      api-key: ${WIKIFORGE_MINIMAX_API_KEY:${WIKIFORGE_MODEL_API_KEY:}}
-      base-url: ${WIKIFORGE_MINIMAX_BASE_URL:https://api.minimax.io/v1}
-      model: ${WIKIFORGE_MINIMAX_MODEL:}

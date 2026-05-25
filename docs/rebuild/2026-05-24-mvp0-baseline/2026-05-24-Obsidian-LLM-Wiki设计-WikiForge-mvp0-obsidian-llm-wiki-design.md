@@ -304,7 +304,7 @@ LLM 不可用、返回不合规或置信度不足时：
 - Markdown 原子写入。
 - Obsidian URI 生成。
 
-现有 `WikiCompileService` 只作为参考：
+旧 `WikiCompileService` 已退役删除：
 
 - 旧 `wiki_pages` / `wiki_integrations` / `agent_runs` 语义不进入 MVP0 主流程。
 - MVP0 使用 `wiki_ingest_runs` 记录写入结果。

@@ -1,21 +1,16 @@
 package com.wikiforge.core.application.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.wikiforge.common.error.BusinessException;
 import com.wikiforge.common.error.ErrorCode;
 import com.wikiforge.common.filesystem.PathSafety;
 import com.wikiforge.core.application.dto.ObsidianInitResponse;
-import com.wikiforge.core.application.dto.ObsidianNotePreviewResponse;
-import com.wikiforge.core.application.dto.ObsidianNoteResponse;
 import com.wikiforge.core.application.dto.ObsidianVaultStatusResponse;
-import com.wikiforge.core.application.dto.SourceNoteDraftResponse;
-import com.wikiforge.core.domain.model.ObsidianNote;
 import com.wikiforge.core.domain.model.SourceContent;
 import com.wikiforge.core.domain.model.SourceFileRecord;
-import com.wikiforge.core.domain.repository.ObsidianNoteRepository;
 import com.wikiforge.core.domain.repository.SourceContentRepository;
-import com.wikiforge.core.domain.repository.SourceFileRepository;
+import com.wikiforge.core.infrastructure.persistence.WikiIngestRunEntity;
+import com.wikiforge.core.infrastructure.persistence.WikiIngestRunMapper;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -24,33 +19,26 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.HexFormat;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ObsidianVaultService {
 
-    private static final String SOURCE_NOTE_TYPE = "source_note";
-    private static final String WIKI_SOURCE_PAGE_TYPE = "wiki_source_page";
-    private static final String WRITTEN_STATUS = "written";
     private static final String MANAGED_ROOT = "WikiForge";
+    private static final String MANAGED_ROOT_DISPLAY = MANAGED_ROOT + "/";
     private static final String WIKI_SOURCE_DIRECTORY = MANAGED_ROOT + "/10_来源";
     private static final String WIKI_INDEX_PATH = MANAGED_ROOT + "/index.md";
     private static final String WIKI_LOG_PATH = MANAGED_ROOT + "/log.md";
-    private static final String SOURCE_NOTE_DIRECTORY = "00_Inbox_收集箱/Sources_来源";
     private static final List<String> VAULT_DIRECTORIES = List.of(
             MANAGED_ROOT,
             MANAGED_ROOT + "/00_规则",
@@ -58,33 +46,22 @@ public class ObsidianVaultService {
             MANAGED_ROOT + "/20_主题",
             MANAGED_ROOT + "/30_项目",
             MANAGED_ROOT + "/90_系统",
-            "00_Inbox_收集箱",
-            SOURCE_NOTE_DIRECTORY,
-            "00_Inbox_收集箱/Personal_个人记录",
-            "10_Wiki_主题库",
-            "20_Projects_项目",
-            "30_Resources_资源",
-            "90_System_系统"
+            MANAGED_ROOT + "/90_系统/ingest-runs"
     );
+    private static final Map<String, String> VAULT_FILES = vaultFiles();
 
-    private final SourceFileRepository sourceFileRepository;
     private final SourceContentRepository sourceContentRepository;
-    private final ObsidianNoteRepository obsidianNoteRepository;
+    private final WikiIngestRunMapper wikiIngestRunMapper;
     private final CoreRuntimeProperties runtimeProperties;
-    private final ObjectMapper objectMapper;
 
     public ObsidianVaultService(
-            SourceFileRepository sourceFileRepository,
             SourceContentRepository sourceContentRepository,
-            ObsidianNoteRepository obsidianNoteRepository,
-            CoreRuntimeProperties runtimeProperties,
-            ObjectMapper objectMapper
+            WikiIngestRunMapper wikiIngestRunMapper,
+            CoreRuntimeProperties runtimeProperties
     ) {
-        this.sourceFileRepository = sourceFileRepository;
         this.sourceContentRepository = sourceContentRepository;
-        this.obsidianNoteRepository = obsidianNoteRepository;
+        this.wikiIngestRunMapper = wikiIngestRunMapper;
         this.runtimeProperties = runtimeProperties;
-        this.objectMapper = objectMapper;
     }
 
     @Transactional(noRollbackFor = BusinessException.class)
@@ -115,26 +92,6 @@ public class ObsidianVaultService {
                 + "`)";
         appendLogLine(WIKI_LOG_PATH, "# WikiForge Log\n\n", logEntry);
 
-        LocalDateTime now = LocalDateTime.now();
-        String contentHash = sha256(mergedMarkdown);
-        ObsidianNote note = obsidianNoteRepository.save(new ObsidianNote(
-                null,
-                nextNoteUid(),
-                sourceFile.sourceId(),
-                sourceFile.sourceFileId(),
-                WIKI_SOURCE_PAGE_TYPE,
-                runtimeProperties.obsidianVaultName(),
-                sourcePagePath,
-                sourcePage.toString(),
-                obsidianUri(runtimeProperties.obsidianVaultName(), sourcePagePath),
-                title(sourceFile),
-                frontmatterJson(sourceFile, contentHash),
-                contentHash,
-                WRITTEN_STATUS,
-                now,
-                now
-        ));
-
         return new WikiIngestWriteResult(
                 sourcePagePath,
                 List.of(sourcePagePath),
@@ -142,224 +99,68 @@ public class ObsidianVaultService {
                 true,
                 managedBlock,
                 logEntry,
-                note.obsidianUri()
+                obsidianUri(runtimeProperties.obsidianVaultName(), sourcePagePath)
         );
     }
 
     public ObsidianInitResponse initializeVault() {
         Path vaultRoot = vaultRoot();
-        List<String> createdDirectories = VAULT_DIRECTORIES.stream()
-                .peek(directory -> createDirectory(resolveVaultPath(vaultRoot, directory)))
-                .toList();
-        return new ObsidianInitResponse(runtimeProperties.obsidianVaultName(), vaultRoot.toString(), createdDirectories);
+        List<String> createdPaths = new ArrayList<>();
+        for (String directory : VAULT_DIRECTORIES) {
+            createDirectory(resolveVaultPath(vaultRoot, directory));
+            createdPaths.add(directory + "/");
+        }
+        for (Map.Entry<String, String> file : VAULT_FILES.entrySet()) {
+            ensureFile(resolveVaultPath(vaultRoot, file.getKey()), file.getValue());
+            createdPaths.add(file.getKey());
+        }
+        return new ObsidianInitResponse(runtimeProperties.obsidianVaultName(), MANAGED_ROOT_DISPLAY, createdPaths);
     }
 
     @Transactional(readOnly = true)
     public ObsidianVaultStatusResponse status() {
         String configuredPath = runtimeProperties.obsidianVaultPath();
-        ObsidianNote latestNote = obsidianNoteRepository.findLatest().orElse(null);
-        OffsetDateTime lastWrittenAt = latestNote == null ? null : toOffset(latestNote.createdAt());
-        String lastNoteUid = latestNote == null ? null : latestNote.noteUid();
+        OffsetDateTime lastWriteAt = latestWikiWriteAt();
         if (configuredPath == null || configuredPath.isBlank()) {
             return new ObsidianVaultStatusResponse(
                     runtimeProperties.obsidianVaultName(),
-                    configuredPath,
+                    null,
+                    MANAGED_ROOT_DISPLAY,
                     false,
                     false,
                     false,
-                    lastNoteUid,
-                    lastWrittenAt,
+                    lastWriteAt,
                     "obsidian vault path is not configured"
             );
         }
         try {
             Path root = PathSafety.normalizeAbsolute(Path.of(configuredPath));
             boolean exists = Files.isDirectory(root, LinkOption.NOFOLLOW_LINKS);
-            Path sourceNoteDirectory = root.resolve(SOURCE_NOTE_DIRECTORY).normalize();
-            boolean sourceNoteDirectoryExists = sourceNoteDirectory.startsWith(root)
-                    && Files.isDirectory(sourceNoteDirectory, LinkOption.NOFOLLOW_LINKS);
+            Path managedRoot = root.resolve(MANAGED_ROOT).normalize();
+            boolean managedRootExists = managedRoot.startsWith(root)
+                    && Files.isDirectory(managedRoot, LinkOption.NOFOLLOW_LINKS);
             return new ObsidianVaultStatusResponse(
                     runtimeProperties.obsidianVaultName(),
-                    root.toString(),
+                    maskPath(root),
+                    MANAGED_ROOT_DISPLAY,
                     exists,
                     exists && Files.isWritable(root),
-                    sourceNoteDirectoryExists,
-                    lastNoteUid,
-                    lastWrittenAt,
+                    managedRootExists,
+                    lastWriteAt,
                     null
             );
         } catch (RuntimeException exception) {
             return new ObsidianVaultStatusResponse(
                     runtimeProperties.obsidianVaultName(),
-                    configuredPath,
+                    maskConfiguredPath(configuredPath),
+                    MANAGED_ROOT_DISPLAY,
                     false,
                     false,
                     false,
-                    lastNoteUid,
-                    lastWrittenAt,
+                    lastWriteAt,
                     exception.getMessage()
             );
         }
-    }
-
-    @Transactional(readOnly = true)
-    public SourceNoteDraftResponse generateDraft(String fileUid) {
-        SourceFileRecord sourceFile = findSourceFile(fileUid);
-        return buildDraft(sourceFile);
-    }
-
-    @Transactional(readOnly = true)
-    public ObsidianNoteResponse findSourceFileNote(String fileUid) {
-        SourceFileRecord sourceFile = findSourceFile(fileUid);
-        return obsidianNoteRepository.findBySourceFileUid(fileUid)
-                .map(note -> toResponse(note, sourceFile))
-                .orElse(null);
-    }
-
-    @Transactional
-    public ObsidianNoteResponse writeSourceNote(String fileUid, String markdown) {
-        SourceFileRecord sourceFile = findSourceFile(fileUid);
-        SourceNoteDraftResponse draft = buildDraft(sourceFile);
-        String noteMarkdown = markdown == null || markdown.isBlank() ? draft.markdown() : markdown;
-        Path vaultRoot = vaultRoot();
-        Path target = resolveVaultPath(vaultRoot, draft.vaultPath());
-
-        writeAtomically(target, noteMarkdown);
-
-        LocalDateTime now = LocalDateTime.now();
-        String contentHash = sha256(noteMarkdown);
-        ObsidianNote note = obsidianNoteRepository.save(new ObsidianNote(
-                null,
-                nextNoteUid(),
-                sourceFile.sourceId(),
-                sourceFile.sourceFileId(),
-                SOURCE_NOTE_TYPE,
-                draft.vaultName(),
-                draft.vaultPath(),
-                target.toString(),
-                obsidianUri(draft.vaultName(), draft.vaultPath()),
-                draft.title(),
-                frontmatterJson(sourceFile, contentHash),
-                contentHash,
-                WRITTEN_STATUS,
-                now,
-                now
-        ));
-        return toResponse(note, sourceFile);
-    }
-
-    @Transactional(readOnly = true)
-    public ObsidianNotePreviewResponse preview(String noteUid) {
-        ObsidianNote note = obsidianNoteRepository.findByNoteUid(noteUid)
-                .orElseThrow(() -> new BusinessException(ErrorCode.OBSIDIAN_NOTE_NOT_FOUND));
-        Path notePath = resolveVaultPath(vaultRoot(), note.vaultPath());
-        if (!Files.isRegularFile(notePath, LinkOption.NOFOLLOW_LINKS)) {
-            throw new BusinessException(ErrorCode.OBSIDIAN_NOTE_NOT_FOUND, "obsidian note file not found");
-        }
-        try {
-            return new ObsidianNotePreviewResponse(
-                    note.noteUid(),
-                    note.title(),
-                    note.vaultName(),
-                    note.vaultPath(),
-                    note.obsidianUri(),
-                    Files.readString(notePath, StandardCharsets.UTF_8)
-            );
-        } catch (IOException exception) {
-            throw new BusinessException(ErrorCode.OBSIDIAN_INVALID_VAULT, "obsidian note cannot be read");
-        }
-    }
-
-    private SourceFileRecord findSourceFile(String fileUid) {
-        return sourceFileRepository.findByFileUid(fileUid)
-                .orElseThrow(() -> new BusinessException(ErrorCode.SOURCE_FILE_NOT_FOUND));
-    }
-
-    private SourceNoteDraftResponse buildDraft(SourceFileRecord sourceFile) {
-        String title = title(sourceFile);
-        String vaultName = runtimeProperties.obsidianVaultName();
-        String vaultPath = SOURCE_NOTE_DIRECTORY + "/" + safeFileName(title) + "-" + sourceFile.sourceUid() + ".md";
-        return new SourceNoteDraftResponse(
-                sourceFile.fileUid(),
-                sourceFile.sourceUid(),
-                title,
-                vaultName,
-                vaultPath,
-                markdown(sourceFile, title, sourceContentRepository.findBySourceFileUid(sourceFile.fileUid()).orElse(null))
-        );
-    }
-
-    private String markdown(SourceFileRecord sourceFile, String title, SourceContent sourceContent) {
-        String today = LocalDate.now().toString();
-        return """
-                ---
-                id: %s
-                source_file_uid: %s
-                title: %s
-                source_type: %s
-                source_platform: local
-                original_path: %s
-                managed_path: %s
-                content_hash: %s
-                collected_at: %s
-                status: draft
-                tags:
-                  - wikiforge/source-note
-                  - source/%s
-                ---
-                # %s
-
-                ## 原始资料 Source
-
-                - Source UID: `%s`
-                - Source File UID: `%s`
-                - 文件名: `%s`
-                - 文件类型: `%s`
-                - 原始路径: `%s`
-                - 归档路径: `%s`
-                - 内容哈希: `%s`
-
-                ## 摘要 Summary
-
-                待补充：MVP2 先完成 Source Note 归档闭环，AI 摘要将在后续版本生成。
-
-                %s
-
-                ## 关键内容 Key Points
-
-                - 待补充
-
-                ## 后续处理 Next Actions
-
-                - [ ] 人工检查资料归档是否正确
-                - [ ] 后续进入知识提炼或 Wiki 编译流程
-                """.formatted(
-                sourceFile.sourceUid(),
-                sourceFile.fileUid(),
-                yamlValue(title),
-                yamlScalar(sourceFile.fileExt()),
-                yamlValue(sourceFile.originalPath()),
-                yamlValue(sourceFile.managedPath()),
-                yamlValue(sourceFile.contentHash()),
-                today,
-                tagValue(sourceFile.fileExt()),
-                title,
-                sourceFile.sourceUid(),
-                sourceFile.fileUid(),
-                value(sourceFile.fileName()),
-                value(sourceFile.fileExt()),
-                value(sourceFile.originalPath()),
-                value(sourceFile.managedPath()),
-                value(sourceFile.contentHash()),
-                excerptSection(sourceContent)
-        );
-    }
-
-    private String excerptSection(SourceContent sourceContent) {
-        if (sourceContent == null || sourceContent.rawText() == null || sourceContent.rawText().isBlank()) {
-            return "";
-        }
-        return "## 正文摘录 Content Excerpt\n\n" + truncate(sourceContent.rawText().trim(), 2000) + "\n";
     }
 
     private String wikiSourcePagePath(SourceFileRecord sourceFile) {
@@ -504,7 +305,7 @@ public class ObsidianVaultService {
 
     private Path resolveVaultPath(Path vaultRoot, String vaultPath) {
         if (vaultPath == null || vaultPath.isBlank()) {
-            throw new BusinessException(ErrorCode.OBSIDIAN_INVALID_VAULT, "obsidian vault path is blank");
+            throw new BusinessException(ErrorCode.OBSIDIAN_INVALID_VAULT, "obsidian note path is blank");
         }
         Path relativePath = Path.of(vaultPath);
         if (relativePath.isAbsolute()) {
@@ -525,6 +326,13 @@ public class ObsidianVaultService {
         }
     }
 
+    private void ensureFile(Path target, String content) {
+        if (Files.exists(target, LinkOption.NOFOLLOW_LINKS)) {
+            return;
+        }
+        writeAtomically(target, content);
+    }
+
     private void writeAtomically(Path target, String markdown) {
         createDirectory(target.getParent());
         Path temp = target.resolveSibling(target.getFileName() + ".wf.tmp");
@@ -540,33 +348,25 @@ public class ObsidianVaultService {
         }
     }
 
-    private ObsidianNoteResponse toResponse(ObsidianNote note, SourceFileRecord sourceFile) {
-        return new ObsidianNoteResponse(
-                note.noteUid(),
-                sourceFile.fileUid(),
-                sourceFile.sourceUid(),
-                note.title(),
-                note.vaultName(),
-                note.vaultPath(),
-                note.absolutePath(),
-                note.obsidianUri(),
-                note.contentHash(),
-                note.status(),
-                toOffset(note.createdAt())
+    private OffsetDateTime latestWikiWriteAt() {
+        WikiIngestRunEntity latest = wikiIngestRunMapper.selectOne(
+                new LambdaQueryWrapper<WikiIngestRunEntity>()
+                        .eq(WikiIngestRunEntity::getStatusCode, "已写入")
+                        .orderByDesc(WikiIngestRunEntity::getCompletedAt)
+                        .last("LIMIT 1")
         );
+        if (latest == null) {
+            return null;
+        }
+        LocalDateTime writtenAt = latest.getCompletedAt() == null ? latest.getUpdatedAt() : latest.getCompletedAt();
+        return toOffset(writtenAt);
     }
 
-    private String frontmatterJson(SourceFileRecord sourceFile, String contentHash) {
-        try {
-            Map<String, Object> frontmatter = new LinkedHashMap<>();
-            frontmatter.put("sourceUid", sourceFile.sourceUid());
-            frontmatter.put("fileUid", sourceFile.fileUid());
-            frontmatter.put("title", title(sourceFile));
-            frontmatter.put("contentHash", contentHash);
-            return objectMapper.writeValueAsString(frontmatter);
-        } catch (JsonProcessingException exception) {
-            throw new BusinessException(ErrorCode.OBSIDIAN_INVALID_VAULT, "frontmatter json cannot be generated");
+    private OffsetDateTime toOffset(LocalDateTime dateTime) {
+        if (dateTime == null) {
+            return null;
         }
+        return dateTime.atZone(ZoneId.systemDefault()).toOffsetDateTime();
     }
 
     private String obsidianUri(String vaultName, String vaultPath) {
@@ -575,28 +375,6 @@ public class ObsidianVaultService {
 
     private String encode(String value) {
         return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");
-    }
-
-    private String sha256(String content) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            return HexFormat.of().formatHex(digest.digest(content.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException("SHA-256 is not available", exception);
-        }
-    }
-
-    private String nextNoteUid() {
-        String date = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
-        String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
-        return "note_" + date + "_" + suffix;
-    }
-
-    private OffsetDateTime toOffset(LocalDateTime dateTime) {
-        if (dateTime == null) {
-            return null;
-        }
-        return dateTime.atZone(ZoneId.systemDefault()).toOffsetDateTime();
     }
 
     private String title(SourceFileRecord sourceFile) {
@@ -617,24 +395,34 @@ public class ObsidianVaultService {
         return safe.length() > 80 ? safe.substring(0, 80).trim() : safe;
     }
 
-    private String tagValue(String value) {
-        if (value == null || value.isBlank()) {
-            return "file";
-        }
-        String tag = value.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_-]+", "-");
-        return tag.isBlank() ? "file" : tag;
-    }
-
-    private String yamlScalar(String value) {
-        return value == null || value.isBlank() ? "file" : tagValue(value);
-    }
-
-    private String yamlValue(String value) {
-        return "\"" + value(value).replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
-    }
-
     private String value(String value) {
         return value == null ? "" : value;
+    }
+
+    private String maskPath(Path path) {
+        Path fileName = path.getFileName();
+        return fileName == null ? "***" : ".../" + fileName;
+    }
+
+    private String maskConfiguredPath(String configuredPath) {
+        if (configuredPath == null || configuredPath.isBlank()) {
+            return null;
+        }
+        return maskPath(Path.of(configuredPath).normalize());
+    }
+
+    private static Map<String, String> vaultFiles() {
+        Map<String, String> files = new LinkedHashMap<>();
+        files.put(WIKI_INDEX_PATH, "# WikiForge Index\n\n## 来源\n");
+        files.put(WIKI_LOG_PATH, "# WikiForge Log\n\n");
+        files.put(MANAGED_ROOT + "/00_规则/LLM-Wiki写入规则.md",
+                "# LLM Wiki 写入规则\n\nWikiForge 只维护带 `wikiforge:managed` 标记的托管区块。\n");
+        files.put(MANAGED_ROOT + "/00_规则/来源页模板.md", "# 来源页模板\n\n用于 Raw Sources 对应来源页。\n");
+        files.put(MANAGED_ROOT + "/00_规则/主题页模板.md", "# 主题页模板\n\n用于后续主题沉淀。\n");
+        files.put(MANAGED_ROOT + "/00_规则/项目页模板.md", "# 项目页模板\n\n用于后续项目沉淀。\n");
+        files.put(MANAGED_ROOT + "/20_主题/待分类.md", "# 待分类\n\n");
+        files.put(MANAGED_ROOT + "/30_项目/待归档项目.md", "# 待归档项目\n\n");
+        return files;
     }
 
     public record WikiIngestWriteResult(

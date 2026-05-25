@@ -13,7 +13,7 @@
 | 冻结 | 已实现但退出主流程，后续单独规划 |
 | 退役 | 不作为新架构目标，迁移完成后可删除 |
 
-本轮只形成清单和目标路径，不移动代码。
+2026-05-25 起，明确无复用价值的历史高级能力已从 MVP0 代码、前端封装、迁移和测试中移除。
 
 ## 2. 后端资源
 
@@ -28,13 +28,13 @@
 | LocalImportJobRunner | `worker.application.service.LocalImportJobRunner` | 适配 | `worker.application.ingest.LocalImportJobRunner` | 保留编排骨架，拆出原子依赖 |
 | TextContentExtractor | `worker.application.service.TextContentExtractor` | 复用 | `worker.infrastructure.extractor.TextContentExtractor` | Markdown/TXT/PDF/DOCX 抽取可复用 |
 | ObsidianVaultService | `core.application.service.ObsidianVaultService` | 适配 | `core.application.wiki` + `infrastructure.filesystem.obsidian` | 路径校验、原子写入和 URI 生成可复用，写入范围改为 `WikiForge/` 托管目录 |
-| WikiCompileService | `core.application.service.WikiCompileService` | 适配 | `core.application.wiki.WikiIngestService` | 自动写入和 Wiki 页面账本可复用，语义需从 Compile 改为 Ingest |
-| AiReviewService | `core.application.service.AiReviewService` | 冻结 | 无 MVP0 迁移目标 | 旧审核流退出主流程 |
-| LinkSourceService | `core.application.service.LinkSourceService` | 冻结 | 后续连接器拓展文档 | 链接资料入口后续再并入统一入口 |
-| PersonalRecordService | `core.application.service.PersonalRecordService` | 冻结 | 后续 LifeOS 原子能力文档 | 不进入本轮主线 |
-| McpPreviewService | `core.application.service.McpPreviewService` | 冻结 | 后续 MCP 原子能力文档 | 保留实现，不展示主入口 |
-| VectorExportService | `core.application.service.VectorExportService` | 冻结 | 后续 Vector 原子能力文档 | 后续真实向量库确认后再处理 |
-| KnowledgeMaintenanceService | `core.application.service.KnowledgeMaintenanceService` | 冻结 | 后续 Maintenance 原子能力文档 | 体检保留，不作为第一版主流程 |
+| WikiCompileService | `core.application.service.WikiCompileService` | 退役 | 已删除 | MVP0 改用 `WikiIngestRunService` 和 `wiki_ingest_runs` |
+| AiReviewService | `core.application.service.AiReviewService` | 退役 | 已删除 | 旧审核流退出主流程 |
+| LinkSourceService | `core.application.service.LinkSourceService` | 退役 | 已删除 | 链接资料入口不进入 MVP0 |
+| PersonalRecordService | `core.application.service.PersonalRecordService` | 退役 | 已删除 | LifeOS 不进入 MVP0 |
+| McpPreviewService | `core.application.service.McpPreviewService` | 退役 | 已删除 | MCP 不进入 MVP0 |
+| VectorExportService | `core.application.service.VectorExportService` | 退役 | 已删除 | 向量不进入 MVP0 |
+| KnowledgeMaintenanceService | `core.application.service.KnowledgeMaintenanceService` | 退役 | 已删除 | 知识体检不进入 MVP0 |
 | Orchestration Service | `backend/wikiforge-orchestration-service` | 退役 | 后续清理出构建和文档入口 | 辅助开发工程多余，不承载知识库业务 |
 
 ## 3. 前端资源
@@ -43,13 +43,13 @@
 | --- | --- | --- | --- | --- |
 | Dashboard 单页 | `frontend/src/views/DashboardView.vue` | 已退役 | 已迁移到 `shell/`、`pages/`、`features/` 并删除 | 不再作为代码资产保留，追溯时读取归档 |
 | Import Jobs API | `frontend/src/api/import-jobs` | 适配 | `features/capture/api` 或保留 `api/import-jobs` | 路径导入继续使用 |
-| Obsidian API | `frontend/src/api/obsidian` | 适配 | `features/llm-wiki/api` | 预览/打开能力复用，模板语义调整 |
-| Wiki API | `frontend/src/api/wiki` | 适配 | `features/llm-wiki/api` | 从 compile 调整到 ingest |
-| Review API | `frontend/src/api/review` | 冻结 | 无 MVP0 UI 入口 | 旧人工审核流冻结 |
-| MCP API | `frontend/src/api/mcp` | 冻结 | 无 MVP0 UI 入口 | 不在主流程加载 |
-| Vector API | `frontend/src/api/vector-exports` | 冻结 | 无 MVP0 UI 入口 | 不在主流程加载 |
-| LifeOS API | `frontend/src/api/lifeos` | 冻结 | 后续 LifeOS 文档 | 不在主流程加载 |
-| Knowledge Maintenance API | `frontend/src/api/knowledge-maintenance` | 冻结 | 无 MVP0 UI 入口 | 不在主流程加载 |
+| Obsidian API | `frontend/src/api/obsidian` | 适配 | 保留 init/status | 已删除旧 Source Note 草稿、写入和预览封装 |
+| Wiki API | `frontend/src/api/wiki` | 退役 | 已删除 | 旧 compile/pages/integrations API 退出，改用 `api/wiki-ingest-runs` |
+| Review API | `frontend/src/api/review` | 退役 | 已删除 | 旧人工审核流退出 |
+| MCP API | `frontend/src/api/mcp` | 退役 | 已删除 | MCP 不进入 MVP0 |
+| Vector API | `frontend/src/api/vector-exports` | 退役 | 已删除 | 向量不进入 MVP0 |
+| LifeOS API | `frontend/src/api/lifeos` | 退役 | 已删除 | LifeOS 不进入 MVP0 |
+| Knowledge Maintenance API | `frontend/src/api/knowledge-maintenance` | 退役 | 已删除 | 知识体检不进入 MVP0 |
 | Orchestration UI | `orchestration-ui` | 退役 | 后续清理出构建和文档入口 | 辅助开发工程多余 |
 | 主样式 | `frontend/src/styles/main.css` | 适配 | `styles/base.css`、`styles/layout.css`、`styles/components.css` | 可保留视觉基调，按页面拆分 |
 | 类型定义 | `frontend/src/types/*` | 适配 | 按 feature 拆分或保留统一 types | 优先避免大规模重命名 |
@@ -66,11 +66,11 @@
 | `sources` | 退役 | 与 MVP0 SourceFile 主账本语义重叠，后续清理 |
 | `obsidian_notes` | 退役 | Source Note 历史语义退出，MVP0 改用 wiki ingest 结果 |
 | `agent_runs` / `agent_steps` / `review_items` | 退役 | 不再复用为 Wiki ingest |
-| `wiki_pages` / `wiki_integrations` | 暂缓 | MVP0 先不预建，确有页面注册需求时再设计 |
-| `mcp_tool_calls` | 冻结 | MCP 不进入 MVP0 |
-| `personal_records` | 冻结 | LifeOS 不进入 MVP0 |
-| `vector_export_jobs` / `content_chunks` | 冻结 | 向量不进入 MVP0 |
-| `knowledge_maintenance_*` | 冻结 | 知识体检不进入 MVP0 |
+| `wiki_pages` / `wiki_integrations` | 退役 | 迁移文件已移除，确有页面注册需求时重新设计 |
+| `mcp_tool_calls` | 退役 | 迁移文件已移除 |
+| `personal_records` | 退役 | 迁移文件已移除 |
+| `vector_export_jobs` / `content_chunks` | 退役 | 迁移文件已移除 |
+| `knowledge_maintenance_*` | 退役 | 迁移文件已移除 |
 | Orchestration 相关表或配置 | 退役 | 后续确认依赖后清理 |
 
 规则：
@@ -86,11 +86,11 @@
 | --- | --- | --- |
 | `ImportJobApiIntegrationTests` | 复用 | 路径导入和 Raw Sources 回归 |
 | `ObsidianApiIntegrationTests` | 适配 | LLM Wiki 写入和 Vault 安全回归 |
-| `WikiCompileApiIntegrationTests` | 适配 | 改造为 Wiki ingest 回归 |
-| `AiReviewApiIntegrationTests` | 冻结 | 旧审核流冻结验证 |
-| `McpPreviewApiIntegrationTests` | 冻结 | MCP 高级能力冻结验证 |
-| `VectorExportApiIntegrationTests` | 冻结 | 向量高级能力冻结验证 |
-| `KnowledgeMaintenanceApiIntegrationTests` | 冻结 | 体检高级能力冻结验证 |
+| `WikiCompileApiIntegrationTests` | 退役 | 已删除 |
+| `AiReviewApiIntegrationTests` | 退役 | 已删除 |
+| `McpPreviewApiIntegrationTests` | 退役 | 已删除 |
+| `VectorExportApiIntegrationTests` | 退役 | 已删除 |
+| `KnowledgeMaintenanceApiIntegrationTests` | 退役 | 已删除 |
 | `LocalFileScannerTests` | 适配 | 拆成扫描、复制、hash、分类测试 |
 | `TextContentExtractorTests` | 复用 | 正文抽取回归 |
 

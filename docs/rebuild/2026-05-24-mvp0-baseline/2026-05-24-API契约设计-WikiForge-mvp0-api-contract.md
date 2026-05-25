@@ -10,7 +10,7 @@
 - Worker 只接受 Core 内部调用。
 - 所有用户可见状态使用中文码值和中文说明。
 - API 不返回宿主机敏感绝对路径。
-- 历史高级能力接口不进入 MVP0 主契约。
+- 历史高级能力接口不进入 MVP0 主契约，当前 MVP0 代码不再暴露这些接口。
 
 ## 2. 通用响应
 
@@ -110,7 +110,7 @@
 | `POST` | `/api/v1/obsidian/init` | 设置 | 初始化 Vault 托管目录 | 保留并收敛 |
 | `GET` | `/api/v1/obsidian/status` | 设置 | 查询 Vault 状态 | 保留并收敛 |
 
-不进入 MVP0 主契约：
+已退出 MVP0 代码，不进入 MVP0 主契约：
 
 - `/api/v1/mcp/**`
 - `/api/v1/vector-exports/**`
@@ -118,6 +118,9 @@
 - `/api/v1/maintenance-*`
 - `/api/v1/*/ai-review-*`
 - `/api/v1/wiki-compile-*`
+- `/api/v1/wiki-pages/**`
+- `/api/v1/wiki-integrations/**`
+- `/api/v1/link-sources/**`
 - `/api/v1/source-files/{fileUid}/obsidian-note/**`
 - Orchestration 相关接口
 
@@ -571,7 +574,7 @@ MVP0 主流程只新增或使用以下错误码前缀：
 | `WORKER_` | Worker 内部调用错误 |
 | `COMMON_` | 通用校验错误 |
 
-MCP、向量、LifeOS、知识体检、Orchestration 错误码不进入 MVP0 主流程新增使用点。
+AI Review、MCP、向量、LifeOS、知识体检、旧 Wiki Compile、旧 Source Note、Link Source、Orchestration 错误码不进入 MVP0 主流程新增使用点。
 
 ## 15. 验收规则
 

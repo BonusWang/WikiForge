@@ -174,18 +174,20 @@ MVP0 数据库从减法开始，只保存当前闭环必须的数据：
 | `sources` | 退役 | 与 MVP0 `source_files` 主账本语义重叠 |
 | `obsidian_notes` | 退役 | 旧 Source Note 语义退出，改用 `wiki_ingest_runs` |
 | `agent_runs` / `agent_steps` / `review_items` | 退役 | 不再承载 Wiki ingest |
-| `wiki_pages` / `wiki_integrations` | 暂缓 | MVP0 先用 Obsidian 文件和 ingest 记录，不预建页面注册表 |
-| `mcp_tool_calls` | 冻结 | MCP 不进 MVP0 |
-| `personal_records` | 冻结 | LifeOS 不进 MVP0 |
-| `vector_export_jobs` / `content_chunks` | 冻结 | 向量不进 MVP0 |
-| `knowledge_maintenance_*` | 冻结 | 知识体检不进 MVP0 |
+| `wiki_pages` / `wiki_integrations` | 退役 | MVP0 只保留 Obsidian 文件和 `wiki_ingest_runs`，不预建页面注册表 |
+| `mcp_tool_calls` | 退役 | MCP 不进 MVP0，迁移文件已移除 |
+| `personal_records` | 退役 | LifeOS 不进 MVP0，迁移文件已移除 |
+| `vector_export_jobs` / `content_chunks` | 退役 | 向量不进 MVP0，迁移文件已移除 |
+| `knowledge_maintenance_*` | 退役 | 知识体检不进 MVP0，迁移文件已移除 |
 | Orchestration 相关配置或表 | 退役 | 辅助开发工程退出项目主线 |
 
 ## 6. Migration 策略
 
-MVP0-0 和 MVP0-1 不直接修改数据库。
+MVP0 新库只执行最小收纳、正文抽取、字典和 Wiki ingest 迁移。
 
-后续执行数据库清理时必须分三步：
+2026-05-25 起，历史高级能力迁移不再随 MVP0 classpath 发布。已经执行过旧迁移的本地库，需要单独重建或迁移，不能把历史表继续作为 MVP0 依赖。
+
+后续如需清理已有库中的历史表，必须分三步：
 
 1. 输出当前库表快照和受影响代码清单。
 2. 新增最小 migration，不直接破坏用户数据。

@@ -67,7 +67,7 @@ class ImportJobApiIntegrationTests {
         restTemplate.getRestTemplate().setRequestFactory(new JdkClientHttpRequestFactory());
         Files.createDirectories(ALLOWED_ROOT);
         Files.createDirectories(RAW_SOURCES_ROOT);
-        jdbcTemplate.execute("DROP TABLE IF EXISTS obsidian_notes");
+        jdbcTemplate.execute("DROP TABLE IF EXISTS wiki_ingest_runs");
         jdbcTemplate.execute("DROP TABLE IF EXISTS source_contents");
         jdbcTemplate.execute("DROP TABLE IF EXISTS source_files");
         jdbcTemplate.execute("DROP TABLE IF EXISTS sources");
@@ -170,24 +170,31 @@ class ImportJobApiIntegrationTests {
                 )
                 """);
         jdbcTemplate.execute("""
-                CREATE TABLE obsidian_notes (
+                CREATE TABLE wiki_ingest_runs (
                     id BIGINT NOT NULL AUTO_INCREMENT,
-                    note_uid VARCHAR(64) NOT NULL,
-                    source_id BIGINT NOT NULL,
-                    source_file_id BIGINT NULL,
-                    note_type VARCHAR(64) NOT NULL DEFAULT 'source_note',
-                    vault_name VARCHAR(128) NOT NULL,
-                    vault_path VARCHAR(1024) NOT NULL,
-                    absolute_path CLOB NOT NULL,
-                    obsidian_uri CLOB NOT NULL,
-                    title VARCHAR(512) NOT NULL,
-                    frontmatter_json CLOB NULL,
-                    content_hash VARCHAR(128) NULL,
-                    status VARCHAR(64) NOT NULL DEFAULT 'written',
+                    run_uid VARCHAR(64) NOT NULL,
+                    source_file_id BIGINT NOT NULL,
+                    file_uid VARCHAR(64) NOT NULL,
+                    file_name VARCHAR(512) NULL,
+                    status_code VARCHAR(128) NOT NULL DEFAULT '已创建',
+                    status_label VARCHAR(128) NOT NULL DEFAULT '已创建',
+                    source_page_path VARCHAR(1024) NULL,
+                    wiki_page_paths CLOB NULL,
+                    index_updated BOOLEAN NOT NULL DEFAULT FALSE,
+                    log_entry_appended BOOLEAN NOT NULL DEFAULT FALSE,
+                    write_status_code VARCHAR(128) NOT NULL DEFAULT '已创建',
+                    write_status_label VARCHAR(128) NOT NULL DEFAULT '已创建',
+                    fallback_reason CLOB NULL,
+                    failure_reason CLOB NULL,
+                    managed_block_preview CLOB NULL,
+                    log_entry_preview CLOB NULL,
+                    obsidian_uri VARCHAR(2048) NULL,
+                    retryable BOOLEAN NOT NULL DEFAULT FALSE,
                     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    completed_at TIMESTAMP NULL,
                     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     PRIMARY KEY (id),
-                    UNIQUE KEY uk_obsidian_notes_note_uid (note_uid)
+                    UNIQUE KEY uk_wiki_ingest_runs_run_uid (run_uid)
                 )
                 """);
     }

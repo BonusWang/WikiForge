@@ -57,7 +57,6 @@ class ObsidianApiIntegrationTests {
         deleteDirectory(OBSIDIAN_VAULT);
         Files.createDirectories(RAW_SOURCES_ROOT);
         Files.createDirectories(OBSIDIAN_VAULT);
-        jdbcTemplate.execute("DROP TABLE IF EXISTS obsidian_notes");
         jdbcTemplate.execute("DROP TABLE IF EXISTS wiki_ingest_runs");
         jdbcTemplate.execute("DROP TABLE IF EXISTS source_contents");
         jdbcTemplate.execute("DROP TABLE IF EXISTS source_files");
@@ -157,27 +156,6 @@ class ObsidianApiIntegrationTests {
                 )
                 """);
         jdbcTemplate.execute("""
-                CREATE TABLE obsidian_notes (
-                    id BIGINT NOT NULL AUTO_INCREMENT,
-                    note_uid VARCHAR(64) NOT NULL,
-                    source_id BIGINT NOT NULL,
-                    source_file_id BIGINT NULL,
-                    note_type VARCHAR(64) NOT NULL DEFAULT 'source_note',
-                    vault_name VARCHAR(128) NOT NULL,
-                    vault_path VARCHAR(1024) NOT NULL,
-                    absolute_path CLOB NOT NULL,
-                    obsidian_uri CLOB NOT NULL,
-                    title VARCHAR(512) NOT NULL,
-                    frontmatter_json CLOB NULL,
-                    content_hash VARCHAR(128) NULL,
-                    status VARCHAR(64) NOT NULL DEFAULT 'written',
-                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    PRIMARY KEY (id),
-                    UNIQUE KEY uk_obsidian_notes_note_uid (note_uid)
-                )
-                """);
-        jdbcTemplate.execute("""
                 CREATE TABLE wiki_ingest_runs (
                     id BIGINT NOT NULL AUTO_INCREMENT,
                     run_uid VARCHAR(64) NOT NULL,
@@ -209,7 +187,7 @@ class ObsidianApiIntegrationTests {
     }
 
     @Test
-    void initializeVaultCreatesExpectedDirectories() throws Exception {
+    void initializeVaultCreatesMvp0ManagedRootOnly() throws Exception {
         ResponseEntity<JsonNode> response = restTemplate.postForEntity(
                 "/api/v1/obsidian/init",
                 null,
@@ -219,47 +197,17 @@ class ObsidianApiIntegrationTests {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         JsonNode data = response.getBody().path("data");
         assertThat(data.path("vaultName").asText()).isEqualTo("WikiForgeVault");
-        assertThat(Path.of(data.path("vaultPath").asText()).toRealPath()).isEqualTo(OBSIDIAN_VAULT.toRealPath());
-        assertThat(Files.isDirectory(OBSIDIAN_VAULT.resolve("00_Inbox_收集箱"))).isTrue();
-        assertThat(Files.isDirectory(OBSIDIAN_VAULT.resolve("00_Inbox_收集箱/Sources_来源"))).isTrue();
-        assertThat(Files.isDirectory(OBSIDIAN_VAULT.resolve("10_Wiki_主题库"))).isTrue();
+        assertThat(data.path("managedRoot").asText()).isEqualTo("WikiForge/");
+        assertThat(data.path("createdPaths").toString()).contains("WikiForge/index.md");
+        assertThat(Files.isDirectory(OBSIDIAN_VAULT.resolve("WikiForge/00_规则"))).isTrue();
+        assertThat(Files.isDirectory(OBSIDIAN_VAULT.resolve("WikiForge/10_来源"))).isTrue();
+        assertThat(Files.isRegularFile(OBSIDIAN_VAULT.resolve("WikiForge/index.md"))).isTrue();
+        assertThat(Files.isRegularFile(OBSIDIAN_VAULT.resolve("WikiForge/00_规则/LLM-Wiki写入规则.md"))).isTrue();
+        assertThat(Files.exists(OBSIDIAN_VAULT.resolve("00_Inbox_收集箱"))).isFalse();
     }
 
     @Test
-    void generateDraftUsesSourceFileMetadata() {
-        jdbcTemplate.update("""
-                INSERT INTO source_contents (
-                    id, content_uid, source_id, source_file_id, parser_name, content_type,
-                    raw_text, text_hash, char_count, raw_text_saved, parse_status,
-                    created_at, updated_at
-                ) VALUES (
-                    400, 'content_test', 100, 200, 'markdown-text', 'plain_text',
-                    '这是第一段正文，用于 Source Note 摘录。\\n这是第二段正文。', 'text-hash', 31, TRUE, 'success',
-                    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-                )
-                """);
-
-        ResponseEntity<JsonNode> response = restTemplate.postForEntity(
-                "/api/v1/source-files/file_test/obsidian-note/draft",
-                null,
-                JsonNode.class
-        );
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        JsonNode data = response.getBody().path("data");
-        assertThat(data.path("fileUid").asText()).isEqualTo("file_test");
-        assertThat(data.path("sourceUid").asText()).isEqualTo("src_test");
-        assertThat(data.path("vaultPath").asText())
-                .isEqualTo("00_Inbox_收集箱/Sources_来源/example.pdf-src_test.md");
-        assertThat(data.path("markdown").asText()).contains("# example.pdf");
-        assertThat(data.path("markdown").asText()).contains("Source UID: `src_test`");
-        assertThat(data.path("markdown").asText()).contains("原始路径");
-        assertThat(data.path("markdown").asText()).contains("## 正文摘录");
-        assertThat(data.path("markdown").asText()).contains("这是第一段正文，用于 Source Note 摘录。");
-    }
-
-    @Test
-    void statusShowsVaultAndLatestNote() {
+    void statusShowsManagedRootAndLatestWikiWrite() {
         ResponseEntity<JsonNode> initialResponse = restTemplate.getForEntity(
                 "/api/v1/obsidian/status",
                 JsonNode.class
@@ -268,17 +216,18 @@ class ObsidianApiIntegrationTests {
         assertThat(initialResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         JsonNode initialData = initialResponse.getBody().path("data");
         assertThat(initialData.path("vaultName").asText()).isEqualTo("WikiForgeVault");
+        assertThat(initialData.path("managedRoot").asText()).isEqualTo("WikiForge/");
         assertThat(initialData.path("exists").asBoolean()).isTrue();
         assertThat(initialData.path("writable").asBoolean()).isTrue();
-        assertThat(initialData.path("sourceNoteDirectoryExists").asBoolean()).isFalse();
-        assertThat(initialData.path("lastNoteUid").isMissingNode()).isTrue();
+        assertThat(initialData.path("managedRootExists").asBoolean()).isFalse();
+        assertThat(initialData.path("lastWriteAt").isMissingNode()).isTrue();
 
-        ResponseEntity<JsonNode> writeResponse = restTemplate.postForEntity(
-                "/api/v1/source-files/file_test/obsidian-note/write",
-                Map.of("markdown", "# status note"),
+        restTemplate.postForEntity("/api/v1/obsidian/init", null, JsonNode.class);
+        restTemplate.postForEntity(
+                "/api/v1/source-files/file_test/wiki-ingest-runs",
+                Map.of("writeMode", "自动"),
                 JsonNode.class
         );
-        String noteUid = writeResponse.getBody().path("data").path("noteUid").asText();
 
         ResponseEntity<JsonNode> response = restTemplate.getForEntity(
                 "/api/v1/obsidian/status",
@@ -287,81 +236,18 @@ class ObsidianApiIntegrationTests {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         JsonNode data = response.getBody().path("data");
-        assertThat(data.path("sourceNoteDirectoryExists").asBoolean()).isTrue();
-        assertThat(data.path("lastNoteUid").asText()).isEqualTo(noteUid);
-        assertThat(data.path("lastWrittenAt").asText()).isNotBlank();
+        assertThat(data.path("managedRootExists").asBoolean()).isTrue();
+        assertThat(data.path("lastWriteAt").asText()).isNotBlank();
     }
 
     @Test
-    void sourceFileNoteReturnsLatestWrittenNoteAndListShowsStatus() {
-        ResponseEntity<JsonNode> emptyResponse = restTemplate.getForEntity(
-                "/api/v1/source-files/file_test/obsidian-note",
-                JsonNode.class
-        );
-        assertThat(emptyResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(emptyResponse.getBody().path("data").isNull()).isTrue();
-
-        ResponseEntity<JsonNode> writeResponse = restTemplate.postForEntity(
-                "/api/v1/source-files/file_test/obsidian-note/write",
-                Map.of("markdown", "# first note"),
-                JsonNode.class
-        );
-        String firstNoteUid = writeResponse.getBody().path("data").path("noteUid").asText();
-
-        restTemplate.postForEntity(
-                "/api/v1/source-files/file_test/obsidian-note/write",
-                Map.of("markdown", "# latest note"),
-                JsonNode.class
-        );
-
+    void sourceNoteEndpointsAreNotExposed() {
         ResponseEntity<JsonNode> response = restTemplate.getForEntity(
                 "/api/v1/source-files/file_test/obsidian-note",
                 JsonNode.class
         );
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        JsonNode data = response.getBody().path("data");
-        assertThat(data.path("noteUid").asText()).isNotEqualTo(firstNoteUid);
-        assertThat(data.path("fileUid").asText()).isEqualTo("file_test");
-        assertThat(data.path("status").asText()).isEqualTo("written");
 
-        ResponseEntity<JsonNode> listResponse = restTemplate.getForEntity(
-                "/api/v1/source-files?jobUid=job_test&page=1&pageSize=10",
-                JsonNode.class
-        );
-        JsonNode file = listResponse.getBody().path("data").path("items").path(0);
-        assertThat(file.path("obsidianNoteUid").asText()).isEqualTo(data.path("noteUid").asText());
-        assertThat(file.path("obsidianNoteStatus").asText()).isEqualTo("written");
-        assertThat(file.path("obsidianVaultPath").asText()).contains("Sources_来源");
-    }
-
-    @Test
-    void writeNotePersistsFileAndPreviewReadsFromVault() {
-        String markdown = "# example.pdf\n\nMVP2 source note.";
-
-        ResponseEntity<JsonNode> writeResponse = restTemplate.postForEntity(
-                "/api/v1/source-files/file_test/obsidian-note/write",
-                Map.of("markdown", markdown),
-                JsonNode.class
-        );
-
-        assertThat(writeResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        JsonNode note = writeResponse.getBody().path("data");
-        assertThat(note.path("noteUid").asText()).matches("note_\\d{8}_[0-9a-f]{12}");
-        assertThat(note.path("obsidianUri").asText()).startsWith("obsidian://open?vault=WikiForgeVault&file=");
-        Path notePath = OBSIDIAN_VAULT.resolve(note.path("vaultPath").asText()).normalize();
-        assertThat(Files.isRegularFile(notePath)).isTrue();
-        assertThat(readString(notePath)).isEqualTo(markdown);
-
-        Integer rowCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM obsidian_notes", Integer.class);
-        assertThat(rowCount).isEqualTo(1);
-
-        ResponseEntity<JsonNode> previewResponse = restTemplate.getForEntity(
-                "/api/v1/obsidian/notes/{noteUid}/preview",
-                JsonNode.class,
-                note.path("noteUid").asText()
-        );
-        assertThat(previewResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(previewResponse.getBody().path("data").path("markdown").asText()).isEqualTo(markdown);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Test
@@ -401,28 +287,14 @@ class ObsidianApiIntegrationTests {
 
         Integer runCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM wiki_ingest_runs", Integer.class);
         assertThat(runCount).isEqualTo(1);
-    }
 
-    @Test
-    void previewRejectsVaultTraversal() {
-        jdbcTemplate.update("""
-                INSERT INTO obsidian_notes (
-                    id, note_uid, source_id, source_file_id, note_type, vault_name, vault_path,
-                    absolute_path, obsidian_uri, title, status, created_at, updated_at
-                ) VALUES (
-                    300, 'note_bad', 100, 200, 'source_note', 'WikiForgeVault', '../outside.md',
-                    'outside', 'obsidian://open?vault=WikiForgeVault&file=outside.md',
-                    'bad', 'written', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-                )
-                """);
-
-        ResponseEntity<JsonNode> response = restTemplate.getForEntity(
-                "/api/v1/obsidian/notes/note_bad/preview",
+        ResponseEntity<JsonNode> fileResponse = restTemplate.getForEntity(
+                "/api/v1/source-files/file_test",
                 JsonNode.class
         );
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(response.getBody().path("code").asText()).isEqualTo("OBSIDIAN_002");
+        JsonNode file = fileResponse.getBody().path("data");
+        assertThat(file.path("wikiStatusCode").asText()).isEqualTo("已写入 Wiki");
+        assertThat(file.path("latestWikiIngestRun").path("runUid").asText()).isEqualTo(data.path("runUid").asText());
     }
 
     private void seedSourceFile() {
