@@ -136,7 +136,6 @@ class ObsidianApiIntegrationTests {
                     status_code VARCHAR(128) NOT NULL DEFAULT '已创建',
                     status_label VARCHAR(128) NOT NULL DEFAULT '已创建',
                     source_page_path VARCHAR(1024) NULL,
-                    wiki_page_paths CLOB NULL,
                     index_updated BOOLEAN NOT NULL DEFAULT FALSE,
                     log_entry_appended BOOLEAN NOT NULL DEFAULT FALSE,
                     write_status_code VARCHAR(128) NOT NULL DEFAULT '已创建',
@@ -173,6 +172,9 @@ class ObsidianApiIntegrationTests {
         assertThat(Files.isDirectory(OBSIDIAN_VAULT.resolve("WikiForge/10_来源"))).isTrue();
         assertThat(Files.isRegularFile(OBSIDIAN_VAULT.resolve("WikiForge/index.md"))).isTrue();
         assertThat(Files.isRegularFile(OBSIDIAN_VAULT.resolve("WikiForge/00_规则/LLM-Wiki写入规则.md"))).isTrue();
+        assertThat(Files.exists(OBSIDIAN_VAULT.resolve("WikiForge/20_主题"))).isFalse();
+        assertThat(Files.exists(OBSIDIAN_VAULT.resolve("WikiForge/30_项目"))).isFalse();
+        assertThat(Files.exists(OBSIDIAN_VAULT.resolve("WikiForge/90_系统"))).isFalse();
         assertThat(Files.exists(OBSIDIAN_VAULT.resolve("00_Inbox_收集箱"))).isFalse();
     }
 

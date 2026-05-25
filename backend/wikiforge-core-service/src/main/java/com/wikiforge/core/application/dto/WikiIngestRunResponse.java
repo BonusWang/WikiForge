@@ -2,7 +2,6 @@ package com.wikiforge.core.application.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import java.time.OffsetDateTime;
-import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record WikiIngestRunResponse(
@@ -12,7 +11,6 @@ public record WikiIngestRunResponse(
         String statusCode,
         String statusLabel,
         String sourcePagePath,
-        List<String> wikiPagePaths,
         Boolean indexUpdated,
         Boolean logEntryAppended,
         String writeStatusCode,

@@ -46,6 +46,10 @@ class MigrationSqlCompatibilityTests {
         assertThat(migrationSql).doesNotContain("处理意图");
         assertThat(migrationSql).doesNotContain("fallback_reason");
         assertThat(migrationSql).doesNotContain("兜底写入");
+        assertThat(migrationSql).doesNotContain("wiki_page_paths");
+        assertThat(migrationSql).doesNotContain("20_主题");
+        assertThat(migrationSql).doesNotContain("30_项目");
+        assertThat(migrationSql).doesNotContain("90_系统");
         assertThat(migrationSql).doesNotContain("CREATE TABLE obsidian_notes");
         assertThat(migrationSql).doesNotContain("CREATE TABLE agent_runs");
         assertThat(migrationSql).doesNotContain("CREATE TABLE review_items");

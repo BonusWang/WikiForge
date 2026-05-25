@@ -17,7 +17,6 @@ public class WikiIngestRunEntity {
     private String statusCode;
     private String statusLabel;
     private String sourcePagePath;
-    private String wikiPagePaths;
     private Boolean indexUpdated;
     private Boolean logEntryAppended;
     private String writeStatusCode;
@@ -93,14 +92,6 @@ public class WikiIngestRunEntity {
 
     public void setSourcePagePath(String sourcePagePath) {
         this.sourcePagePath = sourcePagePath;
-    }
-
-    public String getWikiPagePaths() {
-        return wikiPagePaths;
-    }
-
-    public void setWikiPagePaths(String wikiPagePaths) {
-        this.wikiPagePaths = wikiPagePaths;
     }
 
     public Boolean getIndexUpdated() {

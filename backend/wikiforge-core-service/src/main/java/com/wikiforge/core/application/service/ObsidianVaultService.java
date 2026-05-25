@@ -42,11 +42,7 @@ public class ObsidianVaultService {
     private static final List<String> VAULT_DIRECTORIES = List.of(
             MANAGED_ROOT,
             MANAGED_ROOT + "/00_规则",
-            WIKI_SOURCE_DIRECTORY,
-            MANAGED_ROOT + "/20_主题",
-            MANAGED_ROOT + "/30_项目",
-            MANAGED_ROOT + "/90_系统",
-            MANAGED_ROOT + "/90_系统/ingest-runs"
+            WIKI_SOURCE_DIRECTORY
     );
     private static final Map<String, String> VAULT_FILES = vaultFiles();
 
@@ -94,7 +90,6 @@ public class ObsidianVaultService {
 
         return new WikiIngestWriteResult(
                 sourcePagePath,
-                List.of(sourcePagePath),
                 indexUpdated,
                 true,
                 managedBlock,
@@ -198,7 +193,7 @@ public class ObsidianVaultService {
 
                 ## 摘要
 
-                MVP0 先按规则写入来源页托管区块，后续再接入 LLM 摘要和主题归档。
+                MVP0 当前按规则写入来源页托管区块。
 
                 ## 正文摘录
 
@@ -416,16 +411,11 @@ public class ObsidianVaultService {
         files.put(MANAGED_ROOT + "/00_规则/LLM-Wiki写入规则.md",
                 "# LLM Wiki 写入规则\n\nWikiForge 只维护带 `wikiforge:managed` 标记的托管区块。\n");
         files.put(MANAGED_ROOT + "/00_规则/来源页模板.md", "# 来源页模板\n\n用于 Raw Sources 对应来源页。\n");
-        files.put(MANAGED_ROOT + "/00_规则/主题页模板.md", "# 主题页模板\n\n用于后续主题沉淀。\n");
-        files.put(MANAGED_ROOT + "/00_规则/项目页模板.md", "# 项目页模板\n\n用于后续项目沉淀。\n");
-        files.put(MANAGED_ROOT + "/20_主题/待分类.md", "# 待分类\n\n");
-        files.put(MANAGED_ROOT + "/30_项目/待归档项目.md", "# 待归档项目\n\n");
         return files;
     }
 
     public record WikiIngestWriteResult(
             String sourcePagePath,
-            List<String> wikiPagePaths,
             boolean indexUpdated,
             boolean logEntryAppended,
             String managedBlockPreview,

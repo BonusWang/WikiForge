@@ -44,7 +44,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
@@ -498,7 +497,6 @@ public class ImportJobService {
                 entity.getStatusCode(),
                 entity.getStatusLabel(),
                 entity.getSourcePagePath(),
-                wikiPagePaths(entity.getWikiPagePaths()),
                 Boolean.TRUE.equals(entity.getIndexUpdated()),
                 Boolean.TRUE.equals(entity.getLogEntryAppended()),
                 entity.getWriteStatusCode(),
@@ -511,16 +509,6 @@ public class ImportJobService {
                 toOffset(entity.getCreatedAt()),
                 toOffset(entity.getCompletedAt())
         );
-    }
-
-    private List<String> wikiPagePaths(String value) {
-        if (value == null || value.isBlank() || "[]".equals(value.trim())) {
-            return List.of();
-        }
-        return Arrays.stream(value.split("\\R"))
-                .map(String::trim)
-                .filter(path -> !path.isBlank())
-                .toList();
     }
 
     private String resolveImportStatusFilter(String status, String statusCode) {

@@ -69,7 +69,6 @@ CREATE TABLE wiki_ingest_runs (
     status_code VARCHAR(128) NOT NULL DEFAULT '已创建',
     status_label VARCHAR(128) NOT NULL DEFAULT '已创建',
     source_page_path VARCHAR(1024) NULL,
-    wiki_page_paths TEXT NULL,
     index_updated TINYINT(1) NOT NULL DEFAULT 0,
     log_entry_appended TINYINT(1) NOT NULL DEFAULT 0,
     write_status_code VARCHAR(128) NOT NULL DEFAULT '已创建',
