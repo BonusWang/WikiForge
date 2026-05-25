@@ -12,7 +12,6 @@ export interface ImportJob {
   jobUid: string;
   importType: string;
   inputPath?: string;
-  inputPathMasked?: string;
   rawSourcesRoot?: string;
   recursive: boolean;
   organizeMode: 'copy';
@@ -25,7 +24,6 @@ export interface ImportJob {
   totalCount: number;
   successCount: number;
   skippedCount: number;
-  duplicateCount?: number;
   failedCount: number;
   createdAt: string;
 }
@@ -83,7 +81,6 @@ export interface SourceFile {
   fileUid: string;
   jobUid: string;
   fileName: string;
-  originalName?: string | null;
   fileExt: string;
   originalPath?: string;
   originalPathMasked?: string | null;

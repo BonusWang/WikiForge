@@ -124,8 +124,7 @@ public class ImportJobService {
     }
 
     @Transactional
-    public UploadSourcesResponse uploadSources(List<MultipartFile> files, String wikiWritebackMode) {
-        validateWikiWritebackMode(wikiWritebackMode);
+    public UploadSourcesResponse uploadSources(List<MultipartFile> files) {
         List<MultipartFile> uploadFiles = files == null
                 ? List.of()
                 : files.stream().filter(file -> file != null && !file.isEmpty()).toList();
@@ -393,15 +392,6 @@ public class ImportJobService {
             return contentType;
         }
         return Files.probeContentType(managedPath);
-    }
-
-    private void validateWikiWritebackMode(String wikiWritebackMode) {
-        if (wikiWritebackMode == null || wikiWritebackMode.isBlank()) {
-            return;
-        }
-        if (!"自动".equals(wikiWritebackMode) && !"关闭".equals(wikiWritebackMode)) {
-            throw new BusinessException(ErrorCode.VALIDATION_FAILED, "wikiWritebackMode must be 自动 or 关闭");
-        }
     }
 
     private void deleteTempFile(Path tempPath) {

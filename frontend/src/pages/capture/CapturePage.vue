@@ -280,7 +280,7 @@ onMounted(refreshJobs);
         <el-table-column prop="failedCount" label="失败" width="90" align="right" />
         <el-table-column label="来源路径" min-width="240" show-overflow-tooltip>
           <template #default="scope">
-            {{ scope.row.inputPathMasked || scope.row.inputPath }}
+            {{ scope.row.inputPath }}
           </template>
         </el-table-column>
         <el-table-column prop="rawSourcesRoot" label="收纳目录" min-width="240" show-overflow-tooltip />

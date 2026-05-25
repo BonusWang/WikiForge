@@ -148,7 +148,7 @@ docs/rebuild/2026-05-24-mvp0-baseline/2026-05-24-API契约设计-WikiForge-mvp0-
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
 | `PATCH` | `/api/v1/internal/import-jobs/{jobUid}/status` | Worker 回写任务状态 |
-| `POST` | `/api/v1/internal/import-jobs/{jobUid}/source-files:batch` | Worker 批量回写 SourceFile |
+| `POST` | `/api/v1/internal/import-jobs/{jobUid}/source-files/batch` | Worker 批量回写 SourceFile |
 | `POST` | `/api/v1/internal/source-files/{fileUid}/content` | Worker 回写正文抽取结果 |
 
 内部接口必须有内部令牌或等效校验，前端不得调用。
@@ -197,7 +197,7 @@ MVP0 状态码统一使用中文业务码值，由 `system_dictionaries` 维护�
 | --- | --- |
 | 已创建 | Wiki ingest run 已创建 |
 | 写入中 | 正在生成或写入 Wiki 页面 |
-| 已写入 | Source page、Wiki page、index/log 已写入 |
+| 已写入 | Source page、index/log 已写入 |
 | 兜底写入 | LLM 不可用，已用规则式 Markdown 写入 |
 | 失败 | 写入失败 |
 

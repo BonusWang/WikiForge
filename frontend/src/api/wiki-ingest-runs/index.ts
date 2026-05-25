@@ -1,6 +1,5 @@
 import { http, type ApiResponse } from '../../services/http';
 import type {
-  CreateWikiIngestRunRequest,
   WikiIngestRun,
   WikiIngestRunDetail,
   WikiIngestRunListParams,
@@ -15,12 +14,10 @@ function unwrapResponse<T>(response: ApiResponse<T | null>): T {
 }
 
 export async function createWikiIngestRun(
-  fileUid: string,
-  payload: CreateWikiIngestRunRequest = {}
+  fileUid: string
 ): Promise<WikiIngestRun> {
   const response = await http.post<ApiResponse<WikiIngestRun | null>>(
-    `/v1/source-files/${encodeURIComponent(fileUid)}/wiki-ingest-runs`,
-    payload
+    `/v1/source-files/${encodeURIComponent(fileUid)}/wiki-ingest-runs`
   );
   return unwrapResponse(response.data);
 }

@@ -114,7 +114,7 @@ async function handleSourcePageChange(page: number) {
 async function writeSourceToWiki(sourceFile: SourceFile) {
   wikiWritingFileUid.value = sourceFile.fileUid;
   try {
-    const run = await createWikiIngestRun(sourceFile.fileUid, { writeMode: '自动' });
+    const run = await createWikiIngestRun(sourceFile.fileUid);
     ElMessage.success(`Wiki 写入完成：${run.writeStatusLabel || run.statusLabel}`);
     await refreshSourceFiles();
   } catch (error) {
@@ -185,7 +185,7 @@ onMounted(refreshJobs);
         <el-table-column prop="failedCount" label="失败" width="86" align="right" />
         <el-table-column label="来源路径" min-width="240" show-overflow-tooltip>
           <template #default="scope">
-            {{ scope.row.inputPathMasked || scope.row.inputPath }}
+            {{ scope.row.inputPath }}
           </template>
         </el-table-column>
         <el-table-column prop="createdAt" label="创建时间" min-width="180" show-overflow-tooltip />

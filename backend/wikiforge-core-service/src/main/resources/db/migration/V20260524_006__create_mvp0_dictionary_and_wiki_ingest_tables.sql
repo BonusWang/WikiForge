@@ -50,13 +50,7 @@ INSERT INTO system_dictionaries (
 ('Wiki 写入状态', '写入中', '写入中', '正在写入 Obsidian Wiki', 20, 'info', 0, 0),
 ('Wiki 写入状态', '已写入', '已写入', '已完成 Obsidian Wiki 写入', 30, 'success', 1, 1),
 ('Wiki 写入状态', '兜底写入', '兜底写入', '已按兜底规则写入', 40, 'warning', 1, 1),
-('Wiki 写入状态', '失败', '失败', 'Obsidian Wiki 写入失败', 50, 'danger', 1, 0),
-('写入模式', '自动', '自动', '由系统按规则自动整理', 10, 'info', 0, 0),
-('写入模式', '兜底', '兜底', '使用兜底模板整理', 20, 'warning', 0, 0),
-('写入模式', '仅预览', '仅预览', '只生成预览，不写入文件', 30, 'neutral', 0, 0),
-('写入模式', '关闭', '关闭', '不自动写入 Wiki', 40, 'neutral', 0, 0),
-('处理意图', '仅收纳', '仅收纳', '只完成 Raw Sources 收纳和账本登记', 10, 'neutral', 0, 0),
-('处理意图', '收纳并整理', '收纳并整理', '收纳后继续整理到 Wiki', 20, 'info', 0, 0)
+('Wiki 写入状态', '失败', '失败', 'Obsidian Wiki 写入失败', 50, 'danger', 1, 0)
 ON DUPLICATE KEY UPDATE
     label_zh = VALUES(label_zh),
     description_zh = VALUES(description_zh),

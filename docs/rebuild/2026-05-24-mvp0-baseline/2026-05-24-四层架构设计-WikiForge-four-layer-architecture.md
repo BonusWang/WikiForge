@@ -187,8 +187,8 @@ Obsidian 写入只进入 Vault 内 `WikiForge/` 托管目录。来源页、主�
 
 规划补充字段：
 
-- `processingIntent`: `仅收纳 | 收纳并整理`
-- `wikiWritebackMode`: `自动 | 关闭`
+- `rawSourcesRoot`: 可选 Raw Sources 根目录；为空时使用运行配置
+- `organizeMode`: 当前仅支持 `copy`
 
 ### 6.2 已接入主流程
 
