@@ -300,7 +300,7 @@
 
 请求：无需请求体。
 
-当前 MVP0 固定按规则式来源页写入，写入 `WikiForge/10_来源/` 下的 Source page，并同步 `index.md` 与 `log.md`。模型整理、扩展归档、预览模式和强制覆盖策略后续单独设计，不提前放入当前接口参数。
+当前 MVP0 固定按规则式来源页写入，写入 `WikiForge/10_Sources_来源/` 下的 Source page，并同步 `index.md` 与 `log.md`。模型整理、扩展归档、预览模式和强制覆盖策略后续单独设计，不提前放入当前接口参数。
 
 响应：
 
@@ -310,7 +310,7 @@
   "fileUid": "sf_xxx",
   "statusCode": "已写入",
   "statusLabel": "已写入",
-  "sourcePagePath": "WikiForge/10_来源/2026/05/sf_xxx-资料.md",
+  "sourcePagePath": "WikiForge/10_Sources_来源/2026/05/sf_xxx-资料.md",
   "indexUpdated": true,
   "logEntryAppended": true,
   "writeStatusCode": "已写入",
@@ -397,12 +397,12 @@
   "managedRoot": "WikiForge/",
   "createdPaths": [
     "WikiForge/",
-    "WikiForge/00_规则/",
-    "WikiForge/10_来源/",
+    "WikiForge/00_Rules_规则/",
+    "WikiForge/10_Sources_来源/",
     "WikiForge/index.md",
     "WikiForge/log.md",
-    "WikiForge/00_规则/LLM-Wiki写入规则.md",
-    "WikiForge/00_规则/来源页模板.md"
+    "WikiForge/00_Rules_规则/LLM-Wiki写入规则.md",
+    "WikiForge/00_Rules_规则/来源页模板.md"
   ]
 }
 ```

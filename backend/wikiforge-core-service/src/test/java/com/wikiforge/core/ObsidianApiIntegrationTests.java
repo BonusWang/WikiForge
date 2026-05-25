@@ -168,10 +168,12 @@ class ObsidianApiIntegrationTests {
         assertThat(data.path("vaultName").asText()).isEqualTo("WikiForgeVault");
         assertThat(data.path("managedRoot").asText()).isEqualTo("WikiForge/");
         assertThat(data.path("createdPaths").toString()).contains("WikiForge/index.md");
-        assertThat(Files.isDirectory(OBSIDIAN_VAULT.resolve("WikiForge/00_规则"))).isTrue();
-        assertThat(Files.isDirectory(OBSIDIAN_VAULT.resolve("WikiForge/10_来源"))).isTrue();
+        assertThat(Files.isDirectory(OBSIDIAN_VAULT.resolve("WikiForge/00_Rules_规则"))).isTrue();
+        assertThat(Files.isDirectory(OBSIDIAN_VAULT.resolve("WikiForge/10_Sources_来源"))).isTrue();
         assertThat(Files.isRegularFile(OBSIDIAN_VAULT.resolve("WikiForge/index.md"))).isTrue();
-        assertThat(Files.isRegularFile(OBSIDIAN_VAULT.resolve("WikiForge/00_规则/LLM-Wiki写入规则.md"))).isTrue();
+        assertThat(Files.isRegularFile(OBSIDIAN_VAULT.resolve("WikiForge/00_Rules_规则/LLM-Wiki写入规则.md"))).isTrue();
+        assertThat(Files.exists(OBSIDIAN_VAULT.resolve("WikiForge/00_规则"))).isFalse();
+        assertThat(Files.exists(OBSIDIAN_VAULT.resolve("WikiForge/10_来源"))).isFalse();
         assertThat(Files.exists(OBSIDIAN_VAULT.resolve("WikiForge/20_主题"))).isFalse();
         assertThat(Files.exists(OBSIDIAN_VAULT.resolve("WikiForge/30_项目"))).isFalse();
         assertThat(Files.exists(OBSIDIAN_VAULT.resolve("WikiForge/90_系统"))).isFalse();
@@ -236,7 +238,7 @@ class ObsidianApiIntegrationTests {
         JsonNode data = response.getBody().path("data");
         assertThat(data.path("runUid").asText()).matches("wir_\\d{8}_[0-9a-f]{12}");
         assertThat(data.path("statusCode").asText()).isEqualTo("已写入");
-        assertThat(data.path("sourcePagePath").asText()).startsWith("WikiForge/10_来源/");
+        assertThat(data.path("sourcePagePath").asText()).startsWith("WikiForge/10_Sources_来源/");
         assertThat(data.path("indexUpdated").asBoolean()).isTrue();
         assertThat(data.path("logEntryAppended").asBoolean()).isTrue();
 
