@@ -21,7 +21,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class LocalImportJobRunner {
 
-    private static final String ORGANIZE_MODE_COPY = "copy";
     private static final String STATUS_RUNNING = "running";
     private static final String STATUS_COMPLETED = "completed";
     private static final String STATUS_FAILED = "failed";
@@ -57,8 +56,6 @@ public class LocalImportJobRunner {
     }
 
     public RunLocalImportJobResponse run(RunLocalImportJobRequest request) {
-        requireCopyMode(request.organizeMode());
-
         coreImportJobClient.updateStatus(request.jobUid(), new UpdateImportJobStatusRequest(
                 STATUS_RUNNING,
                 0,
@@ -80,7 +77,7 @@ public class LocalImportJobRunner {
                     scanResult.successCount(),
                     scanResult.skippedCount(),
                     scanResult.failedCount(),
-                    scanResult.failedCount() == 0 ? null : "one or more files failed to copy"
+                    scanResult.failedCount() == 0 ? null : "one or more files failed to collect"
             ));
             return new RunLocalImportJobResponse(request.jobUid(), true, "accepted");
         } catch (RuntimeException exception) {
@@ -96,12 +93,6 @@ public class LocalImportJobRunner {
         }
     }
 
-    private void requireCopyMode(String organizeMode) {
-        if (organizeMode != null && !organizeMode.isBlank() && !ORGANIZE_MODE_COPY.equals(organizeMode)) {
-            throw new BusinessException(ErrorCode.WORKER_REJECTED_IMPORT_TASK, "only copy organizeMode is supported in MVP1");
-        }
-    }
-
     private LocalScanRequest toLocalScanRequest(RunLocalImportJobRequest request) {
         return new LocalScanRequest(
                 Path.of(request.inputPath()),
@@ -110,7 +101,8 @@ public class LocalImportJobRunner {
                 request.skipHidden(),
                 request.skipTemporary(),
                 request.followSymlinks(),
-                request.maxCopyFileSizeMb()
+                request.maxCopyFileSizeMb(),
+                request.organizeMode()
         );
     }
 

@@ -50,7 +50,7 @@
 {
   "statusCode": "已收纳",
   "statusLabel": "已收纳",
-  "statusDescription": "文件已复制到 Raw Sources",
+  "statusDescription": "文件已进入资料仓库",
   "statusColor": "success",
   "isTerminal": false
 }
@@ -123,9 +123,9 @@
 ```json
 {
   "inputPath": "E:\\资料\\待读",
-  "rawSourcesRoot": "E:\\WikiForgeRawSources",
+  "rawSourcesRoot": "E:\\WikiForgeVault\\WikiForge\\30_Resources_资源",
   "recursive": true,
-  "organizeMode": "copy",
+  "organizeMode": "move",
   "maxCopyFileSizeMb": 100
 }
 ```
@@ -134,11 +134,11 @@
 
 | 字段 | 必填 | 说明 |
 | --- | --- | --- |
-| `inputPath` | 是 | 用户输入的本机目录 |
-| `rawSourcesRoot` | 否 | Raw Sources 根目录；为空时使用运行配置 |
+| `inputPath` | 是 | 用户输入的本机目录或单个文件 |
+| `rawSourcesRoot` | 否 | 资料仓库根目录；为空时使用运行配置 |
 | `recursive` | 否 | 是否递归扫描，默认 true |
-| `organizeMode` | 否 | 当前仅支持 `copy` |
-| `maxCopyFileSizeMb` | 否 | 单文件复制上限 |
+| `organizeMode` | 否 | `copy` / `move` / `reference`；本地路径默认 `move` |
+| `maxCopyFileSizeMb` | 否 | 单文件入库上限 |
 
 响应：
 
@@ -147,9 +147,9 @@
   "jobUid": "job_xxx",
   "importType": "path_scan",
   "inputPath": "E:\\资料\\待读",
-  "rawSourcesRoot": "E:\\WikiForgeRawSources",
+  "rawSourcesRoot": "E:\\WikiForgeVault\\WikiForge\\30_Resources_资源",
   "recursive": true,
-  "organizeMode": "copy",
+  "organizeMode": "move",
   "maxCopyFileSizeMb": 100,
   "status": "pending",
   "statusCode": "已创建",
@@ -167,7 +167,7 @@
 
 安全规则：
 
-- `inputPath` 与 Raw Sources 不得重叠。
+- `inputPath` 与资料仓库不得重叠；已在资料仓库内的文件后续按跳过或更新账本处理。
 - 返回给前端的路径必须脱敏或只返回用户已输入路径。
 - 不返回系统内部临时路径。
 
@@ -239,7 +239,7 @@
 
 规则：
 
-- 上传文件进入同一 Raw Sources 流程。
+- 上传文件复制进入同一资料仓库流程。
 - 同名文件不得覆盖，最终命名由 hash 和安全文件名决定。
 - Core 完成上传落盘和 SourceFile 登记后返回 `已完成`。
 - 上传资料的正文抽取状态初始为 `待抽取`，后续沿用资料箱和 Wiki ingest 主流程继续处理。
@@ -263,7 +263,7 @@
       "fileExt": "pdf",
       "fileSizeBytes": 204800,
       "contentHash": "sha256_xxx",
-      "rawSourceRelativePath": "2026/05/sf_xxx-资料.pdf",
+  "rawSourceRelativePath": "03_PDFs_PDF/资料.pdf",
       "collectStatusCode": "已收纳",
       "collectStatusLabel": "已收纳",
       "extractStatusCode": "已抽取",
@@ -365,9 +365,9 @@
   "items": [
     {
       "dictType": "资料状态",
-      "dictCode": "已收纳",
-      "labelZh": "已收纳",
-      "descriptionZh": "文件已复制到 Raw Sources",
+      "dictCode": "已归仓",
+      "labelZh": "已归仓",
+      "descriptionZh": "文件已移动到资料仓库",
       "sortOrder": 20,
       "colorToken": "success",
       "isTerminal": false,
@@ -399,6 +399,7 @@
     "WikiForge/",
     "WikiForge/00_Rules_规则/",
     "WikiForge/10_Sources_来源/",
+    "WikiForge/30_Resources_资源/",
     "WikiForge/index.md",
     "WikiForge/log.md",
     "WikiForge/00_Rules_规则/LLM-Wiki写入规则.md",
@@ -457,7 +458,7 @@ SourceFile 批量回写请求：
       "fileName": "资料.pdf",
       "fileExt": "pdf",
       "originalPath": "E:\\资料\\资料.pdf",
-      "managedPath": "E:\\WikiForgeRawSources\\2026\\05\\资料.pdf",
+      "managedPath": "E:\\WikiForgeVault\\WikiForge\\30_Resources_资源\\03_PDFs_PDF\\资料.pdf",
       "fileSize": 204800,
       "mimeType": "application/pdf",
       "contentHash": "sha256_xxx",
@@ -482,7 +483,7 @@ MVP0 主流程只新增或使用以下错误码前缀：
 
 | 前缀 | 用途 |
 | --- | --- |
-| `SOURCE_` | 路径、资料、Raw Sources 相关错误 |
+| `SOURCE_` | 路径、资料和资料仓库相关错误 |
 | `IMPORT_` | 收纳任务错误 |
 | `UPLOAD_` | 上传错误 |
 | `WIKI_` | Wiki ingest 和页面写入错误 |

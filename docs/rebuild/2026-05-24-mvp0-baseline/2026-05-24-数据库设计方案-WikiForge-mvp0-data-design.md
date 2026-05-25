@@ -5,7 +5,7 @@
 MVP0 数据库从减法开始，只保存当前闭环必须的数据：
 
 - 收纳任务。
-- Raw Sources 文件账本。
+- 资料仓库文件账本。
 - 正文抽取结果。
 - Obsidian LLM Wiki 写入结果。
 - 中文状态字典。
@@ -17,7 +17,7 @@ MVP0 数据库从减法开始，只保存当前闭环必须的数据：
 | 表 | 状态 | 归属 | 用途 |
 | --- | --- | --- | --- |
 | `import_jobs` | 主流程 | Core | 路径扫描、上传任务账本 |
-| `source_files` | 主流程 | Core | Raw Sources 文件账本 |
+| `source_files` | 主流程 | Core | 资料仓库文件账本 |
 | `source_contents` | 主流程 | Core | 正文抽取结果 |
 | `wiki_ingest_runs` | 主流程 | Core | Obsidian LLM Wiki 写入运行结果 |
 | `system_dictionaries` | 主流程 | Core | 状态码、中文名称、说明和颜色映射 |
@@ -34,7 +34,7 @@ MVP0 数据库从减法开始，只保存当前闭环必须的数据：
 | `job_uid` | 对外任务 UID |
 | `import_type` | 本地路径 / 浏览器上传 |
 | `source_path_masked` | 脱敏来源路径或上传批次描述 |
-| `raw_source_root` | Raw Sources 根目录标识 |
+| `raw_source_root` | 资料仓库根目录标识 |
 | `status_code` | 中文状态码，来自字典 |
 | `total_count` | 文件总数 |
 | `success_count` | 成功数 |
@@ -52,7 +52,7 @@ MVP0 数据库从减法开始，只保存当前闭环必须的数据：
 | `job_uid` | 所属收纳任务 |
 | `original_name` | 原始文件名 |
 | `original_path_masked` | 脱敏来源路径 |
-| `raw_source_relative_path` | Raw Sources 相对路径 |
+| `raw_source_relative_path` | 资料仓库相对路径 |
 | `content_hash` | SHA-256 |
 | `file_size_bytes` | 文件大小 |
 | `file_type` | 文件类型 |

@@ -207,7 +207,7 @@ onMounted(refreshJobs);
     <el-card shadow="never">
       <template #header>
         <div class="section-title">
-          <div class="card-title">Raw Sources 文件</div>
+          <div class="card-title">资料仓库文件</div>
           <el-button
             :disabled="!selectedJobUid"
             :loading="detailLoading || sourceLoading"

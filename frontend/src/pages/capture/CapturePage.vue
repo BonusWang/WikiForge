@@ -14,9 +14,15 @@ const importForm = reactive<CreateLocalImportJobRequest>({
   inputPath: '',
   rawSourcesRoot: '',
   recursive: true,
-  organizeMode: 'copy',
+  organizeMode: 'move',
   maxCopyFileSizeMb: 100
 });
+
+const organizeModeOptions = [
+  { label: '移动入库', value: 'move' },
+  { label: '复制入库', value: 'copy' },
+  { label: '引用入库', value: 'reference' }
+];
 
 const statusFilter = ref('');
 const jobs = ref<ImportJob[]>([]);
@@ -60,7 +66,7 @@ async function createJob() {
       inputPath,
       rawSourcesRoot: optionalText(importForm.rawSourcesRoot),
       recursive: importForm.recursive,
-      organizeMode: 'copy',
+      organizeMode: importForm.organizeMode,
       maxCopyFileSizeMb: importForm.maxCopyFileSizeMb
     });
     ElMessage.success(`收纳任务已创建：${job.jobUid}`);
@@ -141,6 +147,10 @@ onMounted(refreshJobs);
           />
         </el-form-item>
 
+        <el-form-item label="入库方式">
+          <el-segmented v-model="importForm.organizeMode" :options="organizeModeOptions" />
+        </el-form-item>
+
         <el-form-item label="最大文件 MB">
           <el-input-number
             v-model="importForm.maxCopyFileSizeMb"
@@ -154,16 +164,16 @@ onMounted(refreshJobs);
           <el-switch v-model="importForm.recursive" active-text="开启" inactive-text="关闭" />
         </el-form-item>
 
-        <el-form-item class="wide-field" label="Raw Sources 根目录">
+        <el-form-item class="wide-field" label="资料仓库目录">
           <el-input
             v-model="importForm.rawSourcesRoot"
             clearable
-            placeholder="留空使用系统默认收纳目录"
+            placeholder="留空使用系统默认资料仓库"
           />
         </el-form-item>
 
         <div class="form-actions">
-          <p class="form-hint">Raw Sources 是不可变事实源，后续 Wiki 页面只引用和整理它。</p>
+          <p class="form-hint">默认资料仓库：WikiForge/30_Resources_资源。</p>
           <el-button :loading="creating" type="primary" @click="createJob">
             <el-icon><FolderAdd /></el-icon>
             创建收纳任务
@@ -203,7 +213,7 @@ onMounted(refreshJobs);
           />
           <el-icon class="upload-dropzone-icon"><UploadFilled /></el-icon>
           <strong>选择或拖入文件</strong>
-          <span>文件会直接进入 Raw Sources，并登记到资料箱。</span>
+          <span>文件会复制进入资料仓库，并登记到资料箱。</span>
         </div>
 
         <div v-if="selectedUploadFiles.length > 0" class="upload-file-list">
@@ -283,7 +293,8 @@ onMounted(refreshJobs);
             {{ scope.row.inputPath }}
           </template>
         </el-table-column>
-        <el-table-column prop="rawSourcesRoot" label="收纳目录" min-width="240" show-overflow-tooltip />
+        <el-table-column prop="organizeMode" label="入库方式" width="110" />
+        <el-table-column prop="rawSourcesRoot" label="资料仓库" min-width="240" show-overflow-tooltip />
       </el-table>
     </el-card>
   </div>

@@ -16,8 +16,8 @@ management:
         enabled: true
 
 wikiforge:
-  raw-sources-root: ${WIKIFORGE_RAW_SOURCES_ROOT:${WIKIFORGE_RAW_SOURCES_PATH:./data/raw-sources}}
-  raw-sources-path: ${WIKIFORGE_RAW_SOURCES_PATH:${WIKIFORGE_RAW_SOURCES_ROOT:./data/raw-sources}}
+  raw-sources-root: ${WIKIFORGE_RAW_SOURCES_ROOT:${WIKIFORGE_RAW_SOURCES_PATH:${WIKIFORGE_OBSIDIAN_VAULT_PATH:./data/obsidian-vault}/WikiForge/30_Resources_资源}}
+  raw-sources-path: ${WIKIFORGE_RAW_SOURCES_PATH:${WIKIFORGE_RAW_SOURCES_ROOT:${WIKIFORGE_OBSIDIAN_VAULT_PATH:./data/obsidian-vault}/WikiForge/30_Resources_资源}}
   obsidian-vault-path: ${WIKIFORGE_OBSIDIAN_VAULT_PATH:./data/obsidian-vault}
   allowed-scan-roots: ${WIKIFORGE_ALLOWED_SCAN_ROOTS:}
   core-service:

@@ -170,6 +170,7 @@ class ObsidianApiIntegrationTests {
         assertThat(data.path("createdPaths").toString()).contains("WikiForge/index.md");
         assertThat(Files.isDirectory(OBSIDIAN_VAULT.resolve("WikiForge/00_Rules_规则"))).isTrue();
         assertThat(Files.isDirectory(OBSIDIAN_VAULT.resolve("WikiForge/10_Sources_来源"))).isTrue();
+        assertThat(Files.isDirectory(OBSIDIAN_VAULT.resolve("WikiForge/30_Resources_资源"))).isTrue();
         assertThat(Files.isRegularFile(OBSIDIAN_VAULT.resolve("WikiForge/index.md"))).isTrue();
         assertThat(Files.isRegularFile(OBSIDIAN_VAULT.resolve("WikiForge/00_Rules_规则/LLM-Wiki写入规则.md"))).isTrue();
         assertThat(Files.exists(OBSIDIAN_VAULT.resolve("WikiForge/00_规则"))).isFalse();

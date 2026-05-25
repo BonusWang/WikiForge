@@ -46,7 +46,8 @@ class LocalFileScannerTests {
                 true,
                 true,
                 false,
-                100
+                100,
+                "copy"
         ));
 
         assertThat(result.totalCount()).isEqualTo(5);
@@ -106,7 +107,8 @@ class LocalFileScannerTests {
                 true,
                 true,
                 false,
-                100
+                100,
+                "copy"
         ));
 
         assertThat(result.totalCount()).isEqualTo(1);
@@ -136,7 +138,8 @@ class LocalFileScannerTests {
                 true,
                 true,
                 false,
-                1
+                1,
+                "copy"
         ));
 
         assertThat(result.totalCount()).isEqualTo(1);
@@ -145,6 +148,76 @@ class LocalFileScannerTests {
         assertThat(result.failedCount()).isZero();
         assertThat(result.files()).isEmpty();
         assertThat(rawSourcesRoot.resolve("03_PDFs_PDF").resolve("large.pdf")).doesNotExist();
+    }
+
+    @Test
+    void scanMovesFilesToRawSourcesWhenOrganizeModeIsMove() throws Exception {
+        Path inputPath = tempDir.resolve("input");
+        Path rawSourcesRoot = tempDir.resolve("raw-sources");
+        Files.createDirectories(inputPath);
+        Files.createDirectories(rawSourcesRoot);
+
+        Path sourceFile = inputPath.resolve("move-me.md");
+        Files.writeString(sourceFile, "move me", StandardCharsets.UTF_8);
+
+        LocalFileScanner scanner = new LocalFileScanner();
+
+        LocalScanResult result = scanner.scan(new LocalScanRequest(
+                inputPath,
+                rawSourcesRoot,
+                true,
+                true,
+                true,
+                false,
+                100,
+                "move"
+        ));
+
+        assertThat(result.totalCount()).isEqualTo(1);
+        assertThat(result.successCount()).isEqualTo(1);
+        assertThat(result.skippedCount()).isZero();
+        assertThat(result.failedCount()).isZero();
+
+        LocalScanFile movedFile = findByFileName(result, "move-me.md");
+        assertThat(movedFile.organizeStatus()).isEqualTo("moved");
+        assertThat(Path.of(movedFile.managedPath())).isRegularFile();
+        assertThat(Path.of(movedFile.managedPath())).startsWith(rawSourcesRoot.toAbsolutePath().normalize());
+        assertThat(sourceFile).doesNotExist();
+    }
+
+    @Test
+    void scanReferencesFilesWithoutCopyingOrMovingWhenOrganizeModeIsReference() throws Exception {
+        Path inputPath = tempDir.resolve("input");
+        Path rawSourcesRoot = tempDir.resolve("raw-sources");
+        Files.createDirectories(inputPath);
+        Files.createDirectories(rawSourcesRoot);
+
+        Path sourceFile = inputPath.resolve("reference-me.md");
+        Files.writeString(sourceFile, "reference me", StandardCharsets.UTF_8);
+
+        LocalFileScanner scanner = new LocalFileScanner();
+
+        LocalScanResult result = scanner.scan(new LocalScanRequest(
+                inputPath,
+                rawSourcesRoot,
+                true,
+                true,
+                true,
+                false,
+                100,
+                "reference"
+        ));
+
+        assertThat(result.totalCount()).isEqualTo(1);
+        assertThat(result.successCount()).isEqualTo(1);
+        assertThat(result.skippedCount()).isZero();
+        assertThat(result.failedCount()).isZero();
+
+        LocalScanFile referencedFile = findByFileName(result, "reference-me.md");
+        assertThat(referencedFile.organizeStatus()).isEqualTo("referenced");
+        assertThat(referencedFile.managedPath()).isEqualTo(sourceFile.toAbsolutePath().normalize().toString());
+        assertThat(sourceFile).isRegularFile();
+        assertThat(Files.list(rawSourcesRoot).toList()).isEmpty();
     }
 
     private static LocalScanFile findByFileName(LocalScanResult result, String fileName) {

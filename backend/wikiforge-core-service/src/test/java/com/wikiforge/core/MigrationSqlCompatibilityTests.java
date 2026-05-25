@@ -13,6 +13,7 @@ class MigrationSqlCompatibilityTests {
         String migrationSql = migrationSql("/db/migration/V20260523_002__create_source_import_tables.sql");
         assertThat(migrationSql).doesNotContain("\n    recursive TINYINT");
         assertThat(migrationSql).contains("\n    recursive_scan TINYINT");
+        assertThat(migrationSql).contains("organize_mode VARCHAR(64) NOT NULL DEFAULT 'move'");
     }
 
     @Test
@@ -39,6 +40,8 @@ class MigrationSqlCompatibilityTests {
         assertThat(migrationSql).contains("CREATE TABLE wiki_ingest_runs");
         assertThat(migrationSql).contains("UNIQUE KEY uk_system_dictionaries_type_code (dict_type, dict_code)");
         assertThat(migrationSql).contains("已收纳");
+        assertThat(migrationSql).contains("已归仓");
+        assertThat(migrationSql).contains("已引用");
         assertThat(migrationSql).contains("待整理到 Wiki");
         assertThat(migrationSql).contains("run_uid VARCHAR(64) NOT NULL");
         assertThat(migrationSql).contains("status_code VARCHAR(128) NOT NULL DEFAULT '已创建'");

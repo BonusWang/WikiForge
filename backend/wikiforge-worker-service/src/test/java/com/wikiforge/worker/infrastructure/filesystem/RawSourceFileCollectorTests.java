@@ -32,8 +32,8 @@ class RawSourceFileCollectorTests {
         RawSourceFileCollector collector = new RawSourceFileCollector();
         Map<String, LocalScanFile> copiedByHash = new HashMap<>();
 
-        LocalScanFile copied = collector.collect(first, rawSourcesRoot, copiedByHash);
-        LocalScanFile duplicateResult = collector.collect(duplicate, rawSourcesRoot, copiedByHash);
+        LocalScanFile copied = collector.collect(first, rawSourcesRoot, copiedByHash, "copy");
+        LocalScanFile duplicateResult = collector.collect(duplicate, rawSourcesRoot, copiedByHash, "copy");
 
         assertThat(copied.contentHash()).isEqualTo(sha256("same content"));
         assertThat(copied.fileExt()).isEqualTo("md");

@@ -52,7 +52,7 @@ onMounted(refreshRuns);
           </div>
         </template>
         <p class="metric ok">{{ sourcePageCount }}</p>
-        <p class="muted">Raw Sources 对应的托管说明页</p>
+        <p class="muted">资料仓库对应的托管说明页</p>
       </el-card>
 
       <el-card shadow="never">

@@ -6,7 +6,7 @@ MVP0 后端只服务一条主流程：
 
 ```text
 文件入口
-  -> Raw Sources 收纳
+  -> 资料仓库入库
   -> SourceFile / SourceContent 账本
   -> Obsidian LLM Wiki 写入
   -> index/log 更新
@@ -94,9 +94,9 @@ com.wikiforge.worker
 
 | 原子能力 | 目标组件 | 说明 |
 | --- | --- | --- |
-| 路径校验 | `PathSafety` | 复用 Common，防止 Raw Sources 重叠和路径逃逸 |
+| 路径校验 | `PathSafety` | 复用 Common，防止资料仓库重叠和路径逃逸 |
 | 目录扫描 | `LocalDirectoryScanner` | 只输出候选文件，不写数据库 |
-| 文件复制 | `RawSourceCopier` | 复制到 Raw Sources，不覆盖已有文件 |
+| 文件入库 | `RawSourceFileCollector` | 按策略复制、移动或引用登记到资料仓库，不覆盖已有文件 |
 | hash 计算 | `ContentHasher` | 默认 SHA-256 |
 | 类型识别 | `FileTypeClassifier` | 识别文档、图片、二进制、大文件 |
 | 正文抽取 | `TextContentExtractor` | 抽取 Markdown / TXT / PDF / DOCX |
@@ -163,7 +163,7 @@ MVP0 状态码统一使用中文业务码值，由 `system_dictionaries` 维护�
 {
   "statusCode": "已收纳",
   "statusLabel": "已收纳",
-  "statusDescription": "文件已复制到 Raw Sources",
+  "statusDescription": "文件已进入资料仓库",
   "statusColor": "success"
 }
 ```
@@ -183,7 +183,9 @@ MVP0 状态码统一使用中文业务码值，由 `system_dictionaries` 维护�
 | 中文码值 | 含义 |
 | --- | --- |
 | 已登记 | 已创建 SourceFile 账本 |
-| 已收纳 | 文件已进入 Raw Sources |
+| 已收纳 | 文件已复制到资料仓库 |
+| 已归仓 | 文件已移动到资料仓库 |
+| 已引用 | 文件已按原路径登记引用 |
 | 重复文件 | hash 已存在，不重复复制 |
 | 抽取中 | 正在抽取正文 |
 | 已抽取 | 正文抽取完成 |
@@ -209,7 +211,7 @@ MVP0 状态码统一使用中文业务码值，由 `system_dictionaries` 维护�
 | 正文内容 | Core | `source_contents` |
 | Wiki 写入运行结果 | Core | `wiki_ingest_runs` |
 | 状态字典 | Core | `system_dictionaries` |
-| Raw Sources 文件 | Worker 执行，Core 记账 | Worker 复制，Core 记录路径和 hash |
+| 资料仓库文件 | Worker 执行，Core 记账 | Worker 复制、移动或引用登记，Core 记录路径和 hash |
 | Obsidian 文件 | Core | Core 写入 Vault 并记录结果 |
 
 Worker 不拥有业务数据表。

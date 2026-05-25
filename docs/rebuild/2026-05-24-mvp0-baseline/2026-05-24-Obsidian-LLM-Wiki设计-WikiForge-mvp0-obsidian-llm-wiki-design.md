@@ -6,7 +6,7 @@ MVP0 的 Obsidian 不是聊天问答库，也不是向量库结果展示页。
 
 它是 WikiForge 自动维护的知识表达层：
 
-- Raw Sources 保持不可变，只做事实源和追溯。
+- 资料仓库保存进入 WikiForge 管理范围的原始资料，只做事实源和追溯。
 - Obsidian LLM Wiki 保存整理后的 Markdown 页面。
 - Schema / index / log 约束写入规则、目录和演进记录。
 - 系统只写托管区块，尽量不覆盖用户在 Obsidian 中手写的内容。
@@ -22,7 +22,7 @@ WikiForge/
 规则：
 
 - `WikiForge/` 之外的用户笔记，MVP0 不写、不改、不删。
-- Raw Sources 不放进 Obsidian Vault，避免原始文件污染知识库。
+- MVP0 正式资料仓库位于 `WikiForge/30_Resources_资源/`；Wiki 来源页仍单独写入 `10_Sources_来源/`。
 - Wiki 页面只保存来源页、索引和运行记录。
 - 所有路径必须是 Vault 相对路径，不允许绝对路径或 `..` 逃逸。
 
@@ -41,6 +41,7 @@ WikiForge/
     YYYY/
       MM/
         {fileUid}-{安全标题}.md
+  30_Resources_资源/
 ```
 
 | 路径 | 作用 |
@@ -49,6 +50,7 @@ WikiForge/
 | `log.md` | 追加式演进日志 |
 | `00_Rules_规则/` | LLM Wiki 写作规则和页面模板 |
 | `10_Sources_来源/` | 每个 SourceFile 对应一个来源页 |
+| `30_Resources_资源/` | 复制或移动入库后的原始资料仓库 |
 
 ## 4. 页面类型
 
@@ -66,7 +68,7 @@ WikiForge/10_Sources_来源/YYYY/MM/{fileUid}-{安全标题}.md
 
 - 文件 UID。
 - 内容 hash。
-- Raw Sources 相对路径。
+- 资料仓库相对路径或引用路径标识。
 - 原始文件名。
 - 文件类型和大小。
 - 抽取正文摘要。
@@ -82,7 +84,7 @@ WikiForge/10_Sources_来源/YYYY/MM/{fileUid}-{安全标题}.md
 
 - 最近写入的来源页。
 - 最近失败记录。
-- Raw Sources 和 Vault 当前配置摘要。
+- 资料仓库和 Vault 当前配置摘要。
 
 ### 4.3 log.md
 
@@ -141,7 +143,7 @@ wikiforge: true
 
 - 用户可见状态使用中文码值。
 - 不写入宿主机敏感绝对路径。
-- Raw Sources 路径只写相对路径或内部 UID。
+- 资料仓库路径只写相对路径、引用标识或内部 UID。
 - 时间使用带时区格式。
 
 ## 7. 写入流程
@@ -179,7 +181,7 @@ SourceFile + SourceContent
 
 失败时：
 
-- 不删除 Raw Sources 文件。
+- 不删除资料仓库文件。
 - 不回滚 SourceFile 账本。
 - `wiki_ingest_runs.status_code` 记为“失败”。
 - UI 展示失败原因中文说明。

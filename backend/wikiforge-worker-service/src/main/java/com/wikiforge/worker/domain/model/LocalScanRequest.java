@@ -9,6 +9,12 @@ public record LocalScanRequest(
         boolean skipHidden,
         boolean skipTemporary,
         boolean followSymlinks,
-        long maxCopyFileSizeMb
+        long maxCopyFileSizeMb,
+        String organizeMode
 ) {
+    public LocalScanRequest {
+        if (organizeMode == null || organizeMode.isBlank()) {
+            organizeMode = "copy";
+        }
+    }
 }
