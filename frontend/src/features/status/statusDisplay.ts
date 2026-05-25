@@ -74,13 +74,6 @@ const wikiWriteStatusDisplay: Record<string, StatusDisplay> = {
     tagType: 'success',
     className: 'status-badge status-badge--completed'
   },
-  兜底写入: {
-    code: '兜底写入',
-    label: '兜底写入',
-    description: '已使用兜底规则写入',
-    tagType: 'warning',
-    className: 'status-badge status-badge--cancelled'
-  },
   失败: {
     code: '失败',
     label: '失败',

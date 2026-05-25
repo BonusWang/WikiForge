@@ -318,7 +318,6 @@
   "logEntryAppended": true,
   "writeStatusCode": "已写入",
   "writeStatusLabel": "已写入",
-  "fallbackReason": null,
   "failureReason": null,
   "createdAt": "2026-05-24T20:00:00+08:00",
   "completedAt": "2026-05-24T20:00:01+08:00"
@@ -342,7 +341,6 @@
 - `logEntryAppended`
 - `writeStatusCode`
 - `writeStatusLabel`
-- `fallbackReason`
 - `failureReason`
 - `createdAt`
 - `completedAt`

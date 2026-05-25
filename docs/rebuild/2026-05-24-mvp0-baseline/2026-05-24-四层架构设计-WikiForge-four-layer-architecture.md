@@ -209,7 +209,7 @@ Wiki ingest 运行结果至少包含：
 - `indexUpdated`
 - `logEntryAppended`
 - `writeStatus`
-- `fallbackReason`
+- `failureReason`
 
 ## 7. 数据模型原则
 

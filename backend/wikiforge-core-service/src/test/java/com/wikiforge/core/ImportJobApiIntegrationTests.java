@@ -156,7 +156,6 @@ class ImportJobApiIntegrationTests {
                     log_entry_appended BOOLEAN NOT NULL DEFAULT FALSE,
                     write_status_code VARCHAR(128) NOT NULL DEFAULT '已创建',
                     write_status_label VARCHAR(128) NOT NULL DEFAULT '已创建',
-                    fallback_reason CLOB NULL,
                     failure_reason CLOB NULL,
                     managed_block_preview CLOB NULL,
                     log_entry_preview CLOB NULL,

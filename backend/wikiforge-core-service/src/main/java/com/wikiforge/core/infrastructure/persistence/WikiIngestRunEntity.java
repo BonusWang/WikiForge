@@ -22,7 +22,6 @@ public class WikiIngestRunEntity {
     private Boolean logEntryAppended;
     private String writeStatusCode;
     private String writeStatusLabel;
-    private String fallbackReason;
     private String failureReason;
     private String managedBlockPreview;
     private String logEntryPreview;
@@ -134,14 +133,6 @@ public class WikiIngestRunEntity {
 
     public void setWriteStatusLabel(String writeStatusLabel) {
         this.writeStatusLabel = writeStatusLabel;
-    }
-
-    public String getFallbackReason() {
-        return fallbackReason;
-    }
-
-    public void setFallbackReason(String fallbackReason) {
-        this.fallbackReason = fallbackReason;
     }
 
     public String getFailureReason() {

@@ -99,7 +99,6 @@ MVP0 数据库从减法开始，只保存当前闭环必须的数据：
 | `index_updated` | 是否更新 index |
 | `log_entry_appended` | 是否追加 log |
 | `write_status_code` | 写入状态中文码值 |
-| `fallback_reason` | 兜底原因 |
 | `failure_reason` | 失败原因 |
 | `created_at` / `updated_at` / `completed_at` | 时间字段 |
 
@@ -115,7 +114,7 @@ MVP0 数据库从减法开始，只保存当前闭环必须的数据：
 | --- | --- |
 | `id` | 自增主键 |
 | `dict_type` | 字典类型，例如：收纳任务状态、资料状态、Wiki 写入状态 |
-| `dict_code` | 中文业务码值，例如：执行中、已收纳、兜底写入 |
+| `dict_code` | 中文业务码值，例如：执行中、已收纳、已写入 |
 | `label_zh` | 中文展示名 |
 | `description_zh` | 中文说明 |
 | `sort_order` | 排序 |
@@ -164,7 +163,6 @@ MVP0 数据库从减法开始，只保存当前闭环必须的数据：
 | Wiki 写入状态 | 已创建 | neutral | 否 |
 | Wiki 写入状态 | 写入中 | info | 否 |
 | Wiki 写入状态 | 已写入 | success | 是 |
-| Wiki 写入状态 | 兜底写入 | warning | 是 |
 | Wiki 写入状态 | 失败 | danger | 是 |
 
 ## 5. 历史表处理

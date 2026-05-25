@@ -12,7 +12,6 @@ export interface WikiIngestRun {
   logEntryAppended: boolean;
   writeStatusCode?: string | null;
   writeStatusLabel?: string | null;
-  fallbackReason?: string | null;
   failureReason?: string | null;
   createdAt: string;
   completedAt?: string | null;

@@ -100,7 +100,7 @@ npm --prefix frontend run build
 - 生成 Source page 和 Wiki page。
 - 记录写入状态和失败原因。
 - 如确需持久化写入结果，只新增 `wiki_ingest_runs`，不复用 `agent_runs`。
-- 模型不可用时用规则式 Markdown 兜底。
+- 当前 MVP0 先使用规则式 Markdown 写入；模型整理能力后续单独设计。
 
 验收：
 

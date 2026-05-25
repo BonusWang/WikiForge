@@ -198,7 +198,6 @@ MVP0 状态码统一使用中文业务码值，由 `system_dictionaries` 维护�
 | 已创建 | Wiki ingest run 已创建 |
 | 写入中 | 正在生成或写入 Wiki 页面 |
 | 已写入 | Source page、index/log 已写入 |
-| 兜底写入 | LLM 不可用，已用规则式 Markdown 写入 |
 | 失败 | 写入失败 |
 
 ## 8. 数据归属

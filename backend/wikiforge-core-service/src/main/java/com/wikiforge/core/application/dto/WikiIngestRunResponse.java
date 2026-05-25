@@ -17,7 +17,6 @@ public record WikiIngestRunResponse(
         Boolean logEntryAppended,
         String writeStatusCode,
         String writeStatusLabel,
-        String fallbackReason,
         String failureReason,
         String managedBlockPreview,
         String logEntryPreview,
