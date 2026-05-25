@@ -71,7 +71,7 @@ interfaces -> application -> domain <- infrastructure
 - `interfaces` 只处理 REST、DTO、请求响应转换。
 - `application` 负责编排用例和事务边界。
 - `domain` 放核心模型、状态、规则，不依赖框架。
-- `infrastructure` 放数据库、文件系统、模型适配器、Obsidian 写入实现。
+- `infrastructure` 放数据库、文件系统、外部服务客户端、Obsidian 写入实现。
 - Worker 只执行扫描、复制、hash、抽取等任务，不提供用户查询接口。
 - Common 只放通用能力，不放业务流程。
 

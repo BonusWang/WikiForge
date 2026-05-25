@@ -312,7 +312,7 @@ docker compose config
 
 - Task 0 基线守护：旧文档物理归档，当前入口指向 MVP0 基座。
 - Task 1 前端 MVP0 主壳拆分：五入口已落地，旧 Dashboard 不再作为根路由。
-- Task 2 前端 API 与类型收敛：新增上传、资料详情、Wiki ingest、字典、设置契约封装。
+- Task 2 前端 API 与类型收敛：新增上传、资料详情、Wiki ingest、字典封装；设置页保留为五入口之一，不提供持久化设置 API。
 - Task 3 后端最小 API 与 DTO 收敛：收纳任务和资料响应补齐中文状态字段。
 - Task 4 数据库最小主流程表落地：新增 `system_dictionaries`、`wiki_ingest_runs`。
 - Task 6 Obsidian LLM Wiki 写入闭环：Wiki ingest 已写入来源页、index 和 log 的最小规则版本。

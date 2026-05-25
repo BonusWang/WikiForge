@@ -63,7 +63,7 @@ frontend/src/
 - Source Inbox：导入任务、SourceFile 列表、重复文件、解析状态。
 - Wiki Workspace：Wiki 写入结果、Source page、Topic / Project 页面、重跑入口。
 - Run Log：ImportJob、WikiIngestRun、index/log 更新记录。
-- Settings：Raw Sources、Obsidian Vault、模型配置、扫描安全根。
+- Settings：MVP0 运行口径、Raw Sources、Obsidian Vault 托管目录、路径安全提示。
 
 ### 3.3 单页拆分原则
 
@@ -90,16 +90,13 @@ Core Service 仍是 MVP 对外业务 API 入口，负责：
 com.wikiforge.core
   interfaces.web.capture
   interfaces.web.wiki
-  interfaces.web.settings
   application.capture
   application.wiki
-  application.settings
   domain.source
   domain.wiki
   domain.job
   infrastructure.persistence.source
   infrastructure.filesystem.obsidian
-  infrastructure.integration.model
 ```
 
 ### 4.2 Worker Service
@@ -170,7 +167,7 @@ UI Capture
 ```text
 SourceFile + SourceContent
   -> Schema rules
-  -> Model adapter or rule-based fallback
+  -> Rule-based managed block
   -> Source page
   -> Topic / Project page
   -> index.md

@@ -512,7 +512,6 @@ MVP0 主流程只新增或使用以下错误码前缀：
 | `WIKI_` | Wiki ingest 和页面写入错误 |
 | `OBSIDIAN_` | Vault 和 Markdown 文件写入错误 |
 | `DICT_` | 字典错误 |
-| `SETTINGS_` | 设置错误 |
 | `WORKER_` | Worker 内部调用错误 |
 | `COMMON_` | 通用校验错误 |
 
