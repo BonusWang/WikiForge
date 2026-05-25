@@ -7,7 +7,6 @@ import java.util.List;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,9 +23,8 @@ public class UploadSourceController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<UploadSourcesResponse> uploadSources(
-            @RequestPart(value = "files", required = false) List<MultipartFile> files,
-            @RequestParam(required = false) String wikiWritebackMode
+            @RequestPart(value = "files", required = false) List<MultipartFile> files
     ) {
-        return ApiResponse.ok(importJobService.uploadSources(files, wikiWritebackMode));
+        return ApiResponse.ok(importJobService.uploadSources(files));
     }
 }

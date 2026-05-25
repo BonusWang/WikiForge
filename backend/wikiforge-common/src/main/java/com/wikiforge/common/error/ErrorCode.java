@@ -8,7 +8,6 @@ public enum ErrorCode {
     IMPORT_JOB_NOT_FOUND("IMPORT_001", "import job not found"),
     IMPORT_INVALID_STATUS_TRANSITION("IMPORT_002", "invalid import job status transition"),
     OBSIDIAN_INVALID_VAULT("OBSIDIAN_002", "invalid obsidian vault"),
-    WIKI_INVALID_INPUT("WIKI_001", "invalid wiki input"),
     WIKI_INGEST_RUN_NOT_FOUND("WIKI_004", "wiki ingest run not found"),
     UPLOAD_EMPTY_INPUT("UPLOAD_001", "upload files are required"),
     UPLOAD_WRITE_FAILED("UPLOAD_002", "upload file cannot be written"),

@@ -15,10 +15,6 @@ export async function uploadSources(payload: UploadSourcesRequest): Promise<Uplo
     formData.append('files', file);
   });
 
-  if (payload.wikiWritebackMode) {
-    formData.append('wikiWritebackMode', payload.wikiWritebackMode);
-  }
-
   const response = await http.post<ApiResponse<UploadSourcesResult | null>>(
     '/v1/upload-sources',
     formData

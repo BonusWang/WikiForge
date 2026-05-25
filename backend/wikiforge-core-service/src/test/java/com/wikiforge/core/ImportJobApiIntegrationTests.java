@@ -233,7 +233,6 @@ class ImportJobApiIntegrationTests {
 
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         body.add("files", new HttpEntity<>(resource, fileHeaders));
-        body.add("wikiWritebackMode", "关闭");
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 

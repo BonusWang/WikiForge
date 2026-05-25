@@ -123,10 +123,10 @@
 ```json
 {
   "inputPath": "E:\\资料\\待读",
+  "rawSourcesRoot": "E:\\WikiForgeRawSources",
   "recursive": true,
-  "maxCopyFileSizeMb": 100,
-  "processingIntent": "仅收纳",
-  "wikiWritebackMode": "自动"
+  "organizeMode": "copy",
+  "maxCopyFileSizeMb": 100
 }
 ```
 
@@ -135,24 +135,31 @@
 | 字段 | 必填 | 说明 |
 | --- | --- | --- |
 | `inputPath` | 是 | 用户输入的本机目录 |
+| `rawSourcesRoot` | 否 | Raw Sources 根目录；为空时使用运行配置 |
 | `recursive` | 否 | 是否递归扫描，默认 true |
+| `organizeMode` | 否 | 当前仅支持 `copy` |
 | `maxCopyFileSizeMb` | 否 | 单文件复制上限 |
-| `processingIntent` | 否 | 中文码值：仅收纳 / 收纳并整理 |
-| `wikiWritebackMode` | 否 | 中文码值：自动 / 关闭 |
 
 响应：
 
 ```json
 {
   "jobUid": "job_xxx",
-  "importType": "本地路径",
-  "inputPathMasked": "E:\\资料\\待读",
+  "importType": "path_scan",
+  "inputPath": "E:\\资料\\待读",
+  "rawSourcesRoot": "E:\\WikiForgeRawSources",
+  "recursive": true,
+  "organizeMode": "copy",
+  "maxCopyFileSizeMb": 100,
+  "status": "pending",
   "statusCode": "已创建",
   "statusLabel": "已创建",
   "statusDescription": "收纳任务已创建，等待执行",
+  "statusColor": "info",
+  "isTerminal": false,
   "totalCount": 0,
   "successCount": 0,
-  "duplicateCount": 0,
+  "skippedCount": 0,
   "failedCount": 0,
   "createdAt": "2026-05-24T20:00:00+08:00"
 }
@@ -175,13 +182,13 @@
   "items": [
     {
       "jobUid": "job_xxx",
-      "importType": "本地路径",
-      "inputPathMasked": "E:\\资料\\待读",
+      "importType": "path_scan",
+      "inputPath": "E:\\资料\\待读",
       "statusCode": "执行中",
       "statusLabel": "执行中",
       "totalCount": 12,
       "successCount": 8,
-      "duplicateCount": 2,
+      "skippedCount": 2,
       "failedCount": 0,
       "createdAt": "2026-05-24T20:00:00+08:00"
     }
@@ -199,9 +206,8 @@
 响应在列表字段基础上增加：
 
 - `startedAt`
-- `completedAt`
-- `failureReason`
-- `recentSourceFiles`
+- `finishedAt`
+- `errorMessage`
 
 ## 7. 上传接口
 
@@ -216,7 +222,6 @@
 | 字段 | 必填 | 说明 |
 | --- | --- | --- |
 | `files` | 是 | 一个或多个文件 |
-| `wikiWritebackMode` | 否 | 中文码值：自动 / 关闭 |
 
 响应：
 
@@ -280,7 +285,6 @@
 
 详情增加：
 
-- `originalName`
 - `originalPathMasked`
 - `mimeType`
 - `duplicateOfFileUid`
@@ -294,25 +298,9 @@
 
 `POST /api/v1/source-files/{fileUid}/wiki-ingest-runs`
 
-请求：
+请求：无需请求体。
 
-```json
-{
-  "writeMode": "自动",
-  "targetTopic": "待分类",
-  "targetProject": "待归档项目",
-  "forceRewriteManagedBlock": false
-}
-```
-
-字段：
-
-| 字段 | 必填 | 说明 |
-| --- | --- | --- |
-| `writeMode` | 否 | 中文码值：自动 / 兜底 / 仅预览 |
-| `targetTopic` | 否 | 指定主题页，默认由规则判断 |
-| `targetProject` | 否 | 指定项目页，默认不强制 |
-| `forceRewriteManagedBlock` | 否 | 是否覆盖已有托管区块 |
+当前 MVP0 固定按规则式来源页写入，写入 `WikiForge/10_来源/` 下的 Source page，并同步 `index.md` 与 `log.md`。主题/项目归档、预览模式和强制覆盖策略后续单独设计，不提前放入当前接口参数。
 
 响应：
 
@@ -320,14 +308,20 @@
 {
   "runUid": "wir_xxx",
   "fileUid": "sf_xxx",
-  "statusCode": "写入中",
-  "statusLabel": "写入中",
+  "statusCode": "已写入",
+  "statusLabel": "已写入",
   "sourcePagePath": "WikiForge/10_来源/2026/05/sf_xxx-资料.md",
-  "wikiPagePaths": [],
-  "indexUpdated": false,
-  "logEntryAppended": false,
+  "wikiPagePaths": [
+    "WikiForge/10_来源/2026/05/sf_xxx-资料.md"
+  ],
+  "indexUpdated": true,
+  "logEntryAppended": true,
+  "writeStatusCode": "已写入",
+  "writeStatusLabel": "已写入",
   "fallbackReason": null,
-  "createdAt": "2026-05-24T20:00:00+08:00"
+  "failureReason": null,
+  "createdAt": "2026-05-24T20:00:00+08:00",
+  "completedAt": "2026-05-24T20:00:01+08:00"
 }
 ```
 
@@ -394,8 +388,6 @@
 - 收纳任务状态。
 - 资料状态。
 - Wiki 写入状态。
-- 写入模式。
-- 处理意图。
 
 ## 11. Obsidian 接口
 
@@ -447,19 +439,18 @@
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
 | `PATCH` | `/api/v1/internal/import-jobs/{jobUid}/status` | 回写收纳任务状态 |
-| `POST` | `/api/v1/internal/import-jobs/{jobUid}/source-files:batch` | 批量回写 SourceFile |
-| `POST` | `/api/v1/internal/source-files/{fileUid}/content` | 回写正文抽取结果 |
+| `POST` | `/api/v1/internal/import-jobs/{jobUid}/source-files/batch` | 批量回写 SourceFile 和正文抽取结果 |
 
 状态回写请求：
 
 ```json
 {
-  "statusCode": "执行中",
+  "status": "running",
   "totalCount": 12,
   "successCount": 8,
-  "duplicateCount": 2,
+  "skippedCount": 2,
   "failedCount": 0,
-  "failureReason": null
+  "errorMessage": null
 }
 ```
 
@@ -469,34 +460,25 @@ SourceFile 批量回写请求：
 {
   "files": [
     {
-      "fileUid": "sf_xxx",
-      "jobUid": "job_xxx",
-      "originalName": "资料.pdf",
-      "originalPathMasked": "E:\\资料\\资料.pdf",
-      "rawSourceRelativePath": "2026/05/sf_xxx-资料.pdf",
+      "fileName": "资料.pdf",
+      "fileExt": "pdf",
+      "originalPath": "E:\\资料\\资料.pdf",
+      "managedPath": "E:\\WikiForgeRawSources\\2026\\05\\资料.pdf",
+      "fileSize": 204800,
+      "mimeType": "application/pdf",
       "contentHash": "sha256_xxx",
-      "fileSizeBytes": 204800,
-      "fileType": "pdf",
-      "collectStatusCode": "已收纳",
-      "extractStatusCode": "待抽取",
-      "wikiStatusCode": "待整理到 Wiki"
+      "parserName": "pdf-text",
+      "parseStatus": "success",
+      "organizeStatus": "copied",
+      "duplicateOfFileUid": null,
+      "contentType": "plain_text",
+      "parsedText": "抽取后的正文",
+      "textHash": "sha256_text_xxx",
+      "charCount": 1200,
+      "rawTextSaved": true,
+      "parseError": null
     }
   ]
-}
-```
-
-正文回写请求：
-
-```json
-{
-  "contentUid": "sc_xxx",
-  "extractStatusCode": "已抽取",
-  "plainText": "抽取后的正文",
-  "metadata": {
-    "pageCount": 10,
-    "extractor": "pdf"
-  },
-  "failureReason": null
 }
 ```
 

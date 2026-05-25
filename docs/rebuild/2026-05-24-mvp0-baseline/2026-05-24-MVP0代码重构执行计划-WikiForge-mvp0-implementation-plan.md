@@ -333,6 +333,7 @@ docker compose config
 - Orchestration 辅助工程物理清理：删除 `backend/wikiforge-orchestration-service/`、`orchestration-ui/`、`deploy/docker/orchestration-*.Dockerfile`、`agentteam/`、Orchestration 错误码和 `.env.example` 中的旧辅助工程/向量/模型变量。
 - 历史 `sources` 账本物理清理：fresh schema 不再创建 `sources`，`source_files` 成为唯一资料文件账本，`source_contents` 只通过 `source_file_id` 关联正文抽取结果。
 - 设置持久化预建能力清理：删除未接通的 `/settings` 前端 API 封装、`system_settings` / `model_providers` 预建迁移；设置页保留为五入口之一，但 MVP0 不提供持久化设置 API。
+- 当前能力参数清理：删除尚无执行语义的 Wiki 写入请求参数、上传写回模式和路径收纳意图参数暴露口径；Wiki ingest 当前固定为来源页、index、log 规则式写入。
 
 验证命令：
 

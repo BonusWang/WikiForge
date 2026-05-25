@@ -5,7 +5,6 @@ import com.wikiforge.core.application.port.WorkerImportJobClient;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
@@ -197,7 +196,7 @@ class ObsidianApiIntegrationTests {
         restTemplate.postForEntity("/api/v1/obsidian/init", null, JsonNode.class);
         restTemplate.postForEntity(
                 "/api/v1/source-files/file_test/wiki-ingest-runs",
-                Map.of("writeMode", "自动"),
+                null,
                 JsonNode.class
         );
 
@@ -228,7 +227,7 @@ class ObsidianApiIntegrationTests {
 
         ResponseEntity<JsonNode> response = restTemplate.postForEntity(
                 "/api/v1/source-files/file_test/wiki-ingest-runs",
-                Map.of("writeMode", "自动"),
+                null,
                 JsonNode.class
         );
 

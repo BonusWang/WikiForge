@@ -1,6 +1,5 @@
 export interface UploadSourcesRequest {
   files: File[];
-  wikiWritebackMode?: '自动' | '关闭';
 }
 
 export interface UploadSourcesResult {

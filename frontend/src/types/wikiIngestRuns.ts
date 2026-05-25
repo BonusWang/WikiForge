@@ -1,12 +1,5 @@
 import type { PageResult } from './importJobs';
 
-export interface CreateWikiIngestRunRequest {
-  writeMode?: '自动' | '兜底' | '仅预览';
-  targetTopic?: string;
-  targetProject?: string;
-  forceRewriteManagedBlock?: boolean;
-}
-
 export interface WikiIngestRun {
   runUid: string;
   fileUid: string;

@@ -42,6 +42,8 @@ class MigrationSqlCompatibilityTests {
         assertThat(migrationSql).contains("待整理到 Wiki");
         assertThat(migrationSql).contains("run_uid VARCHAR(64) NOT NULL");
         assertThat(migrationSql).contains("status_code VARCHAR(128) NOT NULL DEFAULT '已创建'");
+        assertThat(migrationSql).doesNotContain("写入模式");
+        assertThat(migrationSql).doesNotContain("处理意图");
         assertThat(migrationSql).doesNotContain("CREATE TABLE obsidian_notes");
         assertThat(migrationSql).doesNotContain("CREATE TABLE agent_runs");
         assertThat(migrationSql).doesNotContain("CREATE TABLE review_items");

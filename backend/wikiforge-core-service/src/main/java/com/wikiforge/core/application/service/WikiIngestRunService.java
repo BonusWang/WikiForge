@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.wikiforge.common.error.BusinessException;
 import com.wikiforge.common.error.ErrorCode;
-import com.wikiforge.core.application.dto.CreateWikiIngestRunRequest;
 import com.wikiforge.core.application.dto.WikiIngestRunPageResponse;
 import com.wikiforge.core.application.dto.WikiIngestRunResponse;
 import com.wikiforge.core.domain.model.SourceFileRecord;
@@ -18,15 +17,12 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class WikiIngestRunService {
-
-    private static final Set<String> ALLOWED_WRITE_MODES = Set.of("自动", "兜底", "仅预览");
 
     private final SourceFileRepository sourceFileRepository;
     private final WikiIngestRunMapper wikiIngestRunMapper;
@@ -43,8 +39,7 @@ public class WikiIngestRunService {
     }
 
     @Transactional
-    public WikiIngestRunResponse createRun(String fileUid, CreateWikiIngestRunRequest request) {
-        validateWriteMode(request == null ? null : request.writeMode());
+    public WikiIngestRunResponse createRun(String fileUid) {
         SourceFileRecord sourceFile = sourceFileRepository.findByFileUid(fileUid)
                 .orElseThrow(() -> new BusinessException(ErrorCode.SOURCE_FILE_NOT_FOUND));
 
@@ -87,15 +82,6 @@ public class WikiIngestRunService {
         }
         wikiIngestRunMapper.insert(entity);
         return toResponse(entity);
-    }
-
-    private void validateWriteMode(String writeMode) {
-        if (writeMode == null || writeMode.isBlank()) {
-            return;
-        }
-        if (!ALLOWED_WRITE_MODES.contains(writeMode.trim())) {
-            throw new BusinessException(ErrorCode.WIKI_INVALID_INPUT, "writeMode must be 自动、兜底 or 仅预览");
-        }
     }
 
     @Transactional(readOnly = true)
